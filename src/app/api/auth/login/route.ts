@@ -14,7 +14,9 @@ export async function POST(request: Request) {
     }
 
     const trimmedEmail = (email || "").trim().toLowerCase();
-    console.log(`[AUTH] Login attempt for: "${trimmedEmail}"`);
+    // Sanitize for logging: strip newlines/control chars to prevent log injection
+    const safeEmail = trimmedEmail.replace(/[\r\n\t]/g, "");
+    console.log(`[AUTH] Login attempt for: "${safeEmail}"`);
 
     const rows = await sql`
       SELECT id, email, password_hash, full_name, department, role
@@ -24,7 +26,7 @@ export async function POST(request: Request) {
     `;
 
     if (rows.length === 0) {
-      console.warn(`[AUTH] User not found for email: "${trimmedEmail}"`);
+      console.warn(`[AUTH] User not found for email: "${safeEmail}"`);
       return NextResponse.json(
         { error: "Invalid email or password." },
         { status: 401 }
@@ -38,14 +40,14 @@ export async function POST(request: Request) {
     }
 
     if (!passwordMatch) {
-      console.warn(`[AUTH] Password mismatch for user: "${trimmedEmail}"`);
+      console.warn(`[AUTH] Password mismatch for user: "${safeEmail}"`);
       return NextResponse.json(
         { error: "Invalid email or password." },
         { status: 401 }
       );
     }
 
-    console.log(`[AUTH] Login successful for: "${trimmedEmail}" (${user.role})`);
+    console.log(`[AUTH] Login successful for: "${safeEmail}" (${user.role})`);
 
     // Create session in Neon
     await createSession(user.id);
