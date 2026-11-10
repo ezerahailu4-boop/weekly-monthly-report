@@ -402,12 +402,12 @@ export function AppShell({
                     </p>
                   </div>
                 </div>
-                <Link
+                <a
                   href="/logout"
                   className="rounded-md border border-border bg-card px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
                 >
                   Sign out
-                </Link>
+                </a>
               </div>
             </div>
           </div>

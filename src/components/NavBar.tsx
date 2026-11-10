@@ -150,12 +150,12 @@ export default async function NavBar() {
                   </p>
                 </div>
               </Link>
-              <Link
+              <a
                 href="/logout"
                 className="rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground shadow-2xs"
               >
                 Sign out
-              </Link>
+              </a>
             </div>
           </nav>
         ) : (
