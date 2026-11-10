@@ -479,22 +479,40 @@ export function AppShell({
               <ThemeToggle />
             </div>
 
-            {/* User Avatar link */}
-            <Link
-              href="/profile"
-              className="flex items-center gap-2 rounded-lg p-1 hover:bg-muted transition-colors"
-              title={fullName}
-            >
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                  isSuperAdmin
-                    ? "bg-zinc-950 text-amber-300 ring-1 ring-amber-500/40"
-                    : "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100"
-                }`}
+            {/* User Avatar Dropdown */}
+            <div className="relative group">
+              <button
+                type="button"
+                className="flex items-center gap-2 rounded-lg p-1 hover:bg-muted transition-colors"
+                title={fullName}
               >
-                {initials}
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
+                    isSuperAdmin
+                      ? "bg-zinc-950 text-amber-300 ring-1 ring-amber-500/40"
+                      : "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-100"
+                  }`}
+                >
+                  {initials}
+                </div>
+              </button>
+              {/* Dropdown */}
+              <div className="absolute right-0 top-full mt-1.5 hidden w-44 rounded-xl border border-border bg-card p-1.5 shadow-xl group-hover:block z-50 animate-in fade-in-50 duration-150">
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                >
+                  View Profile
+                </Link>
+                <div className="my-1 border-t border-border" />
+                <a
+                  href="/logout"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                >
+                  Sign out
+                </a>
               </div>
-            </Link>
+            </div>
           </div>
         </header>
 

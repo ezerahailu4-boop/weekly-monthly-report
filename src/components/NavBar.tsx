@@ -120,12 +120,12 @@ export default async function NavBar() {
 
             <div className="hidden h-5 w-px bg-border md:block" />
 
-            {/* User Profile */}
-            <div className="flex items-center gap-2">
-              <Link
-                href="/profile"
-                title="View Profile & Settings"
+            {/* User Profile Dropdown */}
+            <div className="relative group">
+              <button
+                type="button"
                 className="flex items-center gap-2 rounded-xl p-1 transition-all hover:bg-muted"
+                title={fullName || "Profile"}
               >
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold shadow-xs ${
@@ -149,13 +149,23 @@ export default async function NavBar() {
                     {department ? `• ${department}` : ""}
                   </p>
                 </div>
-              </Link>
-              <a
-                href="/logout"
-                className="rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground shadow-2xs"
-              >
-                Sign out
-              </a>
+              </button>
+              {/* Dropdown */}
+              <div className="absolute right-0 top-full mt-1.5 hidden w-44 rounded-xl border border-border bg-card p-1.5 shadow-xl group-hover:block z-50 animate-in fade-in-50 duration-150">
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                >
+                  View Profile
+                </Link>
+                <div className="my-1 border-t border-border" />
+                <a
+                  href="/logout"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                >
+                  Sign out
+                </a>
+              </div>
             </div>
           </nav>
         ) : (
