@@ -23,8 +23,8 @@ async function main() {
   console.log("Added review_notes, reviewed_by, and reviewed_at columns to reports.");
 
   // 3. Seed Super Admin (CEO) account
-  const ceoEmail = "ceo@yetta-holding.com";
-  const ceoPassword = "YettaCeo2026!";
+  const ceoEmail = "ceo@yetaf-holding.com";
+  const ceoPassword = "YetafCeo2026!";
   const ceoHash = await bcrypt.hash(ceoPassword, 10);
 
   const existingCeo = await sql`SELECT id FROM users WHERE email = ${ceoEmail};`;
@@ -53,8 +53,8 @@ async function main() {
   }
 
   // 4. Ensure standard Admin account is also set
-  const adminEmail = "admin@yetta-holding.com";
-  const adminPassword = "YettaAdmin2026!";
+  const adminEmail = "admin@yetaf-holding.com";
+  const adminPassword = "YetafAdmin2026!";
   const adminHash = await bcrypt.hash(adminPassword, 10);
 
   const existingAdmin = await sql`SELECT id FROM users WHERE email = ${adminEmail};`;
@@ -81,8 +81,8 @@ async function main() {
   }
 
   // 5. Seed a sample Department Employee account so user can test staff submission workflow
-  const staffEmail = "operations@yetta-holding.com";
-  const staffPassword = "YettaStaff2026!";
+  const staffEmail = "operations@yetaf-holding.com";
+  const staffPassword = "YetafStaff2026!";
   const staffHash = await bcrypt.hash(staffPassword, 10);
 
   const existingStaff = await sql`SELECT id FROM users WHERE email = ${staffEmail};`;

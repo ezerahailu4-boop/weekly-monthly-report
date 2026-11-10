@@ -28,3 +28,4 @@ export function getDatabaseUrl() {
     "DATABASE_URL is not set. Provide it via environment variable or .env.local."
   );
 }
+

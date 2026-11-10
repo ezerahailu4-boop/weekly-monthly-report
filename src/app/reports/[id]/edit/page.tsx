@@ -29,8 +29,8 @@ export default async function EditReportPage({
 
   const row = rows[0];
 
-  // Only the creator or an admin can edit
-  const isAuthorized = user.id === row.user_id || user.role === "admin";
+  // Only the creator, admin, or super_admin can edit
+  const isAuthorized = user.id === row.user_id || user.role === "admin" || user.role === "super_admin";
   if (!isAuthorized) {
     redirect("/dashboard");
   }

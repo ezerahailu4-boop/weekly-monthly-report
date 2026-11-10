@@ -104,14 +104,6 @@ export function CommandPalette({
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        if (isOpen) onClose();
-        else {
-          // open handled by parent or state
-        }
-      }
-
       if (!isOpen) return;
 
       if (e.key === "Escape") {
