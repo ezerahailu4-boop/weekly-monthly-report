@@ -7,13 +7,13 @@ import { IconBuilding, IconCheck, IconLock, IconUser } from "./Icons";
 const DEPARTMENTS = [
   "Office of the CEO & Board",
   "Executive Management",
-  "Operations & Logistics",
+  "Logistics",
   "Finance & Accounting",
-  "Commercial & Sales",
-  "Technology & Engineering",
-  "Legal & Governance",
+  "IT",
+  "Engineering",
+  "Legal",
   "Human Resources",
-  "Strategy & Business Dev",
+  "Sales",
 ];
 
 export function ProfileForm({
