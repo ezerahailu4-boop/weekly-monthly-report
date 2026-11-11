@@ -2,17 +2,28 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { getPortalSettings } from "@/lib/portalSettings";
+import { evaluateReportingWindow, ETHIOPIA_TIMEZONE } from "@/lib/windowSchedule";
 import { DashboardReportsTable } from "@/components/DashboardReportsTable";
+import { ReportingWindowBanner } from "@/components/ReportingWindowBanner";
+import {
+  StaffSubmissionTracker,
+  type StaffTaskCounts,
+  type TrackedStaffMember,
+} from "@/components/StaffSubmissionTracker";
 import { AppShell } from "@/components/AppShell";
 import {
   IconAlertCircle,
+  IconBell,
   IconCalendar,
   IconCheckCircle,
+  IconCheckSquare,
   IconClock,
   IconCrown,
   IconDownload,
   IconFileText,
   IconLayers,
+  IconLock,
   IconPlus,
   IconShield,
   IconTrendingUp,
@@ -112,6 +123,58 @@ export default async function DashboardPage({
     },
   }));
 
+  // Fetch portal settings, open tasks, and (for CEO/Admin) staff compliance data in parallel
+  const [settings, myOpenTasks, staffRows, taskSummaryRows] = await Promise.all([
+    getPortalSettings(),
+    sql`
+      SELECT id, title, priority, status, to_char(due_date, 'YYYY-MM-DD') as due_date
+      FROM tasks
+      WHERE assigned_to = ${user.id} AND status != 'completed'
+      ORDER BY due_date ASC NULLS LAST, created_at DESC
+      LIMIT 4;
+    `,
+    isPrivileged && activeView === "company"
+      ? sql`
+          SELECT id, full_name, email, department, role, telegram_chat_id
+          FROM users
+          ORDER BY full_name ASC;
+        `
+      : Promise.resolve([]),
+    isPrivileged && activeView === "company"
+      ? sql`
+          SELECT assigned_to,
+                 COUNT(*) FILTER (WHERE status != 'completed')::int AS pending_tasks,
+                 COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_tasks
+          FROM tasks
+          GROUP BY assigned_to;
+        `
+      : Promise.resolve([]),
+  ]);
+
+  const windowStatus = evaluateReportingWindow(settings);
+  const windowLocked = !windowStatus.isOpen && !isPrivileged;
+
+  const staffList: TrackedStaffMember[] = staffRows.map((s) => ({
+    id: s.id,
+    full_name: s.full_name,
+    email: s.email,
+    department: s.department,
+    role: s.role as "employee" | "admin" | "super_admin",
+    telegram_chat_id: s.telegram_chat_id ?? null,
+  }));
+
+  const taskStats: Record<string, StaffTaskCounts> = {};
+  for (const row of taskSummaryRows) {
+    taskStats[row.assigned_to] = {
+      pending: Number(row.pending_tasks || 0),
+      completed: Number(row.completed_tasks || 0),
+    };
+  }
+
+  const todayEthYmd = new Intl.DateTimeFormat("en-CA", {
+    timeZone: ETHIOPIA_TIMEZONE,
+  }).format(new Date());
+
   const totalCount = reportList.length;
   const weeklyCount = reportList.filter((r) => r.report_type === "weekly").length;
   const monthlyCount = reportList.filter((r) => r.report_type === "monthly").length;
@@ -190,23 +253,100 @@ export default async function DashboardPage({
               </>
             )}
 
-            <Link
-              href="/reports/new/weekly"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs transition-all hover:bg-muted"
-            >
-              <IconPlus size={14} className="text-muted-foreground" />
-              New Weekly
-            </Link>
+            {windowLocked ? (
+              <span
+                title={`Reporting closed. ${windowStatus.countdownLabel}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-800 dark:text-amber-300 cursor-not-allowed"
+              >
+                <IconLock size={14} />
+                Submissions Locked
+              </span>
+            ) : (
+              <>
+                <Link
+                  href="/reports/new/weekly"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs transition-all hover:bg-muted"
+                >
+                  <IconPlus size={14} className="text-muted-foreground" />
+                  New Weekly
+                </Link>
+
+                <Link
+                  href="/reports/new/monthly"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs transition-all hover:opacity-90"
+                >
+                  <IconPlus size={14} />
+                  New Monthly
+                </Link>
+              </>
+            )}
 
             <Link
-              href="/reports/new/monthly"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs transition-all hover:opacity-90"
+              href="/tasks"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs transition-all hover:bg-muted"
             >
-              <IconPlus size={14} />
-              New Monthly
+              <IconCheckSquare size={14} className="text-accent" />
+              Tasks{myOpenTasks.length > 0 ? ` (${myOpenTasks.length})` : ""}
             </Link>
           </div>
         </div>
+
+        {/* Live Ethiopian Time Reporting Window Status */}
+        <ReportingWindowBanner status={windowStatus} isPrivileged={isPrivileged} />
+
+        {/* My Open Tasks & Telegram Notification Card */}
+        {(myOpenTasks.length > 0 || !user.telegram_chat_id) && (
+          <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-foreground">
+                  <IconCheckSquare size={15} className="text-accent" />
+                  {myOpenTasks.length > 0
+                    ? `You have ${myOpenTasks.length} pending assigned task${myOpenTasks.length === 1 ? "" : "s"}`
+                    : "Stay notified on Telegram"}
+                </span>
+                {!user.telegram_chat_id && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-300 border border-sky-500/20">
+                    <IconBell size={10} />
+                    Telegram Not Linked
+                  </span>
+                )}
+              </div>
+              {myOpenTasks.length > 0 ? (
+                <div className="flex flex-wrap gap-2 pt-0.5">
+                  {myOpenTasks.map((t) => (
+                    <Link
+                      key={t.id}
+                      href="/tasks"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
+                    >
+                      <span className="truncate max-w-[200px]">{t.title}</span>
+                      {t.due_date && (
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          ({t.due_date})
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Link your Telegram account to receive instant task notifications from management.
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href="/tasks"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-all"
+              >
+                <IconCheckSquare size={13} />
+                {myOpenTasks.length > 0 ? "Open & Complete Tasks" : "Connect Telegram & View Tasks"}
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Executive "Needs Attention" alert card if there are pending items */}
         {pendingReviewCount > 0 && isPrivileged && (
@@ -336,6 +476,17 @@ export default async function DashboardPage({
           </div>
         )}
 
+        {/* Registered Staff Weekly & Monthly Compliance Tracker (for CEO / Admin) */}
+        {isPrivileged && activeView === "company" && staffList.length > 0 && (
+          <StaffSubmissionTracker
+            staffList={staffList}
+            reports={reportList}
+            taskStats={taskStats}
+            todayEthYmd={todayEthYmd}
+            telegramBotConfigured={!!settings.telegram_bot_token}
+          />
+        )}
+
         {/* Reports Table Section */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -356,6 +507,7 @@ export default async function DashboardPage({
             initialReports={reportList}
             showAuthor={isPrivileged && activeView === "company"}
             isPrivileged={isPrivileged}
+            windowLocked={windowLocked}
           />
         </div>
       </div>

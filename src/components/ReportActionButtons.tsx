@@ -25,6 +25,7 @@ export function ReportActionButtons({
   isOwner,
   isAdmin,
   isSuperAdmin,
+  windowLocked = false,
 }: {
   reportId: string;
   currentStatus: ReportStatus;
@@ -32,6 +33,7 @@ export function ReportActionButtons({
   isOwner: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  windowLocked?: boolean;
 }) {
   const router = useRouter();
   const [status, setStatus] = useState<ReportStatus>(currentStatus);
@@ -81,7 +83,7 @@ export function ReportActionButtons({
         </Link>
 
         {/* 1. Employee: Send/Submit Draft to Management */}
-        {isOwner && status === "draft" && (
+        {isOwner && status === "draft" && !windowLocked && (
           <button
             type="button"
             disabled={updating}
@@ -117,8 +119,8 @@ export function ReportActionButtons({
           </button>
         )}
 
-        {/* 3. Edit Report (Owner or Admin) */}
-        {(isOwner || isAdmin) && (
+        {/* 3. Edit Report (Owner or Admin, when window is open or privileged) */}
+        {(isAdmin || (isOwner && !windowLocked)) && (
           <Link
             href={`/reports/${reportId}/edit`}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 font-semibold text-foreground hover:bg-muted shadow-2xs transition-colors"

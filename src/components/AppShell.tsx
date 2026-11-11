@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   IconCalendar,
+  IconCheckSquare,
   IconChevronLeft,
   IconChevronRight,
   IconCrown,
@@ -121,6 +122,13 @@ export function AppShell({
       href: "/dashboard",
       icon: IconLayers,
       active: pathname === "/dashboard",
+    },
+    {
+      label: isAdmin ? "Tasks & Telegram Alerts" : "My Tasks",
+      shortLabel: "Tasks",
+      href: "/tasks",
+      icon: IconCheckSquare,
+      active: pathname.startsWith("/tasks"),
     },
     {
       label: "New Weekly Report",

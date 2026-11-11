@@ -1,6 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { getReportingWindowStatus } from "@/lib/portalSettings";
+import { ReportingWindowLockedView } from "@/components/ReportingWindowBanner";
 import { EditReportForm } from "./EditReportForm";
 import type { ReportRow } from "@/types/report";
 
@@ -14,6 +16,13 @@ export default async function EditReportPage({
   const { id } = await params;
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  if (user.role === "employee") {
+    const windowStatus = await getReportingWindowStatus();
+    if (!windowStatus.isOpen) {
+      return <ReportingWindowLockedView status={windowStatus} />;
+    }
+  }
 
   const rows = await sql`
     SELECT r.id, r.user_id, r.report_type,

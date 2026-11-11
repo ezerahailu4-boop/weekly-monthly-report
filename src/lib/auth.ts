@@ -14,6 +14,8 @@ export interface AuthUser {
   full_name: string;
   department: string;
   role: UserRole;
+  telegram_chat_id?: string | null;
+  telegram_username?: string | null;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -31,7 +33,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     if (!token) return null;
 
     const rows = await sql`
-      SELECT u.id, u.email, u.full_name, u.department, u.role
+      SELECT u.id, u.email, u.full_name, u.department, u.role,
+             u.telegram_chat_id, u.telegram_username
       FROM sessions s
       JOIN users u ON s.user_id = u.id
       WHERE s.id = ${token} AND s.expires_at > now()
@@ -47,6 +50,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       full_name: u.full_name,
       department: u.department,
       role: u.role as UserRole,
+      telegram_chat_id: u.telegram_chat_id ?? null,
+      telegram_username: u.telegram_username ?? null,
     };
   } catch (err: unknown) {
     if (

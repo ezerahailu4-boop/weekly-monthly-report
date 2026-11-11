@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import {
+  IconBell,
   IconCheck,
+  IconEdit,
   IconPlus,
   IconTrash,
   IconBuilding,
@@ -22,6 +24,8 @@ export interface TeamMember {
   role: "employee" | "admin" | "super_admin";
   created_at?: string;
   email?: string;
+  telegram_chat_id?: string | null;
+  telegram_username?: string | null;
 }
 
 const DEPARTMENTS = [
@@ -53,8 +57,16 @@ export function AdminUserManagement({
   const [password, setPassword] = useState("");
   const [department, setDepartment] = useState("Operations & Logistics");
   const [role, setRole] = useState<"employee" | "admin" | "super_admin">("employee");
+  const [telegramChatId, setTelegramChatId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDepartment, setEditDepartment] = useState("");
+  const [editRole, setEditRole] = useState<"employee" | "admin" | "super_admin">("employee");
+  const [editChatId, setEditChatId] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
   const [createdCredentials, setCreatedCredentials] = useState<{
     email: string;
     password: string;
@@ -91,6 +103,7 @@ export function AdminUserManagement({
           password,
           department,
           role,
+          telegram_chat_id: telegramChatId.trim() || null,
         }),
       });
 
@@ -117,12 +130,57 @@ export function AdminUserManagement({
       setFullName("");
       setEmail("");
       setPassword("");
+      setTelegramChatId("");
       setRole("employee");
       setShowModal(false);
       setLoading(false);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Network error");
       setLoading(false);
+    }
+  }
+
+  function openEditModal(member: TeamMember) {
+    setEditingMember(member);
+    setEditName(member.full_name || "");
+    setEditDepartment(member.department || "Logistics");
+    setEditRole(member.role);
+    setEditChatId(member.telegram_chat_id || "");
+    setEditError(null);
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingMember) return;
+    setSavingEdit(true);
+    setEditError(null);
+
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingMember.id,
+          full_name: editName,
+          department: editDepartment,
+          role: editRole,
+          telegram_chat_id: editChatId.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setEditError(data.error || "Failed to update user.");
+        setSavingEdit(false);
+        return;
+      }
+      if (data.user) {
+        setTeam((prev) => prev.map((m) => (m.id === editingMember.id ? data.user : m)));
+      }
+      setEditingMember(null);
+    } catch (err: unknown) {
+      setEditError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSavingEdit(false);
     }
   }
 
@@ -336,6 +394,7 @@ export function AdminUserManagement({
                 <th className="px-4 py-3">Staff Member</th>
                 <th className="px-4 py-3">Division / Department</th>
                 <th className="px-4 py-3">Assigned Role</th>
+                <th className="px-4 py-3">Telegram Alerts</th>
                 <th className="px-4 py-3">Joined Date</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
@@ -402,22 +461,47 @@ export function AdminUserManagement({
                       )}
                     </td>
 
+                    <td className="px-4 py-3.5">
+                      {member.telegram_chat_id ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-300 border border-sky-500/20">
+                          <IconBell size={10} />
+                          {member.telegram_username
+                            ? `@${member.telegram_username}`
+                            : member.telegram_chat_id}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground">Not Linked</span>
+                      )}
+                    </td>
+
                     <td className="px-4 py-3.5 text-muted-foreground" suppressHydrationWarning>
                       {member.created_at ? formatDate(member.created_at) : "Active"}
                     </td>
 
                     <td className="px-4 py-3.5 text-right">
-                      {!isSuper && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteUser(member.id, member.full_name)}
-                          disabled={deletingId === member.id}
-                          className="inline-flex items-center gap-1 rounded-md border border-rose-500/20 px-2.5 py-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-50 shadow-2xs"
-                        >
-                          <IconTrash size={12} />
-                          <span>Delete</span>
-                        </button>
-                      )}
+                      <div className="inline-flex items-center gap-1.5">
+                        {(!isSuper || isSuperAdmin) && (
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(member)}
+                            className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-muted transition-colors shadow-2xs"
+                          >
+                            <IconEdit size={12} />
+                            <span>Edit</span>
+                          </button>
+                        )}
+                        {!isSuper && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(member.id, member.full_name)}
+                            disabled={deletingId === member.id}
+                            className="inline-flex items-center gap-1 rounded-md border border-rose-500/20 px-2.5 py-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-50 shadow-2xs"
+                          >
+                            <IconTrash size={12} />
+                            <span>Delete</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -552,6 +636,19 @@ export function AdminUserManagement({
                 </select>
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">
+                  Telegram Chat ID (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 5123456789 (or user can link via bot)"
+                  value={telegramChatId}
+                  onChange={(e) => setTelegramChatId(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                />
+              </div>
+
               {error && (
                 <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-700 dark:text-rose-300">
                   {error}
@@ -572,6 +669,126 @@ export function AdminUserManagement({
                   className="rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
                 >
                   {loading ? "Provisioning..." : "Provision Account"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User & Telegram Modal */}
+      {editingMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs animate-in fade-in-50">
+          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                  <IconEdit size={16} />
+                </div>
+                <div>
+                  <h3 className="font-display text-base font-bold text-foreground">
+                    Edit User &amp; Telegram ID
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground">
+                    {editingMember.email}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingMember(null)}
+                className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <IconX size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">
+                  Full Name &amp; Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">
+                  Department / Subsidiary
+                </label>
+                <select
+                  value={editDepartment}
+                  onChange={(e) => setEditDepartment(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                >
+                  {DEPARTMENTS.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                  {!DEPARTMENTS.includes(editDepartment) && editDepartment && (
+                    <option value={editDepartment}>{editDepartment}</option>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">
+                  System Role
+                </label>
+                <select
+                  value={editRole}
+                  onChange={(e) =>
+                    setEditRole(e.target.value as "employee" | "admin" | "super_admin")
+                  }
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 font-semibold"
+                >
+                  <option value="employee">Staff Member</option>
+                  <option value="admin">Administrator</option>
+                  {isSuperAdmin && (
+                    <option value="super_admin">Super Admin (CEO)</option>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">
+                  Telegram Chat ID
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 5123456789 (leave empty to unlink)"
+                  value={editChatId}
+                  onChange={(e) => setEditChatId(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                />
+              </div>
+
+              {editError && (
+                <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-700 dark:text-rose-300">
+                  {editError}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditingMember(null)}
+                  className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                >
+                  {savingEdit ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </form>

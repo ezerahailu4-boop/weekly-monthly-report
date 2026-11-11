@@ -24,10 +24,12 @@ export function DashboardReportsTable({
   initialReports,
   showAuthor = false,
   isPrivileged = false,
+  windowLocked = false,
 }: {
   initialReports: ReportRow[];
   showAuthor?: boolean;
   isPrivileged?: boolean;
+  windowLocked?: boolean;
 }) {
   const router = useRouter();
   const [reports, setReports] = useState<ReportRow[]>(initialReports);
@@ -359,13 +361,15 @@ export function DashboardReportsTable({
                             <IconEye size={13} />
                           </Link>
 
-                          <Link
-                            href={`/reports/${r.id}/edit`}
-                            title="Edit Report"
-                            className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground shadow-2xs"
-                          >
-                            <IconEdit size={13} />
-                          </Link>
+                          {!windowLocked && (
+                            <Link
+                              href={`/reports/${r.id}/edit`}
+                              title="Edit Report"
+                              className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground shadow-2xs"
+                            >
+                              <IconEdit size={13} />
+                            </Link>
+                          )}
 
                           <a
                             href={`/api/reports/${r.id}/export/docx`}
@@ -375,15 +379,17 @@ export function DashboardReportsTable({
                             <IconDownload size={13} />
                           </a>
 
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(r.id)}
-                            disabled={deletingId === r.id}
-                            title="Delete Report"
-                            className="flex h-7 w-7 items-center justify-center rounded-md border border-rose-500/20 bg-card text-rose-600 dark:text-rose-400 transition-colors hover:bg-rose-500/10 shadow-2xs disabled:opacity-50"
-                          >
-                            <IconTrash size={13} />
-                          </button>
+                          {!windowLocked && (
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(r.id)}
+                              disabled={deletingId === r.id}
+                              title="Delete Report"
+                              className="flex h-7 w-7 items-center justify-center rounded-md border border-rose-500/20 bg-card text-rose-600 dark:text-rose-400 transition-colors hover:bg-rose-500/10 shadow-2xs disabled:opacity-50"
+                            >
+                              <IconTrash size={13} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { ProfileForm } from "@/components/ProfileForm";
+import { TelegramConnectCard } from "@/components/TelegramConnectCard";
 import { AppShell } from "@/components/AppShell";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,8 @@ export default async function ProfilePage() {
         </div>
 
         <ProfileForm initialProfile={initialProfile} email={user.email || ""} />
+
+        <TelegramConnectCard />
       </div>
     </AppShell>
   );

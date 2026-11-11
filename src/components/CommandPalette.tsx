@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   IconCalendar,
+  IconCheckSquare,
   IconCommand,
   IconCrown,
   IconDownload,
@@ -11,6 +12,7 @@ import {
   IconPlus,
   IconSearch,
   IconShield,
+  IconSliders,
   IconUser,
   IconX,
 } from "./Icons";
@@ -49,6 +51,14 @@ export function CommandPalette({
       href: "/dashboard",
     },
     {
+      id: "tasks",
+      title: isPrivileged ? "Tasks & Telegram Assignment" : "My Assigned Tasks",
+      subtitle: "View, track, and mark assigned tasks completed",
+      icon: IconCheckSquare,
+      href: "/tasks",
+      badge: "Tasks",
+    },
+    {
       id: "new-weekly",
       title: "New Weekly Performance Report",
       subtitle: "7-Section operational report template",
@@ -73,6 +83,14 @@ export function CommandPalette({
             icon: isSuperAdmin ? IconCrown : IconShield,
             href: "/admin?tab=team",
             badge: "Admin",
+          },
+          {
+            id: "window-settings",
+            title: "Reporting Window & Telegram Bot Settings",
+            subtitle: "Configure Ethiopian Time open/close schedule and Telegram bot",
+            icon: IconSliders,
+            href: "/admin?tab=settings",
+            badge: "Schedule",
           },
           {
             id: "export-csv",

@@ -1,11 +1,25 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { getReportingWindowStatus } from "@/lib/portalSettings";
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (user.role === "employee") {
+    const windowStatus = await getReportingWindowStatus();
+    if (!windowStatus.isOpen) {
+      return NextResponse.json(
+        {
+          error: `Reporting submissions are currently closed. ${windowStatus.countdownLabel}.`,
+          windowClosed: true,
+        },
+        { status: 403 }
+      );
+    }
   }
 
   try {

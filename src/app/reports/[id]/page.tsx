@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { getReportingWindowStatus } from "@/lib/portalSettings";
 import { renderReportHtml } from "@/lib/reportHtml";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ReportActionButtons } from "@/components/ReportActionButtons";
@@ -53,6 +54,9 @@ export default async function ReportDetailPage({
 
   if (!isOwnerOrAdmin) notFound();
 
+  const windowStatus = await getReportingWindowStatus();
+  const windowLocked = !windowStatus.isOpen && !isPrivileged;
+
   const report: ReportRow = {
     id: row.id,
     user_id: row.user_id,
@@ -103,6 +107,7 @@ export default async function ReportDetailPage({
           isOwner={isOwner}
           isAdmin={isPrivileged}
           isSuperAdmin={user.role === "super_admin"}
+          windowLocked={windowLocked}
         />
       </div>
 

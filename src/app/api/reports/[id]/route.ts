@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import { getReportingWindowStatus } from "@/lib/portalSettings";
 
 export async function PUT(
   request: Request,
@@ -11,11 +12,24 @@ export async function PUT(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (user.role === "employee") {
+    const windowStatus = await getReportingWindowStatus();
+    if (!windowStatus.isOpen) {
+      return NextResponse.json(
+        {
+          error: `Reporting submissions & edits are currently locked. ${windowStatus.countdownLabel}.`,
+          windowClosed: true,
+        },
+        { status: 403 }
+      );
+    }
+  }
+
   const { id } = await params;
 
   // Verify ownership or admin/super_admin role
   const existingRows = await sql`
-    SELECT id, user_id, status FROM reports WHERE id = ${id} LIMIT 1;
+    SELECT id, user_id, status, reviewed_by, reviewed_at FROM reports WHERE id = ${id} LIMIT 1;
   `;
 
   if (existingRows.length === 0) {
@@ -34,8 +48,17 @@ export async function PUT(
 
     // Determine reviewed metadata
     const isMarkingReviewed = status === "reviewed";
-    const reviewedBy = isMarkingReviewed ? user.id : (status === "submitted" || status === "draft" ? null : undefined);
-    const reviewedAt = isMarkingReviewed ? "now()" : null;
+    const isReopening = status === "submitted" || status === "draft";
+    const nextReviewedBy = isMarkingReviewed
+      ? user.id
+      : isReopening
+      ? null
+      : report.reviewed_by;
+    const nextReviewedAt = isMarkingReviewed
+      ? new Date().toISOString()
+      : isReopening
+      ? null
+      : report.reviewed_at;
 
     let updatedRows;
     if (data !== undefined) {
@@ -46,8 +69,8 @@ export async function PUT(
             status = COALESCE(${status}, status),
             data = ${JSON.stringify(data)},
             review_notes = COALESCE(${review_notes ?? null}, review_notes),
-            reviewed_by = ${reviewedBy !== undefined ? reviewedBy : sql`reviewed_by`},
-            reviewed_at = ${isMarkingReviewed ? sql`now()` : (status === "submitted" || status === "draft" ? null : sql`reviewed_at`)},
+            reviewed_by = ${nextReviewedBy},
+            reviewed_at = ${nextReviewedAt},
             updated_at = now()
         WHERE id = ${id}
         RETURNING id, report_type, status, review_notes, reviewed_by, reviewed_at, updated_at;
@@ -57,8 +80,8 @@ export async function PUT(
         UPDATE reports
         SET status = COALESCE(${status}, status),
             review_notes = COALESCE(${review_notes ?? null}, review_notes),
-            reviewed_by = ${reviewedBy !== undefined ? reviewedBy : sql`reviewed_by`},
-            reviewed_at = ${isMarkingReviewed ? sql`now()` : (status === "submitted" || status === "draft" ? null : sql`reviewed_at`)},
+            reviewed_by = ${nextReviewedBy},
+            reviewed_at = ${nextReviewedAt},
             updated_at = now()
         WHERE id = ${id}
         RETURNING id, report_type, status, review_notes, reviewed_by, reviewed_at, updated_at;
@@ -79,6 +102,19 @@ export async function DELETE(
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (user.role === "employee") {
+    const windowStatus = await getReportingWindowStatus();
+    if (!windowStatus.isOpen) {
+      return NextResponse.json(
+        {
+          error: `Report modifications are locked while the reporting window is closed. ${windowStatus.countdownLabel}.`,
+          windowClosed: true,
+        },
+        { status: 403 }
+      );
+    }
   }
 
   const { id } = await params;
