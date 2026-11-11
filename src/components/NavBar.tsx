@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconBuilding, IconCrown, IconFileText, IconPlus, IconShield } from "./Icons";
+import Image from "next/image";
+import { IconCrown, IconFileText, IconPlus, IconShield } from "./Icons";
 import { ThemeToggle } from "./ThemeProvider";
 
 interface NavUser {
@@ -64,8 +65,8 @@ export default function NavBar({ user }: { user: NavUser | null }) {
           href={user ? "/dashboard" : "/"}
           className="group flex items-center gap-3 transition-opacity hover:opacity-90"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 dark:bg-emerald-950/70 text-white dark:text-emerald-400 shadow-xs ring-1 ring-border transition-transform group-hover:scale-105">
-            <IconBuilding size={20} className="text-emerald-400" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-xs ring-1 ring-border transition-transform group-hover:scale-105">
+            <Image src="/logo.jpg" alt="YETAF Holding" width={40} height={40} className="object-cover w-full h-full" />
           </div>
           <div>
             <div className="flex items-center gap-2">

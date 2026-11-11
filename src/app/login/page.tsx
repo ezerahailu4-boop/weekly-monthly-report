@@ -3,9 +3,9 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   IconAlertCircle,
-  IconBuilding,
   IconCrown,
   IconEye,
   IconShield,
@@ -86,9 +86,9 @@ function LoginForm() {
         <div className="text-center mb-6 sm:mb-8">
           <Link
             href="/"
-            className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-slate-900 dark:bg-emerald-950/70 text-white dark:text-emerald-400 shadow-sm mb-3.5 transition-transform hover:scale-105 ring-1 ring-border"
+            className="inline-flex items-center justify-center h-12 w-12 rounded-xl overflow-hidden shadow-sm mb-3.5 transition-transform hover:scale-105 ring-1 ring-border"
           >
-            <IconBuilding size={24} className="text-emerald-400" />
+            <Image src="/logo.jpg" alt="YETAF Holding" width={48} height={48} className="object-cover w-full h-full" />
           </Link>
           <div className="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground">
             <span>YETAF HOLDING</span>

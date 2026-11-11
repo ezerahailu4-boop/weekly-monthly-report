@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  IconBuilding,
   IconCalendar,
   IconChevronLeft,
   IconChevronRight,
@@ -174,9 +174,7 @@ export function AppShell({
             className="flex items-center gap-3 overflow-hidden group"
             title="YETAF HOLDING"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 dark:bg-emerald-950/60 text-white dark:text-emerald-400 shadow-xs ring-1 ring-border group-hover:scale-105 transition-transform">
-              <IconBuilding size={20} className="text-emerald-400" />
-            </div>
+            <Image src="/logo.jpg" alt="YETAF Holding" width={40} height={40} className="object-cover rounded-xl" />
             {!collapsed && (
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -351,9 +349,7 @@ export function AppShell({
               {/* Header with close button */}
               <div className="flex items-center justify-between pb-4 border-b border-border">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
-                    <IconBuilding size={18} className="text-emerald-400" />
-                  </div>
+                  <Image src="/logo.jpg" alt="YETAF Holding" width={36} height={36} className="object-cover rounded-xl" />
                   <div>
                     <span className="font-display font-bold text-sm tracking-tight text-foreground">
                       YETAF
