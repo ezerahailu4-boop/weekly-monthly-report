@@ -1,5 +1,6 @@
 import Link from "next/link";
 import NavBar from "@/components/NavBar";
+import { getCurrentUser } from "@/lib/auth";
 import {
   IconArrowRight,
   IconCrown,
@@ -48,10 +49,11 @@ const features = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const user = await getCurrentUser();
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-accent selection:text-white">
-      <NavBar />
+      <NavBar user={user} />
 
       <main>
         {/* Hero Section */}

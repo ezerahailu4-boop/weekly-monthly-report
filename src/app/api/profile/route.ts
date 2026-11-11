@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, hashPassword } from "@/lib/auth";
+import { getCurrentUser, hashPassword, destroyOtherSessions } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
 export async function PUT(request: Request) {
@@ -26,6 +26,8 @@ export async function PUT(request: Request) {
         SET password_hash = ${newHash}
         WHERE id = ${user.id};
       `;
+      // Invalidate all other active sessions
+      await destroyOtherSessions(user.id);
     }
 
     // Handle profile fields if provided

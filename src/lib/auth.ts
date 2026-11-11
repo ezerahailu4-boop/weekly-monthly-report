@@ -103,3 +103,15 @@ export async function destroySession(): Promise<void> {
   });
 }
 
+export async function destroyOtherSessions(userId: string): Promise<void> {
+  const cookieStore = await cookies();
+  const currentToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  if (currentToken) {
+    try {
+      await sql`DELETE FROM sessions WHERE user_id = ${userId} AND id != ${currentToken};`;
+    } catch {
+      // ignore
+    }
+  }
+}
+
