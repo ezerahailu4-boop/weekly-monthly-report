@@ -66,7 +66,7 @@ export default function NavBar({ user }: { user: NavUser | null }) {
           className="group flex items-center gap-3 transition-opacity hover:opacity-90"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-xs ring-1 ring-border transition-transform group-hover:scale-105">
-            <Image src="/logo.jpg" alt="YETAF Holding" width={40} height={40} className="object-cover w-full h-full" />
+            <Image src="/logo.jpg" alt="YETAF Holding" width={80} height={80} className="object-contain w-full h-full" priority />
           </div>
           <div>
             <div className="flex items-center gap-2">

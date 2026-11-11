@@ -86,9 +86,9 @@ function LoginForm() {
         <div className="text-center mb-6 sm:mb-8">
           <Link
             href="/"
-            className="inline-flex items-center justify-center h-12 w-12 rounded-xl overflow-hidden shadow-sm mb-3.5 transition-transform hover:scale-105 ring-1 ring-border"
+            className="inline-flex items-center justify-center h-12 w-12 rounded-xl overflow-hidden shadow-sm mb-3.5 transition-transform hover:scale-105 ring-1 ring-border bg-white"
           >
-            <Image src="/logo.jpg" alt="YETAF Holding" width={48} height={48} className="object-cover w-full h-full" />
+            <Image src="/logo.jpg" alt="YETAF Holding" width={96} height={96} className="object-contain w-full h-full" priority />
           </Link>
           <div className="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground">
             <span>YETAF HOLDING</span>

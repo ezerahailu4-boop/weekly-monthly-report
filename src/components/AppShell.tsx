@@ -174,7 +174,7 @@ export function AppShell({
             className="flex items-center gap-3 overflow-hidden group"
             title="YETAF HOLDING"
           >
-            <Image src="/logo.jpg" alt="YETAF Holding" width={40} height={40} className="object-cover rounded-xl" />
+            <Image src="/logo.jpg" alt="YETAF Holding" width={80} height={80} className="object-contain rounded-xl w-10 h-10" priority />
             {!collapsed && (
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -349,7 +349,7 @@ export function AppShell({
               {/* Header with close button */}
               <div className="flex items-center justify-between pb-4 border-b border-border">
                 <div className="flex items-center gap-2.5">
-                  <Image src="/logo.jpg" alt="YETAF Holding" width={36} height={36} className="object-cover rounded-xl" />
+                  <Image src="/logo.jpg" alt="YETAF Holding" width={72} height={72} className="object-contain rounded-xl w-9 h-9" />
                   <div>
                     <span className="font-display font-bold text-sm tracking-tight text-foreground">
                       YETAF
