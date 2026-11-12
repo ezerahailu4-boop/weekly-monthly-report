@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { IconCrown, IconFileText, IconPlus, IconShield } from "./Icons";
+import { IconCrown, IconFileText, IconPlus, IconShield, IconUser } from "./Icons";
 import { ThemeToggle } from "./ThemeProvider";
 
 interface NavUser {
@@ -23,77 +23,55 @@ export default function NavBar({ user }: { user: NavUser | null }) {
 
   const fullName = user?.full_name || user?.email || null;
   const role = user?.role || "employee";
-  const department = user?.department || null;
-
-  const initials = fullName
-    ? fullName
-        .split(" ")
-        .map((n) => n[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
-    : "YH";
-
   const isSuperAdmin = role === "super_admin";
   const isAdmin = role === "admin" || isSuperAdmin;
+  const initials = fullName
+    ? fullName.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()
+    : "YH";
 
-  // Close dropdowns on route change
   useEffect(() => {
     setNewReportOpen(false);
     setProfileOpen(false);
   }, [pathname]);
 
-  // Close on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (newReportRef.current && !newReportRef.current.contains(e.target as Node)) {
+      if (newReportRef.current && !newReportRef.current.contains(e.target as Node))
         setNewReportOpen(false);
-      }
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node))
         setProfileOpen(false);
-      }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-card/85 backdrop-blur-md transition-colors">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3">
+    <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Brand */}
-        <Link
-          href={user ? "/dashboard" : "/"}
-          className="group flex items-center gap-3 transition-opacity hover:opacity-90"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-xs ring-1 ring-border transition-transform group-hover:scale-105">
-            <Image src="/logo.jpg" alt="YETAF Holding" width={80} height={80} className="object-contain w-full h-full" priority />
+        <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2.5 group">
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg ring-1 ring-border transition-transform group-hover:scale-105">
+            <Image src="/logo.jpg" alt="YETAF" width={64} height={64} className="h-full w-full object-contain" priority />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-display text-base sm:text-lg font-bold tracking-tight text-foreground">
-                YETAF
-              </span>
-              <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                Holding
-              </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-semibold tracking-tight text-foreground">YETAF Holding</span>
               {isSuperAdmin && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-zinc-950 px-2 py-0.5 text-[10px] font-bold text-amber-300 ring-1 ring-amber-500/30">
-                  <IconCrown size={10} className="text-amber-400" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-950 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300 ring-1 ring-amber-500/30">
+                  <IconCrown size={9} />
                   CEO
                 </span>
               )}
             </div>
-            <p className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
-              Executive Reporting Portal
-            </p>
+            <p className="text-[10px] text-muted-foreground">Executive Reporting Portal</p>
           </div>
         </Link>
 
         {user ? (
-          <nav className="flex items-center gap-2 sm:gap-4 text-sm">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <Link
               href="/dashboard"
-              className="hidden sm:inline-block text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="hidden sm:inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               {isSuperAdmin ? "CEO Overview" : "Dashboard"}
             </Link>
@@ -102,27 +80,24 @@ export default function NavBar({ user }: { user: NavUser | null }) {
             <div className="relative" ref={newReportRef}>
               <button
                 type="button"
-                onClick={() => {
-                  setNewReportOpen((p) => !p);
-                  setProfileOpen(false);
-                }}
-                className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted shadow-2xs"
+                onClick={() => { setNewReportOpen((p) => !p); setProfileOpen(false); }}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
               >
-                <IconPlus size={14} className="text-muted-foreground" />
-                <span>New Report</span>
+                <IconPlus size={14} />
+                <span className="hidden sm:inline">New Report</span>
               </button>
               {newReportOpen && (
-                <div className="absolute right-0 top-full mt-1.5 w-48 rounded-xl border border-border bg-card p-1.5 shadow-xl z-50 animate-in fade-in-50 duration-150">
+                <div className="absolute right-0 top-full mt-1.5 w-48 rounded-lg border border-border bg-popover p-1 shadow-lg z-50 animate-in fade-in-50">
                   <Link
                     href="/reports/new/weekly"
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
                     <IconFileText size={14} className="text-muted-foreground" />
                     Weekly Report
                   </Link>
                   <Link
                     href="/reports/new/monthly"
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
                     <IconFileText size={14} className="text-muted-foreground" />
                     Monthly Report
@@ -134,93 +109,78 @@ export default function NavBar({ user }: { user: NavUser | null }) {
             {isAdmin && (
               <Link
                 href="/admin"
-                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-1.5 text-xs font-bold transition-all ${
+                className={`hidden sm:inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                   isSuperAdmin
-                    ? "bg-zinc-950 text-amber-300 ring-1 ring-amber-500/30 hover:bg-zinc-900"
+                    ? "bg-amber-950 text-amber-300 ring-1 ring-amber-500/30 hover:bg-amber-900"
                     : "bg-primary text-primary-foreground hover:opacity-90"
                 }`}
               >
-                {isSuperAdmin ? (
-                  <>
-                    <IconCrown size={12} className="text-amber-400" />
-                    <span className="hidden sm:inline">Governance &amp; Users</span>
-                    <span className="sm:hidden">CEO</span>
-                  </>
-                ) : (
-                  <>
-                    <IconShield size={12} className="text-slate-300" />
-                    <span className="hidden sm:inline">Admin Console</span>
-                    <span className="sm:hidden">Admin</span>
-                  </>
-                )}
+                {isSuperAdmin ? <IconCrown size={13} /> : <IconShield size={13} />}
+                <span>{isSuperAdmin ? "Governance" : "Admin"}</span>
               </Link>
             )}
 
             <ThemeToggle />
 
-            <div className="hidden h-5 w-px bg-border md:block" />
+            <div className="h-5 w-px bg-border hidden sm:block" />
 
-            {/* User Profile Dropdown */}
+            {/* Profile Dropdown */}
             <div className="relative" ref={profileRef}>
               <button
                 type="button"
-                onClick={() => {
-                  setProfileOpen((p) => !p);
-                  setNewReportOpen(false);
-                }}
-                className="flex items-center gap-2 rounded-xl p-1 transition-all hover:bg-muted"
+                onClick={() => { setProfileOpen((p) => !p); setNewReportOpen(false); }}
+                className="flex items-center gap-2 rounded-md p-1 transition-colors hover:bg-accent"
                 title={fullName || "Profile"}
               >
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold shadow-xs ${
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ${
                     isSuperAdmin
-                      ? "bg-zinc-950 text-amber-300 ring-1 ring-amber-500/40"
-                      : "bg-muted text-foreground border border-border"
+                      ? "bg-amber-950 text-amber-300 ring-1 ring-amber-500/40"
+                      : "bg-primary text-primary-foreground"
                   }`}
                 >
                   {initials}
                 </div>
-                <div className="hidden text-left md:block">
-                  <p className="text-xs font-semibold text-foreground leading-tight">
-                    {fullName}
-                  </p>
+                <div className="hidden md:block text-left">
+                  <p className="text-xs font-medium text-foreground leading-tight">{fullName}</p>
                   <p className="text-[10px] text-muted-foreground capitalize">
-                    {isSuperAdmin
-                      ? "Super Admin (CEO)"
-                      : role === "admin"
-                      ? "Admin"
-                      : "Staff"}{" "}
-                    {department ? `• ${department}` : ""}
+                    {isSuperAdmin ? "CEO" : role === "admin" ? "Admin" : "Staff"}
                   </p>
                 </div>
               </button>
+
               {profileOpen && (
-                <div className="absolute right-0 top-full mt-1.5 w-44 rounded-xl border border-border bg-card p-1.5 shadow-xl z-50 animate-in fade-in-50 duration-150">
+                <div className="absolute right-0 top-full mt-1.5 w-48 rounded-lg border border-border bg-popover p-1 shadow-lg z-50 animate-in fade-in-50">
+                  <div className="px-2 py-1.5 border-b border-border mb-1">
+                    <p className="text-xs font-semibold text-foreground truncate">{fullName}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                  </div>
                   <Link
                     href="/profile"
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    View Profile
+                    <IconUser size={14} className="text-muted-foreground" />
+                    Profile & Settings
                   </Link>
                   <div className="my-1 border-t border-border" />
                   <a
                     href="/logout"
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
                   >
                     Sign out
                   </a>
                 </div>
               )}
             </div>
-          </nav>
+          </div>
         ) : (
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-2">
             <ThemeToggle />
             <Link
               href="/login"
-              className="rounded-lg bg-primary px-3.5 py-1.5 font-medium text-primary-foreground shadow-xs transition-all hover:opacity-90 text-xs"
+              className="rounded-md bg-primary px-3.5 py-1.5 text-sm font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
             >
-              Sign In to Portal
+              Sign In
             </Link>
           </div>
         )}

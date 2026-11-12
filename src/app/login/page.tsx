@@ -4,13 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  IconAlertCircle,
-  IconCrown,
-  IconEye,
-  IconShield,
-  IconUser,
-} from "@/components/Icons";
+import { IconAlertCircle, IconCrown, IconEye, IconShield, IconUser } from "@/components/Icons";
 import { ThemeToggle } from "@/components/ThemeProvider";
 
 export default function LoginPage() {
@@ -35,120 +29,85 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),
       });
-
       const data = await res.json();
       setLoading(false);
-
-      if (!res.ok) {
-        setError(data.error || "Invalid email or password.");
-        return;
-      }
-
+      if (!res.ok) { setError(data.error || "Invalid email or password."); return; }
       router.push(params.get("next") || "/dashboard");
       router.refresh();
     } catch (err: unknown) {
       setLoading(false);
-      const message = err instanceof Error ? err.message : "Connection failed";
-      setError(message);
+      setError(err instanceof Error ? err.message : "Connection failed");
     }
   }
 
   function fillCredentials(type: "ceo" | "admin" | "staff") {
-    if (type === "ceo") {
-      setEmail("ceo@yetaf-holding.com");
-      setPassword("YetafCeo2026!");
-    } else if (type === "admin") {
-      setEmail("admin@yetaf-holding.com");
-      setPassword("YetafAdmin2026!");
-    } else {
-      setEmail("operations@yetaf-holding.com");
-      setPassword("YetafStaff2026!");
-    }
+    const creds = {
+      ceo: { email: "ceo@yetaf-holding.com", password: "YetafCeo2026!" },
+      admin: { email: "admin@yetaf-holding.com", password: "YetafAdmin2026!" },
+      staff: { email: "operations@yetaf-holding.com", password: "YetafStaff2026!" },
+    };
+    setEmail(creds[type].email);
+    setPassword(creds[type].password);
     setError(null);
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4 sm:px-6 py-12 relative">
-      {/* Top right theme toggle */}
+    <div className="relative flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-md">
-        {/* Logo / Header */}
-        <div className="text-center mb-6 sm:mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center h-12 w-12 rounded-xl overflow-hidden shadow-sm mb-3.5 transition-transform hover:scale-105 ring-1 ring-border bg-white"
-          >
-            <Image src="/logo.jpg" alt="YETAF Holding" width={96} height={96} className="object-contain w-full h-full" priority />
+      <div className="w-full max-w-sm space-y-6">
+        {/* Header */}
+        <div className="flex flex-col items-center gap-3 text-center">
+          <Link href="/" className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white ring-1 ring-border shadow-sm transition-transform hover:scale-105">
+            <Image src="/logo.jpg" alt="YETAF" width={96} height={96} className="h-full w-full object-contain" priority />
           </Link>
-          <div className="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            <span>YETAF HOLDING</span>
-            <span>&middot;</span>
-            <span>Enterprise Portal</span>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Welcome back</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Sign in to your YETAF Holding workspace</p>
           </div>
-          <h1 className="mt-2 font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-            Sign In to Your Workspace
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            Executive &amp; department reporting. Powered by Neon PostgreSQL.
-          </p>
         </div>
 
-        {/* Notice Banner if redirected from signup */}
+        {/* No-signup notice */}
         {notice === "no-signup" && (
-          <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-800 dark:text-amber-300 shadow-xs">
-            <IconAlertCircle size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-amber-950 dark:text-amber-100">Public Registration Is Disabled</p>
-              <p className="mt-0.5 leading-relaxed">
-                To uphold corporate data governance, staff accounts are provisioned exclusively
-                by executive system administrators.
-              </p>
-            </div>
+          <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+            <IconAlertCircle size={16} className="mt-0.5 shrink-0" />
+            <p>Public registration is disabled. Contact your administrator for access.</p>
           </div>
         )}
 
         {/* Card */}
-        <div className="rounded-xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-foreground mb-1.5">
-                Corporate Email Address
-              </label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">Email</label>
               <input
                 type="email"
                 required
                 placeholder="name@yetaf-holding.com"
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (error) setError(null);
-                }}
-                className="w-full rounded-lg border border-border bg-card px-3.5 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 shadow-2xs"
+                onChange={(e) => { setEmail(e.target.value); if (error) setError(null); }}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-foreground">
-                  Password
-                </label>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">Password</label>
                 <button
                   type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  <IconEye size={13} />
-                  <span>{showPassword ? "Hide" : "Show"}</span>
+                  <IconEye size={12} />
+                  {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
               <input
@@ -156,16 +115,13 @@ function LoginForm() {
                 required
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (error) setError(null);
-                }}
-                className="w-full rounded-lg border border-border bg-card px-3.5 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 shadow-2xs"
+                onChange={(e) => { setPassword(e.target.value); if (error) setError(null); }}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
 
             {error && (
-              <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs font-medium text-rose-700 dark:text-rose-300 leading-relaxed">
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -173,58 +129,38 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-primary py-2.5 text-xs font-semibold text-primary-foreground shadow-xs transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-60"
+              className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
             >
-              {loading ? "Verifying Credentials..." : "Sign In to Portal"}
+              {loading ? "Signing in..." : "Sign in"}
             </button>
           </form>
 
-          {/* Quick Role Switcher for Testing */}
-          <div className="mt-6 border-t border-border pt-5">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
-              1-Click Demo Accounts:
-            </p>
-
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => fillCredentials("ceo")}
-                className="flex flex-col items-center justify-center p-2 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 transition-all text-amber-900 dark:text-amber-200 shadow-2xs group"
-              >
-                <IconCrown size={14} className="text-amber-500 mb-0.5 group-hover:scale-110 transition-transform" />
-                <span className="font-bold text-[11px]">CEO</span>
-                <span className="text-[9px] text-amber-800/80 dark:text-amber-300/80">Super Admin</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillCredentials("admin")}
-                className="flex flex-col items-center justify-center p-2 rounded-lg border border-border bg-muted/60 hover:bg-muted transition-all text-foreground shadow-2xs group"
-              >
-                <IconShield size={14} className="text-muted-foreground mb-0.5 group-hover:scale-110 transition-transform" />
-                <span className="font-bold text-[11px]">Admin</span>
-                <span className="text-[9px] text-muted-foreground">User Creator</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillCredentials("staff")}
-                className="flex flex-col items-center justify-center p-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-emerald-900 dark:text-emerald-200 shadow-2xs group"
-              >
-                <IconUser size={14} className="text-emerald-600 dark:text-emerald-400 mb-0.5 group-hover:scale-110 transition-transform" />
-                <span className="font-bold text-[11px]">Staff</span>
-                <span className="text-[9px] text-emerald-800/80 dark:text-emerald-300/80">Submitter</span>
-              </button>
+          {/* Demo accounts */}
+          <div className="mt-5 border-t border-border pt-5">
+            <p className="mb-3 text-xs font-medium text-muted-foreground">Demo accounts</p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { type: "ceo" as const, label: "CEO", sub: "Super Admin", icon: IconCrown, color: "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20" },
+                { type: "admin" as const, label: "Admin", sub: "Manager", icon: IconShield, color: "border-border bg-muted/50 text-foreground hover:bg-muted" },
+                { type: "staff" as const, label: "Staff", sub: "Employee", icon: IconUser, color: "border-green-200 bg-green-50 text-green-900 hover:bg-green-100 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200 dark:hover:bg-green-500/20" },
+              ].map(({ type, label, sub, icon: Icon, color }) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => fillCredentials(type)}
+                  className={`flex flex-col items-center gap-1 rounded-lg border p-2.5 text-xs transition-colors ${color}`}
+                >
+                  <Icon size={14} />
+                  <span className="font-semibold">{label}</span>
+                  <span className="text-[10px] opacity-70">{sub}</span>
+                </button>
+              ))}
             </div>
-
-            <p className="mt-4 text-center text-[11px] text-muted-foreground">
-              Need access? Contact your division head or IT administration.
-            </p>
           </div>
         </div>
 
-        <p className="mt-6 text-center text-[11px] text-muted-foreground">
-          Confidential internal system &middot; YETAF HOLDING LIMITED
+        <p className="text-center text-xs text-muted-foreground">
+          Confidential internal system · YETAF HOLDING LIMITED
         </p>
       </div>
     </div>
