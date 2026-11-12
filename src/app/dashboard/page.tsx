@@ -409,7 +409,7 @@ export default async function DashboardPage({
                     : "Stay notified on Telegram"}
                 </span>
                 {!user.telegram_chat_id && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-300 border border-sky-500/20">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-800 dark:text-sky-300 border border-sky-500/25">
                     <IconBell size={10} />
                     Telegram Not Linked
                   </span>
@@ -459,16 +459,16 @@ export default async function DashboardPage({
                 <IconAlertCircle size={18} />
               </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200">
+                <h3 className="text-xs sm:text-sm font-bold text-amber-950 dark:text-amber-200">
                   {pendingReviewCount} Submission{pendingReviewCount === 1 ? "" : "s"} Awaiting Executive Review
                 </h3>
-                <p className="text-[11px] sm:text-xs text-amber-800/80 dark:text-amber-300/80">
+                <p className="text-[11px] sm:text-xs text-amber-900 dark:text-amber-300/85">
                   Business units have submitted weekly &amp; monthly filings ready for leadership feedback and sign-off.
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-              <span className="text-[11px] font-semibold text-amber-900 dark:text-amber-200">
+              <span className="text-[11px] font-semibold text-amber-950 dark:text-amber-200">
                 Action Required
               </span>
             </div>

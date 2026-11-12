@@ -23,8 +23,8 @@ export function ReportingWindowBanner({
         <div
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
             isOpen
-              ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
-              : "bg-amber-500/20 text-amber-700 dark:text-amber-300"
+              ? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-300"
+              : "bg-amber-500/20 text-amber-800 dark:text-amber-300"
           }`}
         >
           {isOpen ? <IconClock size={18} /> : <IconLock size={18} />}
