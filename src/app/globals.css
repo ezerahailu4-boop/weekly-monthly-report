@@ -40,86 +40,92 @@
   --radius-2xl: calc(var(--radius) + 8px);
 }
 
-/* ─── Light Theme ─────────────────────────────────────────── */
+/* ─── Light Theme · Jet Black + Soft White + Flame Orange ─── */
 :root {
   --radius: 0.625rem;
 
+  /* Soft white warm background */
   --background: oklch(0.97 0.006 75);
-  --foreground: oklch(0.1 0.008 75);
+  /* Jet black text */
+  --foreground: oklch(0.08 0.005 30);
 
   --card: oklch(0.99 0.004 75);
-  --card-foreground: oklch(0.1 0.008 75);
+  --card-foreground: oklch(0.08 0.005 30);
 
   --popover: oklch(0.99 0.004 75);
-  --popover-foreground: oklch(0.1 0.008 75);
+  --popover-foreground: oklch(0.08 0.005 30);
 
-  --primary: oklch(0.15 0.01 75);
-  --primary-foreground: oklch(0.98 0.004 75);
+  --primary: oklch(0.08 0.005 30);
+  --primary-foreground: oklch(0.99 0.004 75);
 
   --secondary: oklch(0.93 0.008 75);
-  --secondary-foreground: oklch(0.15 0.01 75);
+  --secondary-foreground: oklch(0.08 0.005 30);
 
   --muted: oklch(0.93 0.008 75);
-  --muted-foreground: oklch(0.42 0.012 75);
+  --muted-foreground: oklch(0.40 0.01 30);
 
-  --accent: oklch(0.488 0.243 264.376);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Flame Orange */
+  --accent: oklch(0.65 0.21 38);
+  --accent-foreground: oklch(0.99 0 0);
 
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
 
   --border: oklch(0.88 0.01 75);
   --input: oklch(0.88 0.01 75);
-  --ring: oklch(0.65 0.015 75);
+  --ring: oklch(0.65 0.21 38);
 
-  --brand: oklch(0.488 0.243 264.376);
-  --brand-foreground: oklch(0.985 0 0);
+  --brand: oklch(0.65 0.21 38);
+  --brand-foreground: oklch(0.99 0 0);
 
   --sidebar: oklch(0.95 0.007 75);
-  --sidebar-foreground: oklch(0.18 0.008 75);
+  --sidebar-foreground: oklch(0.08 0.005 30);
   --sidebar-border: oklch(0.88 0.01 75);
   --sidebar-accent: oklch(0.93 0.008 75);
-  --sidebar-accent-foreground: oklch(0.22 0.01 75);
+  --sidebar-accent-foreground: oklch(0.08 0.005 30);
 }
 
-/* ─── Dark Theme ──────────────────────────────────────────── */
+/* ─── Dark Theme · Midnight Navy + Cloud White + Electric Lime */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
+  /* Midnight Navy */
+  --background: oklch(0.20 0.04 255);
+  /* Cloud White */
+  --foreground: oklch(0.97 0.005 255);
 
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
+  --card: oklch(0.25 0.04 255);
+  --card-foreground: oklch(0.97 0.005 255);
 
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.25 0.04 255);
+  --popover-foreground: oklch(0.97 0.005 255);
 
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.97 0.005 255);
+  --primary-foreground: oklch(0.20 0.04 255);
 
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.28 0.04 255);
+  --secondary-foreground: oklch(0.97 0.005 255);
 
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
+  --muted: oklch(0.28 0.04 255);
+  --muted-foreground: oklch(0.72 0.02 255);
 
-  --accent: oklch(0.623 0.214 259.815);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Electric Lime */
+  --accent: oklch(0.88 0.22 130);
+  --accent-foreground: oklch(0.12 0.04 130);
 
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
 
   --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.88 0.22 130);
 
-  --brand: oklch(0.623 0.214 259.815);
-  --brand-foreground: oklch(0.985 0 0);
+  --brand: oklch(0.88 0.22 130);
+  --brand-foreground: oklch(0.12 0.04 130);
 
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar: oklch(0.18 0.04 255);
+  --sidebar-foreground: oklch(0.97 0.005 255);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.28 0.04 255);
+  --sidebar-accent-foreground: oklch(0.97 0.005 255);
 }
 
 /* ─── Base ────────────────────────────────────────────────── */
