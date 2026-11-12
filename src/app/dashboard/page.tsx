@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { getPortalSettings } from "@/lib/portalSettings";
+import { getWarningsList } from "@/lib/warnings";
 import { evaluateReportingWindow, ETHIOPIA_TIMEZONE } from "@/lib/windowSchedule";
 import { DashboardReportsTable } from "@/components/DashboardReportsTable";
 import { ReportingWindowBanner } from "@/components/ReportingWindowBanner";
@@ -123,33 +124,40 @@ export default async function DashboardPage({
     },
   }));
 
-  // Fetch portal settings, open tasks, and (for CEO/Admin) staff compliance data in parallel
-  const [settings, myOpenTasks, staffRows, taskSummaryRows] = await Promise.all([
-    getPortalSettings(),
-    sql`
-      SELECT id, title, priority, status, to_char(due_date, 'YYYY-MM-DD') as due_date
-      FROM tasks
-      WHERE assigned_to = ${user.id} AND status != 'completed'
-      ORDER BY due_date ASC NULLS LAST, created_at DESC
-      LIMIT 4;
-    `,
-    isPrivileged && activeView === "company"
-      ? sql`
-          SELECT id, full_name, email, department, role, telegram_chat_id
-          FROM users
-          ORDER BY full_name ASC;
-        `
-      : Promise.resolve([]),
-    isPrivileged && activeView === "company"
-      ? sql`
-          SELECT assigned_to,
-                 COUNT(*) FILTER (WHERE status != 'completed')::int AS pending_tasks,
-                 COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_tasks
-          FROM tasks
-          GROUP BY assigned_to;
-        `
-      : Promise.resolve([]),
-  ]);
+  // Fetch portal settings, open tasks, warnings, and (for CEO/Admin) staff compliance data in parallel
+  const [settings, myOpenTasks, staffRows, taskSummaryRows, allWarnings, myWarnings] =
+    await Promise.all([
+      getPortalSettings(),
+      sql`
+        SELECT id, title, priority, status, to_char(due_date, 'YYYY-MM-DD') as due_date
+        FROM tasks
+        WHERE assigned_to = ${user.id} AND status != 'completed'
+        ORDER BY due_date ASC NULLS LAST, created_at DESC
+        LIMIT 4;
+      `,
+      isPrivileged && activeView === "company"
+        ? sql`
+            SELECT id, full_name, email, department, role, telegram_chat_id
+            FROM users
+            ORDER BY full_name ASC;
+          `
+        : Promise.resolve([]),
+      isPrivileged && activeView === "company"
+        ? sql`
+            SELECT assigned_to,
+                   COUNT(*) FILTER (WHERE status != 'completed')::int AS pending_tasks,
+                   COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_tasks
+            FROM tasks
+            GROUP BY assigned_to;
+          `
+        : Promise.resolve([]),
+      isPrivileged && activeView === "company"
+        ? getWarningsList()
+        : Promise.resolve([]),
+      getWarningsList(user.id),
+    ]);
+
+  const activePersonalWarnings = myWarnings.filter((w) => w.status !== "revoked");
 
   const windowStatus = evaluateReportingWindow(settings);
   const windowLocked = !windowStatus.isOpen && !isPrivileged;
@@ -293,6 +301,81 @@ export default async function DashboardPage({
 
         {/* Live Ethiopian Time Reporting Window Status */}
         <ReportingWindowBanner status={windowStatus} isPrivileged={isPrivileged} />
+
+        {/* Personal Disciplinary Warnings / Written Warning Letters */}
+        {activePersonalWarnings.length > 0 && (
+          <div className="rounded-xl border border-rose-500/35 bg-rose-500/10 p-4 sm:p-5 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-500/20 text-rose-700 dark:text-rose-300">
+                  <IconAlertCircle size={18} />
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-bold text-rose-900 dark:text-rose-200">
+                    Disciplinary Notice: {activePersonalWarnings.length} Active Warning
+                    {activePersonalWarnings.length === 1 ? "" : "s"} on Record
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-rose-800/85 dark:text-rose-300/85">
+                    1st missed report triggers a Verbal Warning on Telegram; a 2nd missed report automatically issues an Official Written Warning Letter.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {activePersonalWarnings.slice(0, 3).map((w) => {
+                const isLetter = w.warning_level === "written_letter";
+                return (
+                  <div
+                    key={w.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-rose-500/25 bg-card/90 px-3.5 py-2.5 text-xs"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold border ${
+                          isLetter
+                            ? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30"
+                            : "bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30"
+                        }`}
+                      >
+                        {isLetter
+                          ? `Strike #${w.strike_number} · Written Letter`
+                          : "Strike #1 · Verbal Warning"}
+                      </span>
+                      <span className="font-semibold text-foreground">
+                        {w.report_type === "monthly" ? "Monthly" : "Weekly"} Report ({w.period_label})
+                      </span>
+                      {w.letter_ref && (
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          {w.letter_ref}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Link
+                        href={`/warnings/${w.id}`}
+                        className="inline-flex items-center gap-1 rounded-md bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 transition-colors"
+                      >
+                        <IconFileText size={12} />
+                        {isLetter ? "Open & Acknowledge Letter" : "View Warning"}
+                      </Link>
+                      {isLetter && (
+                        <a
+                          href={`/api/warnings/${w.id}/docx`}
+                          className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-muted transition-colors"
+                        >
+                          <IconDownload size={12} />
+                          .docx
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* My Open Tasks & Telegram Notification Card */}
         {(myOpenTasks.length > 0 || !user.telegram_chat_id) && (
@@ -484,6 +567,7 @@ export default async function DashboardPage({
             taskStats={taskStats}
             todayEthYmd={todayEthYmd}
             telegramBotConfigured={!!settings.telegram_bot_token}
+            initialWarnings={allWarnings}
           />
         )}
 

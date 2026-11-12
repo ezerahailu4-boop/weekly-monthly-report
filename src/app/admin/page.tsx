@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { getPortalSettings } from "@/lib/portalSettings";
+import { getWarningsList } from "@/lib/warnings";
 import { ETHIOPIA_TIMEZONE } from "@/lib/windowSchedule";
 import { AdminUserManagement, type TeamMember } from "@/components/AdminUserManagement";
 import { AdminWindowSettings } from "@/components/AdminWindowSettings";
@@ -54,8 +55,8 @@ export default async function AdminPage({
       ? params.tab
       : "team";
 
-  // Query team members, reports, tasks, and portal settings in parallel from Neon
-  const [teamRows, reportRows, taskRows, settings] = await Promise.all([
+  // Query team members, reports, tasks, settings, and warnings in parallel from Neon
+  const [teamRows, reportRows, taskRows, settings, allWarnings] = await Promise.all([
     sql`
       SELECT id, email, full_name, department, role,
              telegram_chat_id, telegram_username, created_at
@@ -92,6 +93,7 @@ export default async function AdminPage({
         t.created_at DESC;
     `,
     getPortalSettings(),
+    getWarningsList(),
   ]);
 
   const allReports: ReportRow[] = reportRows.map((r) => ({
@@ -306,6 +308,7 @@ export default async function AdminPage({
               close_time: settings.close_time,
               timezone: settings.timezone,
             }}
+            initialAutoWarnEnabled={settings.auto_warn_enabled}
             initialTelegram={{
               configured: !!settings.telegram_bot_token,
               botUsername: settings.telegram_bot_username,
@@ -330,6 +333,7 @@ export default async function AdminPage({
               taskStats={taskStats}
               todayEthYmd={todayEthDate}
               telegramBotConfigured={!!settings.telegram_bot_token}
+              initialWarnings={allWarnings}
             />
 
             <div className="space-y-4">

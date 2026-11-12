@@ -26,6 +26,7 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     windowStatus,
+    autoWarnEnabled: settings.auto_warn_enabled,
     telegram: {
       configured: !!settings.telegram_bot_token,
       botUsername: settings.telegram_bot_username,
@@ -110,10 +111,16 @@ export async function PUT(request: Request) {
       nextBotUsername = body.telegram_bot_username.trim().replace(/^@/, "");
     }
 
+    const autoWarnEnabled =
+      typeof body.auto_warn_enabled === "boolean"
+        ? body.auto_warn_enabled
+        : current.auto_warn_enabled;
+
     await sql`
       INSERT INTO portal_settings (
         id, window_mode, open_day, open_time, close_day, close_time,
-        timezone, telegram_bot_token, telegram_bot_username, updated_by, updated_at
+        timezone, telegram_bot_token, telegram_bot_username, auto_warn_enabled,
+        updated_by, updated_at
       )
       VALUES (
         'default',
@@ -125,6 +132,7 @@ export async function PUT(request: Request) {
         'Africa/Addis_Ababa',
         ${body.clear_telegram_token ? null : nextBotToken},
         ${nextBotUsername},
+        ${autoWarnEnabled},
         ${user.id},
         now()
       )
@@ -137,6 +145,7 @@ export async function PUT(request: Request) {
         timezone = EXCLUDED.timezone,
         telegram_bot_token = EXCLUDED.telegram_bot_token,
         telegram_bot_username = EXCLUDED.telegram_bot_username,
+        auto_warn_enabled = EXCLUDED.auto_warn_enabled,
         updated_by = EXCLUDED.updated_by,
         updated_at = now();
     `;
@@ -147,6 +156,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({
       success: true,
       windowStatus,
+      autoWarnEnabled: updated.auto_warn_enabled,
       telegram: {
         configured: !!updated.telegram_bot_token,
         botUsername: updated.telegram_bot_username,

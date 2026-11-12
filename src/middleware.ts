@@ -8,6 +8,7 @@ const PUBLIC_PATHS = [
   "/auth",
   "/api/auth",
   "/api/telegram/webhook",
+  "/api/cron",
   "/icon",
   "/apple-icon",
 ];

@@ -41,6 +41,7 @@ export async function sendTelegramMessage(params: {
   chatId: string;
   text: string;
   portalHttpsUrl?: string | null;
+  buttonText?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   try {
     const payload: Record<string, unknown> = {
@@ -55,7 +56,7 @@ export async function sendTelegramMessage(params: {
         inline_keyboard: [
           [
             {
-              text: "View & Complete Task in Portal",
+              text: params.buttonText || "View & Complete Task in Portal",
               url: params.portalHttpsUrl,
             },
           ],
@@ -81,6 +82,67 @@ export async function sendTelegramMessage(params: {
     return {
       ok: false,
       error: err instanceof Error ? err.message : "Network error sending Telegram message",
+    };
+  }
+}
+
+export async function sendTelegramDocument(params: {
+  botToken: string;
+  chatId: string;
+  filename: string;
+  fileBuffer: Buffer;
+  mimeType?: string;
+  caption?: string;
+  portalHttpsUrl?: string | null;
+  buttonText?: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const form = new FormData();
+    form.append("chat_id", params.chatId.trim());
+    if (params.caption) {
+      form.append("caption", params.caption);
+      form.append("parse_mode", "HTML");
+    }
+    if (params.portalHttpsUrl && params.portalHttpsUrl.startsWith("https://")) {
+      form.append(
+        "reply_markup",
+        JSON.stringify({
+          inline_keyboard: [
+            [
+              {
+                text: params.buttonText || "Open Official Letter in Portal",
+                url: params.portalHttpsUrl,
+              },
+            ],
+          ],
+        })
+      );
+    }
+
+    const blob = new Blob([new Uint8Array(params.fileBuffer)], {
+      type:
+        params.mimeType ||
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+    form.append("document", blob, params.filename);
+
+    const res = await fetch(
+      `https://api.telegram.org/bot${params.botToken}/sendDocument`,
+      {
+        method: "POST",
+        body: form,
+      }
+    );
+
+    const json = await res.json();
+    if (!json.ok) {
+      return { ok: false, error: json.description || "Telegram sendDocument failed." };
+    }
+    return { ok: true };
+  } catch (err: unknown) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Network error sending Telegram document",
     };
   }
 }

@@ -1,0 +1,9 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/enforce-warnings",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}
+

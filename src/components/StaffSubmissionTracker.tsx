@@ -9,16 +9,21 @@ import {
 } from "@/lib/compliancePeriods";
 import { StatusBadge } from "./StatusBadge";
 import {
+  IconAlertCircle,
   IconBuilding,
   IconCheckCircle,
   IconCheckSquare,
+  IconDownload,
   IconEye,
+  IconFileText,
   IconSearch,
   IconSend,
+  IconShield,
   IconUser,
   IconX,
 } from "./Icons";
 import type { ReportRow } from "@/types/report";
+import type { DisciplinaryWarningRow } from "@/types/warning";
 
 export interface TrackedStaffMember {
   id: string;
@@ -47,12 +52,14 @@ export function StaffSubmissionTracker({
   taskStats = {},
   todayEthYmd,
   telegramBotConfigured = false,
+  initialWarnings = [],
 }: {
   staffList: TrackedStaffMember[];
   reports: ReportRow[];
   taskStats?: Record<string, StaffTaskCounts>;
   todayEthYmd: string;
   telegramBotConfigured?: boolean;
+  initialWarnings?: DisciplinaryWarningRow[];
 }) {
   const weekOptions = buildWeekOptions(todayEthYmd, reports);
   const monthOptions = buildMonthOptions(todayEthYmd, reports);
@@ -69,6 +76,12 @@ export function StaffSubmissionTracker({
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [remindingKey, setRemindingKey] = useState<string | null>(null);
+  const [warningActionKey, setWarningActionKey] = useState<string | null>(null);
+  const [enforcingType, setEnforcingType] = useState<"weekly" | "monthly" | null>(null);
+  const [warnings, setWarnings] = useState<DisciplinaryWarningRow[]>(initialWarnings);
+  const [showDisciplinaryLog, setShowDisciplinaryLog] = useState(
+    initialWarnings.some((w) => w.status !== "revoked")
+  );
   const [notice, setNotice] = useState<{
     type: "ok" | "err";
     text: string;
@@ -115,12 +128,36 @@ export function StaffSubmissionTracker({
       monthlyReport?.status === "submitted" ||
       monthlyReport?.status === "reviewed";
 
+    const memberWarnings = warnings.filter(
+      (w) => w.user_id === member.id && w.status !== "revoked"
+    );
+    const weeklyWarning = activeWeek
+      ? memberWarnings.find(
+          (w) =>
+            w.report_type === "weekly" &&
+            w.period_start === activeWeek.start &&
+            w.period_end === activeWeek.end
+        ) || null
+      : null;
+    const monthlyWarning = activeMonth
+      ? memberWarnings.find(
+          (w) =>
+            w.report_type === "monthly" &&
+            w.period_start === activeMonth.start &&
+            w.period_end === activeMonth.end
+        ) || null
+      : null;
+
     return {
       member,
       weeklyReport,
       monthlyReport,
       weeklySubmitted,
       monthlySubmitted,
+      memberWarnings,
+      activeStrikeCount: memberWarnings.length,
+      weeklyWarning,
+      monthlyWarning,
       tasks: taskStats[member.id] || { pending: 0, completed: 0 },
     };
   });
@@ -202,6 +239,152 @@ export function StaffSubmissionTracker({
     }
   }
 
+  async function handleIssueWarning(
+    userId: string,
+    reportType: "weekly" | "monthly",
+    period: { start: string; end: string; label: string }
+  ) {
+    const key = `${userId}_${reportType}`;
+    setWarningActionKey(key);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/warnings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          reportType,
+          periodStart: period.start,
+          periodEnd: period.end,
+          periodLabel: period.label,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setNotice({
+          type: "err",
+          text: data.error || "Could not issue warning.",
+        });
+      } else if (data.warning) {
+        setWarnings((prev) => [data.warning, ...prev]);
+        setShowDisciplinaryLog(true);
+        const w = data.warning as DisciplinaryWarningRow;
+        const levelLabel =
+          w.warning_level === "written_letter"
+            ? `2nd Offense Written Warning Letter (${w.letter_ref}) prepared`
+            : "1st Offense Verbal Warning issued";
+        const tgNote = data.telegram?.sent
+          ? "and sent to Telegram!"
+          : `(saved to portal; Telegram: ${data.telegram?.error || "not linked"})`;
+        setNotice({
+          type: "ok",
+          text: `${levelLabel} for ${w.employee_name || "staff member"} ${tgNote}`,
+        });
+      }
+    } catch (err: unknown) {
+      setNotice({
+        type: "err",
+        text: err instanceof Error ? err.message : "Network error",
+      });
+    } finally {
+      setWarningActionKey(null);
+    }
+  }
+
+  async function handleEnforcePeriod(reportType: "weekly" | "monthly") {
+    const period = reportType === "weekly" ? activeWeek : activeMonth;
+    if (!period) return;
+    setEnforcingType(reportType);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/warnings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "enforce_period",
+          periods: [
+            {
+              reportType,
+              periodStart: period.start,
+              periodEnd: period.end,
+              periodLabel: period.label,
+            },
+          ],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setNotice({
+          type: "err",
+          text: data.error || "Failed to run enforcement check.",
+        });
+      } else {
+        const s = data.summary;
+        if (Array.isArray(s.issuedWarnings) && s.issuedWarnings.length > 0) {
+          setWarnings((prev) => [...s.issuedWarnings, ...prev]);
+          setShowDisciplinaryLog(true);
+        }
+        setNotice({
+          type: "ok",
+          text:
+            `Enforcement complete for ${period.label}: ` +
+            `${s.verbalIssued} Verbal Warning(s) & ${s.lettersIssued} Written Letter(s) issued` +
+            ` (${s.telegramSent} sent on Telegram` +
+            `${s.alreadyWarned > 0 ? `, ${s.alreadyWarned} already warned` : ""}).`,
+        });
+      }
+    } catch (err: unknown) {
+      setNotice({
+        type: "err",
+        text: err instanceof Error ? err.message : "Network error",
+      });
+    } finally {
+      setEnforcingType(null);
+    }
+  }
+
+  async function handleWarningRowAction(
+    warningId: string,
+    action: "resend_telegram" | "revoke"
+  ) {
+    setWarningActionKey(`row_${warningId}_${action}`);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/warnings/${warningId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json();
+      if (data.warning) {
+        setWarnings((prev) =>
+          prev.map((w) => (w.id === warningId ? data.warning : w))
+        );
+      }
+      if (!res.ok || !data.success) {
+        setNotice({
+          type: "err",
+          text: data.error || "Could not update warning.",
+        });
+      } else {
+        setNotice({
+          type: "ok",
+          text:
+            action === "resend_telegram"
+              ? "Warning delivered via Telegram!"
+              : "Warning revoked and removed from active strike count.",
+        });
+      }
+    } catch (err: unknown) {
+      setNotice({
+        type: "err",
+        text: err instanceof Error ? err.message : "Network error",
+      });
+    } finally {
+      setWarningActionKey(null);
+    }
+  }
+
   return (
     <section className="rounded-xl border border-border bg-card p-4 sm:p-6 shadow-xs space-y-5">
       {/* Header */}
@@ -280,13 +463,27 @@ export function StaffSubmissionTracker({
             />
           </div>
 
-          <div className="flex items-center justify-between text-[11px] tabular-nums">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] tabular-nums">
             <span className="text-emerald-700 dark:text-emerald-300 font-semibold">
               {weeklySubmittedCount} submitted
             </span>
-            <span className="text-rose-600 dark:text-rose-400 font-semibold">
-              {Math.max(0, totalMembers - weeklySubmittedCount)} not submitted
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-rose-600 dark:text-rose-400 font-semibold">
+                {Math.max(0, totalMembers - weeklySubmittedCount)} not submitted
+              </span>
+              {activeWeek && totalMembers - weeklySubmittedCount > 0 && (
+                <button
+                  type="button"
+                  disabled={enforcingType !== null}
+                  onClick={() => handleEnforcePeriod("weekly")}
+                  title="Automatically issue 1st Verbal Warning or 2nd Written Warning Letter to all missing staff for this week"
+                  className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 disabled:opacity-50 transition-colors"
+                >
+                  <IconAlertCircle size={10} />
+                  {enforcingType === "weekly" ? "Enforcing..." : "Auto-Warn Missing"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -321,13 +518,27 @@ export function StaffSubmissionTracker({
             />
           </div>
 
-          <div className="flex items-center justify-between text-[11px] tabular-nums">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] tabular-nums">
             <span className="text-blue-700 dark:text-blue-300 font-semibold">
               {monthlySubmittedCount} submitted
             </span>
-            <span className="text-rose-600 dark:text-rose-400 font-semibold">
-              {Math.max(0, totalMembers - monthlySubmittedCount)} not submitted
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-rose-600 dark:text-rose-400 font-semibold">
+                {Math.max(0, totalMembers - monthlySubmittedCount)} not submitted
+              </span>
+              {activeMonth && totalMembers - monthlySubmittedCount > 0 && (
+                <button
+                  type="button"
+                  disabled={enforcingType !== null}
+                  onClick={() => handleEnforcePeriod("monthly")}
+                  title="Automatically issue 1st Verbal Warning or 2nd Written Warning Letter to all missing staff for this month"
+                  className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 disabled:opacity-50 transition-colors"
+                >
+                  <IconAlertCircle size={10} />
+                  {enforcingType === "monthly" ? "Enforcing..." : "Auto-Warn Missing"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -437,6 +648,10 @@ export function StaffSubmissionTracker({
                     monthlyReport,
                     weeklySubmitted,
                     monthlySubmitted,
+                    memberWarnings,
+                    activeStrikeCount,
+                    weeklyWarning,
+                    monthlyWarning,
                     tasks,
                   }) => {
                     const name = member.full_name || member.email.split("@")[0];
@@ -446,6 +661,7 @@ export function StaffSubmissionTracker({
                       .slice(0, 2)
                       .join("")
                       .toUpperCase();
+                    const latestWarning = memberWarnings[0] || null;
 
                     return (
                       <tr
@@ -458,7 +674,7 @@ export function StaffSubmissionTracker({
                               {initials}
                             </div>
                             <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex flex-wrap items-center gap-1.5">
                                 <p className="font-semibold text-foreground truncate">
                                   {name}
                                 </p>
@@ -468,6 +684,21 @@ export function StaffSubmissionTracker({
                                       ? "CEO"
                                       : "Admin"}
                                   </span>
+                                )}
+                                {activeStrikeCount > 0 && latestWarning && (
+                                  <Link
+                                    href={`/warnings/${latestWarning.id}`}
+                                    title="View employee warning / letter record"
+                                    className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold border ${
+                                      activeStrikeCount >= 2
+                                        ? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30"
+                                        : "bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30"
+                                    }`}
+                                  >
+                                    {activeStrikeCount >= 2
+                                      ? `${activeStrikeCount} Strikes · Letter`
+                                      : "1 Verbal"}
+                                  </Link>
                                 )}
                               </div>
                               <p className="text-[11px] text-muted-foreground truncate">
@@ -489,7 +720,7 @@ export function StaffSubmissionTracker({
 
                         {/* Weekly Cell */}
                         <td className="px-4 py-3.5">
-                          {weeklyReport ? (
+                          {weeklySubmitted && weeklyReport ? (
                             <div className="flex flex-wrap items-center gap-2">
                               <StatusBadge
                                 status={weeklyReport.status}
@@ -500,15 +731,24 @@ export function StaffSubmissionTracker({
                                 className="inline-flex items-center gap-1 text-[11px] font-semibold text-accent hover:underline"
                               >
                                 <IconEye size={12} />
-                                {weeklySubmitted ? "View" : "View Draft"}
+                                View
                               </Link>
                             </div>
                           ) : (
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-medium text-rose-700 dark:text-rose-300 border border-rose-500/20">
-                                <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-                                Not Submitted
-                              </span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {weeklyReport ? (
+                                <Link
+                                  href={`/reports/${weeklyReport.id}`}
+                                  className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:text-amber-300 border border-amber-500/20 hover:underline"
+                                >
+                                  Draft Only
+                                </Link>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-medium text-rose-700 dark:text-rose-300 border border-rose-500/20">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                                  Not Submitted
+                                </span>
+                              )}
                               {telegramBotConfigured && member.telegram_chat_id && (
                                 <button
                                   type="button"
@@ -531,13 +771,61 @@ export function StaffSubmissionTracker({
                                     : "Remind"}
                                 </button>
                               )}
+                              {weeklyWarning ? (
+                                <Link
+                                  href={`/warnings/${weeklyWarning.id}`}
+                                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border ${
+                                    weeklyWarning.warning_level === "written_letter"
+                                      ? "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
+                                      : "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                                  }`}
+                                >
+                                  <IconFileText size={10} />
+                                  {weeklyWarning.warning_level === "written_letter"
+                                    ? "Letter Sent"
+                                    : "Verbal Warned"}
+                                </Link>
+                              ) : (
+                                activeWeek && (
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      warningActionKey === `${member.id}_weekly`
+                                    }
+                                    onClick={() =>
+                                      handleIssueWarning(
+                                        member.id,
+                                        "weekly",
+                                        activeWeek
+                                      )
+                                    }
+                                    title={
+                                      activeStrikeCount === 0
+                                        ? "1st Offense: Send Verbal Warning via Telegram"
+                                        : "2nd Offense: Automatically prepare & send Official Written Warning Letter"
+                                    }
+                                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold transition-colors disabled:opacity-50 ${
+                                      activeStrikeCount >= 1
+                                        ? "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20"
+                                        : "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20"
+                                    }`}
+                                  >
+                                    <IconAlertCircle size={10} />
+                                    {warningActionKey === `${member.id}_weekly`
+                                      ? "Issuing..."
+                                      : activeStrikeCount >= 1
+                                      ? "Send Letter (2nd)"
+                                      : "Verbal Warn (1st)"}
+                                  </button>
+                                )
+                              )}
                             </div>
                           )}
                         </td>
 
                         {/* Monthly Cell */}
                         <td className="px-4 py-3.5">
-                          {monthlyReport ? (
+                          {monthlySubmitted && monthlyReport ? (
                             <div className="flex flex-wrap items-center gap-2">
                               <StatusBadge
                                 status={monthlyReport.status}
@@ -548,15 +836,24 @@ export function StaffSubmissionTracker({
                                 className="inline-flex items-center gap-1 text-[11px] font-semibold text-accent hover:underline"
                               >
                                 <IconEye size={12} />
-                                {monthlySubmitted ? "View" : "View Draft"}
+                                View
                               </Link>
                             </div>
                           ) : (
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-medium text-rose-700 dark:text-rose-300 border border-rose-500/20">
-                                <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-                                Not Submitted
-                              </span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {monthlyReport ? (
+                                <Link
+                                  href={`/reports/${monthlyReport.id}`}
+                                  className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:text-amber-300 border border-amber-500/20 hover:underline"
+                                >
+                                  Draft Only
+                                </Link>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-medium text-rose-700 dark:text-rose-300 border border-rose-500/20">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                                  Not Submitted
+                                </span>
+                              )}
                               {telegramBotConfigured && member.telegram_chat_id && (
                                 <button
                                   type="button"
@@ -578,6 +875,54 @@ export function StaffSubmissionTracker({
                                     ? "Sending..."
                                     : "Remind"}
                                 </button>
+                              )}
+                              {monthlyWarning ? (
+                                <Link
+                                  href={`/warnings/${monthlyWarning.id}`}
+                                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border ${
+                                    monthlyWarning.warning_level === "written_letter"
+                                      ? "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
+                                      : "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                                  }`}
+                                >
+                                  <IconFileText size={10} />
+                                  {monthlyWarning.warning_level === "written_letter"
+                                    ? "Letter Sent"
+                                    : "Verbal Warned"}
+                                </Link>
+                              ) : (
+                                activeMonth && (
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      warningActionKey === `${member.id}_monthly`
+                                    }
+                                    onClick={() =>
+                                      handleIssueWarning(
+                                        member.id,
+                                        "monthly",
+                                        activeMonth
+                                      )
+                                    }
+                                    title={
+                                      activeStrikeCount === 0
+                                        ? "1st Offense: Send Verbal Warning via Telegram"
+                                        : "2nd Offense: Automatically prepare & send Official Written Warning Letter"
+                                    }
+                                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold transition-colors disabled:opacity-50 ${
+                                      activeStrikeCount >= 1
+                                        ? "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20"
+                                        : "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20"
+                                    }`}
+                                  >
+                                    <IconAlertCircle size={10} />
+                                    {warningActionKey === `${member.id}_monthly`
+                                      ? "Issuing..."
+                                      : activeStrikeCount >= 1
+                                      ? "Send Letter (2nd)"
+                                      : "Verbal Warn (1st)"}
+                                  </button>
+                                )
                               )}
                             </div>
                           )}
@@ -628,6 +973,143 @@ export function StaffSubmissionTracker({
               WEEKLY &amp; MONTHLY COMPLIANCE
             </span>
           </div>
+        </div>
+      )}
+
+      {/* Disciplinary Warnings & Official Letters Log */}
+      {warnings.length > 0 && (
+        <div className="rounded-xl border border-border bg-muted/20 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowDisciplinaryLog((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-3 text-left text-xs font-bold text-foreground hover:bg-muted/40 transition-colors"
+          >
+            <span className="inline-flex items-center gap-2">
+              <IconShield size={14} className="text-rose-500" />
+              Disciplinary Warnings &amp; Official Letters (
+              {warnings.filter((w) => w.status !== "revoked").length} active)
+            </span>
+            <span className="text-[11px] font-medium text-muted-foreground">
+              {showDisciplinaryLog ? "Hide Log" : "Show Log"}
+            </span>
+          </button>
+
+          {showDisciplinaryLog && (
+            <div className="border-t border-border divide-y divide-border/60 bg-card">
+              {warnings.map((w) => {
+                const isLetter = w.warning_level === "written_letter";
+                const isRevoked = w.status === "revoked";
+                return (
+                  <div
+                    key={w.id}
+                    className={`flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 px-4 py-3 text-xs ${
+                      isRevoked ? "opacity-55" : ""
+                    }`}
+                  >
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border ${
+                            isLetter
+                              ? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30"
+                              : "bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30"
+                          }`}
+                        >
+                          {isLetter
+                            ? `Strike #${w.strike_number} · Written Letter`
+                            : `Strike #${w.strike_number} · Verbal Warning`}
+                        </span>
+
+                        <span className="font-semibold text-foreground">
+                          {w.employee_name || w.employee_email}
+                        </span>
+
+                        <span className="text-muted-foreground">
+                          ({w.report_type === "monthly" ? "Monthly" : "Weekly"} ·{" "}
+                          {w.period_label})
+                        </span>
+
+                        {w.letter_ref && (
+                          <span className="font-mono text-[10px] text-muted-foreground">
+                            {w.letter_ref}
+                          </span>
+                        )}
+
+                        {w.status === "acknowledged" && (
+                          <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+                            Acknowledged
+                          </span>
+                        )}
+                        {isRevoked && (
+                          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                            Revoked
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-muted-foreground">
+                        Telegram:{" "}
+                        {w.telegram_sent_at ? (
+                          <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+                            Delivered
+                          </span>
+                        ) : (
+                          <span className="text-amber-700 dark:text-amber-300">
+                            {w.telegram_error || "Pending"}
+                          </span>
+                        )}
+                        {" · "}Trigger: {w.trigger_source === "auto" ? "Automatic" : "Manual"}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <Link
+                        href={`/warnings/${w.id}`}
+                        className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-muted transition-colors"
+                      >
+                        <IconEye size={12} />
+                        {isLetter ? "Open Letter" : "View Notice"}
+                      </Link>
+
+                      {isLetter && (
+                        <a
+                          href={`/api/warnings/${w.id}/docx`}
+                          className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-muted transition-colors"
+                        >
+                          <IconDownload size={12} />
+                          .docx
+                        </a>
+                      )}
+
+                      {!isRevoked && (
+                        <>
+                          <button
+                            type="button"
+                            disabled={warningActionKey !== null}
+                            onClick={() =>
+                              handleWarningRowAction(w.id, "resend_telegram")
+                            }
+                            className="inline-flex items-center gap-1 rounded-md border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:text-sky-300 hover:bg-sky-500/20 disabled:opacity-50 transition-colors"
+                          >
+                            <IconSend size={11} />
+                            Resend
+                          </button>
+                          <button
+                            type="button"
+                            disabled={warningActionKey !== null}
+                            onClick={() => handleWarningRowAction(w.id, "revoke")}
+                            className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-[11px] font-semibold text-muted-foreground hover:text-rose-600 disabled:opacity-50 transition-colors"
+                          >
+                            Revoke
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </section>

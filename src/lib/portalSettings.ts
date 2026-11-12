@@ -10,6 +10,7 @@ import {
 export interface PortalSettingsRow extends ReportingWindowConfig {
   telegram_bot_token: string | null;
   telegram_bot_username: string | null;
+  auto_warn_enabled: boolean;
   updated_at: string | null;
 }
 
@@ -17,7 +18,7 @@ export async function getPortalSettings(): Promise<PortalSettingsRow> {
   try {
     const rows = await sql`
       SELECT window_mode, open_day, open_time, close_day, close_time, timezone,
-             telegram_bot_token, telegram_bot_username, updated_at
+             telegram_bot_token, telegram_bot_username, auto_warn_enabled, updated_at
       FROM portal_settings
       WHERE id = 'default'
       LIMIT 1;
@@ -28,6 +29,7 @@ export async function getPortalSettings(): Promise<PortalSettingsRow> {
         ...DEFAULT_WINDOW_CONFIG,
         telegram_bot_token: process.env.TELEGRAM_BOT_TOKEN || null,
         telegram_bot_username: process.env.TELEGRAM_BOT_USERNAME || null,
+        auto_warn_enabled: true,
         updated_at: null,
       };
     }
@@ -42,6 +44,8 @@ export async function getPortalSettings(): Promise<PortalSettingsRow> {
       timezone: r.timezone || DEFAULT_WINDOW_CONFIG.timezone,
       telegram_bot_token: r.telegram_bot_token || process.env.TELEGRAM_BOT_TOKEN || null,
       telegram_bot_username: r.telegram_bot_username || process.env.TELEGRAM_BOT_USERNAME || null,
+      auto_warn_enabled:
+        typeof r.auto_warn_enabled === "boolean" ? r.auto_warn_enabled : true,
       updated_at: r.updated_at
         ? typeof r.updated_at === "string"
           ? r.updated_at
@@ -54,6 +58,7 @@ export async function getPortalSettings(): Promise<PortalSettingsRow> {
       ...DEFAULT_WINDOW_CONFIG,
       telegram_bot_token: process.env.TELEGRAM_BOT_TOKEN || null,
       telegram_bot_username: process.env.TELEGRAM_BOT_USERNAME || null,
+      auto_warn_enabled: true,
       updated_at: null,
     };
   }
