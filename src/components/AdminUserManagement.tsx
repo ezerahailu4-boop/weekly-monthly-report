@@ -8,7 +8,6 @@ import {
   IconPlus,
   IconTrash,
   IconBuilding,
-  IconAlertCircle,
   IconCrown,
   IconShield,
   IconUser,

@@ -10,9 +10,25 @@ export async function GET() {
 
   const isPrivileged = user.role === "admin" || user.role === "super_admin";
 
-  let rows: any[];
+  interface CsvReportRow {
+    id: string;
+    report_type: string;
+    period_start: string;
+    period_end: string;
+    status: string;
+    created_at: string | Date;
+    updated_at: string | Date;
+    review_notes: string | null;
+    reviewed_at: string | Date | null;
+    author_name: string | null;
+    author_department: string | null;
+    author_email: string | null;
+    reviewer_name: string | null;
+  }
+
+  let rows: CsvReportRow[];
   if (isPrivileged) {
-    rows = await sql`
+    rows = (await sql`
       SELECT r.id, r.report_type,
              to_char(r.period_start, 'YYYY-MM-DD') as period_start,
              to_char(r.period_end, 'YYYY-MM-DD') as period_end,
@@ -24,9 +40,9 @@ export async function GET() {
       LEFT JOIN users u ON r.user_id = u.id
       LEFT JOIN users rev ON r.reviewed_by = rev.id
       ORDER BY r.created_at DESC;
-    `;
+    `) as CsvReportRow[];
   } else {
-    rows = await sql`
+    rows = (await sql`
       SELECT r.id, r.report_type,
              to_char(r.period_start, 'YYYY-MM-DD') as period_start,
              to_char(r.period_end, 'YYYY-MM-DD') as period_end,
@@ -39,7 +55,7 @@ export async function GET() {
       LEFT JOIN users rev ON r.reviewed_by = rev.id
       WHERE r.user_id = ${user.id}
       ORDER BY r.created_at DESC;
-    `;
+    `) as CsvReportRow[];
   }
 
   const headers = [
@@ -58,7 +74,7 @@ export async function GET() {
     "Last Updated",
   ];
 
-  function escapeCsvCell(cell: any) {
+  function escapeCsvCell(cell: unknown) {
     if (cell === null || cell === undefined) return '""';
     const str = String(cell).replace(/"/g, '""');
     return `"${str}"`;

@@ -64,8 +64,8 @@
   --muted: oklch(0.93 0.008 75);
   --muted-foreground: oklch(0.40 0.01 30);
 
-  /* Flame Orange */
-  --accent: oklch(0.65 0.21 38);
+  /* Flame Orange (tuned for >=4.5:1 contrast with white & on light cards) */
+  --accent: oklch(0.55 0.20 38);
   --accent-foreground: oklch(0.99 0 0);
 
   --destructive: oklch(0.577 0.245 27.325);
@@ -73,9 +73,9 @@
 
   --border: oklch(0.88 0.01 75);
   --input: oklch(0.88 0.01 75);
-  --ring: oklch(0.65 0.21 38);
+  --ring: oklch(0.55 0.20 38);
 
-  --brand: oklch(0.65 0.21 38);
+  --brand: oklch(0.55 0.20 38);
   --brand-foreground: oklch(0.99 0 0);
 
   --sidebar: oklch(0.95 0.007 75);

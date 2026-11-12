@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark" | "system";
 
@@ -18,52 +18,67 @@ const ThemeContext = createContext<ThemeContextType>({
   toggleTheme: () => {},
 });
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
-  const [mounted, setMounted] = useState(false);
+const emptySubscribe = () => () => {};
 
-  useEffect(() => {
-    setMounted(true);
-    const stored = (localStorage.getItem("yh_theme") as Theme) || "system";
-    setThemeState(stored);
-  }, []);
+function subscribeTheme(callback: () => void) {
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  window.addEventListener("yh-theme-change", callback);
+  window.addEventListener("storage", callback);
+  media.addEventListener("change", callback);
+  return () => {
+    window.removeEventListener("yh-theme-change", callback);
+    window.removeEventListener("storage", callback);
+    media.removeEventListener("change", callback);
+  };
+}
 
-  useEffect(() => {
-    if (!mounted) return;
-
-    const root = document.documentElement;
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    function applyTheme() {
-      const isDark =
-        theme === "dark" || (theme === "system" && mediaQuery.matches);
-      if (isDark) {
-        root.classList.add("dark");
-        setResolvedTheme("dark");
-      } else {
-        root.classList.remove("dark");
-        setResolvedTheme("light");
-      }
+function getStoredThemeSnapshot(): Theme {
+  try {
+    const stored = localStorage.getItem("yh_theme");
+    if (stored === "light" || stored === "dark" || stored === "system") {
+      return stored;
     }
+  } catch {
+    // ignore
+  }
+  return "system";
+}
 
-    applyTheme();
+function getResolvedThemeSnapshot(): "light" | "dark" {
+  const theme = getStoredThemeSnapshot();
+  if (theme === "dark") return "dark";
+  if (theme === "light") return "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
 
-    const listener = () => {
-      if (theme === "system") applyTheme();
-    };
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const theme = useSyncExternalStore<Theme>(
+    subscribeTheme,
+    getStoredThemeSnapshot,
+    () => "system"
+  );
+  const resolvedTheme = useSyncExternalStore<"light" | "dark">(
+    subscribeTheme,
+    getResolvedThemeSnapshot,
+    () => "light"
+  );
 
-    mediaQuery.addEventListener("change", listener);
-    return () => mediaQuery.removeEventListener("change", listener);
-  }, [theme, mounted]);
+  useEffect(() => {
+    const root = document.documentElement;
+    if (resolvedTheme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }, [resolvedTheme]);
 
   function setTheme(newTheme: Theme) {
-    setThemeState(newTheme);
     try {
       localStorage.setItem("yh_theme", newTheme);
     } catch {
       // ignore
     }
+    window.dispatchEvent(new Event("yh-theme-change"));
   }
 
   function toggleTheme() {
@@ -113,9 +128,11 @@ export function ThemeToggle({
   showLabel?: boolean;
 }) {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => { setMounted(true); }, []);
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
   if (!mounted) {
     return <div className={`h-8 w-24 rounded-lg border border-border bg-muted ${className}`} aria-hidden="true" />;

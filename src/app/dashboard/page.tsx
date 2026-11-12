@@ -50,11 +50,30 @@ export default async function DashboardPage({
   // By default, Super Admin and Admin view all group submissions; employees view their own.
   const activeView = params.view || (isPrivileged ? "company" : "personal");
 
+  interface DbReportRow {
+    id: string;
+    user_id: string;
+    report_type: ReportRow["report_type"];
+    period_start: string;
+    period_end: string;
+    status: ReportRow["status"];
+    data: ReportRow["data"];
+    review_notes: string | null;
+    reviewed_by: string | null;
+    reviewed_at: string | Date | null;
+    created_at: string | Date;
+    updated_at: string | Date;
+    author_name: string | null;
+    author_department: string | null;
+    author_email: string | null;
+    reviewer_name: string | null;
+  }
+
   // Query reports from Neon
-  let reportRows: any[];
+  let reportRows: DbReportRow[];
   if (isPrivileged) {
     if (activeView === "personal") {
-      reportRows = await sql`
+      reportRows = (await sql`
         SELECT r.id, r.user_id, r.report_type,
                to_char(r.period_start, 'YYYY-MM-DD') as period_start,
                to_char(r.period_end, 'YYYY-MM-DD') as period_end,
@@ -67,10 +86,10 @@ export default async function DashboardPage({
         LEFT JOIN users rev ON r.reviewed_by = rev.id
         WHERE r.user_id = ${user.id}
         ORDER BY r.created_at DESC;
-      `;
+      `) as DbReportRow[];
     } else {
       // Company-wide view: CEO & Admin see EVERYTHING
-      reportRows = await sql`
+      reportRows = (await sql`
         SELECT r.id, r.user_id, r.report_type,
                to_char(r.period_start, 'YYYY-MM-DD') as period_start,
                to_char(r.period_end, 'YYYY-MM-DD') as period_end,
@@ -82,10 +101,10 @@ export default async function DashboardPage({
         LEFT JOIN users u ON r.user_id = u.id
         LEFT JOIN users rev ON r.reviewed_by = rev.id
         ORDER BY r.created_at DESC;
-      `;
+      `) as DbReportRow[];
     }
   } else {
-    reportRows = await sql`
+    reportRows = (await sql`
       SELECT r.id, r.user_id, r.report_type,
              to_char(r.period_start, 'YYYY-MM-DD') as period_start,
              to_char(r.period_end, 'YYYY-MM-DD') as period_end,
@@ -98,7 +117,7 @@ export default async function DashboardPage({
       LEFT JOIN users rev ON r.reviewed_by = rev.id
       WHERE r.user_id = ${user.id}
       ORDER BY r.created_at DESC;
-    `;
+    `) as DbReportRow[];
   }
 
   const reportList: ReportRow[] = reportRows.map((r) => ({
@@ -244,6 +263,7 @@ export default async function DashboardPage({
               <>
                 <a
                   href="/api/reports/export/csv"
+                  download
                   title="Download consolidated spreadsheet summary of all group submissions"
                   className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
                 >

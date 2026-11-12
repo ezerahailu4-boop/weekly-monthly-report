@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -30,6 +30,204 @@ export interface ShellUser {
   role: "employee" | "admin" | "super_admin";
 }
 
+interface NavGroup {
+  label: string;
+  links: {
+    label: string;
+    href: string;
+    icon: React.ComponentType<{ size?: number; className?: string }>;
+    active: boolean;
+    highlight?: boolean;
+  }[];
+}
+
+const SIDEBAR_EVENT = "yh-sidebar-change";
+
+function subscribeCollapsed(callback: () => void) {
+  window.addEventListener(SIDEBAR_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(SIDEBAR_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+function getCollapsedSnapshot(): boolean {
+  try {
+    return localStorage.getItem("yh_sidebar_collapsed") === "true";
+  } catch {
+    return false;
+  }
+}
+
+interface SidebarContentProps {
+  mobile?: boolean;
+  collapsed: boolean;
+  navGroups: NavGroup[];
+  fullName: string;
+  initials: string;
+  role: ShellUser["role"];
+  isSuperAdmin: boolean;
+  onToggleCollapse: () => void;
+  onNavigate?: () => void;
+}
+
+function SidebarContent({
+  mobile = false,
+  collapsed,
+  navGroups,
+  fullName,
+  initials,
+  role,
+  isSuperAdmin,
+  onToggleCollapse,
+  onNavigate,
+}: SidebarContentProps) {
+  return (
+    <>
+      {/* Brand */}
+      <div className={`flex h-14 items-center border-b border-sidebar-border px-4 ${collapsed && !mobile ? "justify-center" : "gap-3"}`}>
+        <Link href="/dashboard" onClick={onNavigate} className="flex items-center gap-3 min-w-0" title="YETAF Holding">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg ring-1 ring-border">
+            <Image src="/logo.jpg" alt="YETAF" width={64} height={64} className="h-full w-full object-contain" priority />
+          </div>
+          {(!collapsed || mobile) && (
+            <div className="min-w-0">
+              <p className="text-sm font-semibold tracking-tight text-sidebar-foreground truncate">YETAF Holding</p>
+              <p className="text-[10px] text-muted-foreground truncate">Executive Portal</p>
+            </div>
+          )}
+        </Link>
+      </div>
+
+      {/* Nav Groups */}
+      <div className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+        {navGroups.map((group) => (
+          <div key={group.label}>
+            {(!collapsed || mobile) && (
+              <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                {group.label}
+              </p>
+            )}
+            <div className="space-y-0.5">
+              {group.links.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    title={collapsed && !mobile ? link.label : undefined}
+                    onClick={onNavigate}
+                    className={`group flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-all duration-100 ${
+                      collapsed && !mobile ? "justify-center" : ""
+                    } ${
+                      link.active
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <Icon
+                      size={16}
+                      className={`shrink-0 ${
+                        link.active ? "text-brand" : "text-muted-foreground group-hover:text-sidebar-accent-foreground"
+                      }`}
+                    />
+                    {(!collapsed || mobile) && (
+                      <span className="truncate">{link.label}</span>
+                    )}
+                    {(!collapsed || mobile) && link.active && (
+                      <span className="ml-auto h-1.5 w-1.5 rounded-full bg-brand" />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        {/* Quick file card */}
+        {(!collapsed || mobile) && (
+          <div className="mx-1 mt-2 rounded-lg border border-dashed border-border bg-muted/40 p-3">
+            <p className="text-xs font-semibold text-foreground">File a report</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">Corporate governance templates</p>
+            <div className="mt-2.5 flex flex-col gap-1.5">
+              <Link
+                href="/reports/new/weekly"
+                onClick={onNavigate}
+                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                <IconPlus size={12} />
+                Weekly Filing
+              </Link>
+              <Link
+                href="/reports/new/monthly"
+                onClick={onNavigate}
+                className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                <IconFileText size={12} className="text-muted-foreground" />
+                Monthly Filing
+              </Link>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-sidebar-border p-2 space-y-1">
+        <div className={`flex items-center gap-2 rounded-md p-2 ${collapsed && !mobile ? "justify-center" : ""}`}>
+          <ThemeToggle showLabel={!collapsed || mobile} />
+        </div>
+
+        <Link
+          href="/profile"
+          onClick={onNavigate}
+          className={`flex items-center gap-2.5 rounded-md p-2 transition-colors hover:bg-sidebar-accent ${collapsed && !mobile ? "justify-center" : ""}`}
+        >
+          <div
+            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+              isSuperAdmin
+                ? "bg-amber-950 text-amber-300 ring-1 ring-amber-500/40"
+                : "bg-primary text-primary-foreground"
+            }`}
+          >
+            {initials}
+          </div>
+          {(!collapsed || mobile) && (
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold text-sidebar-foreground leading-tight">{fullName}</p>
+              <p className="truncate text-[10px] text-muted-foreground capitalize">
+                {isSuperAdmin ? "CEO · Super Admin" : role === "admin" ? "Administrator" : "Staff Member"}
+              </p>
+            </div>
+          )}
+        </Link>
+
+        {(!collapsed || mobile) && (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="hidden lg:flex w-full items-center justify-center gap-1.5 rounded-md py-1.5 text-xs text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <IconChevronLeft size={14} />
+            <span>Collapse</span>
+          </button>
+        )}
+
+        {collapsed && !mobile && (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            title="Expand sidebar"
+            className="hidden lg:flex w-full items-center justify-center rounded-md py-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <IconChevronRight size={14} />
+          </button>
+        )}
+      </div>
+    </>
+  );
+}
+
 interface AppShellProps {
   user: ShellUser | null;
   title?: string;
@@ -39,7 +237,11 @@ interface AppShellProps {
 
 export function AppShell({ user, title, subtitle, children }: AppShellProps) {
   const pathname = usePathname() || "";
-  const [collapsed, setCollapsed] = useState(false);
+  const collapsed = useSyncExternalStore(
+    subscribeCollapsed,
+    getCollapsedSnapshot,
+    () => false
+  );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
@@ -56,25 +258,13 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("yh_sidebar_collapsed");
-      if (saved !== null) setCollapsed(saved === "true");
-    } catch {}
-  }, []);
-
   function toggleCollapse() {
-    setCollapsed((prev) => {
-      const next = !prev;
-      try { localStorage.setItem("yh_sidebar_collapsed", String(next)); } catch {}
-      return next;
-    });
+    const next = !collapsed;
+    try {
+      localStorage.setItem("yh_sidebar_collapsed", String(next));
+    } catch {}
+    window.dispatchEvent(new Event(SIDEBAR_EVENT));
   }
-
-  useEffect(() => {
-    setMobileOpen(false);
-    setAvatarOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -92,7 +282,7 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
   const fullName = user?.full_name || user?.email?.split("@")[0] || "Executive";
   const initials = fullName.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
 
-  const navGroups = [
+  const navGroups: NavGroup[] = [
     {
       label: "Overview",
       links: [
@@ -156,147 +346,6 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
     },
   ];
 
-  const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => (
-    <>
-      {/* Brand */}
-      <div className={`flex h-14 items-center border-b border-sidebar-border px-4 ${collapsed && !mobile ? "justify-center" : "gap-3"}`}>
-        <Link href="/dashboard" className="flex items-center gap-3 min-w-0" title="YETAF Holding">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg ring-1 ring-border">
-            <Image src="/logo.jpg" alt="YETAF" width={64} height={64} className="h-full w-full object-contain" priority />
-          </div>
-          {(!collapsed || mobile) && (
-            <div className="min-w-0">
-              <p className="text-sm font-semibold tracking-tight text-sidebar-foreground truncate">YETAF Holding</p>
-              <p className="text-[10px] text-muted-foreground truncate">Executive Portal</p>
-            </div>
-          )}
-        </Link>
-      </div>
-
-      {/* Nav Groups */}
-      <div className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
-        {navGroups.map((group) => (
-          <div key={group.label}>
-            {(!collapsed || mobile) && (
-              <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                {group.label}
-              </p>
-            )}
-            <div className="space-y-0.5">
-              {group.links.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    title={collapsed && !mobile ? link.label : undefined}
-                    onClick={mobile ? () => setMobileOpen(false) : undefined}
-                    className={`group flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-all duration-100 ${
-                      collapsed && !mobile ? "justify-center" : ""
-                    } ${
-                      link.active
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <Icon
-                      size={16}
-                      className={`shrink-0 ${
-                        link.active ? "text-brand" : "text-muted-foreground group-hover:text-sidebar-accent-foreground"
-                      }`}
-                    />
-                    {(!collapsed || mobile) && (
-                      <span className="truncate">{link.label}</span>
-                    )}
-                    {(!collapsed || mobile) && link.active && (
-                      <span className="ml-auto h-1.5 w-1.5 rounded-full bg-brand" />
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-
-        {/* Quick file card */}
-        {(!collapsed || mobile) && (
-          <div className="mx-1 mt-2 rounded-lg border border-dashed border-border bg-muted/40 p-3">
-            <p className="text-xs font-semibold text-foreground">File a report</p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">Corporate governance templates</p>
-            <div className="mt-2.5 flex flex-col gap-1.5">
-              <Link
-                href="/reports/new/weekly"
-                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
-              >
-                <IconPlus size={12} />
-                Weekly Filing
-              </Link>
-              <Link
-                href="/reports/new/monthly"
-                className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
-              >
-                <IconFileText size={12} className="text-muted-foreground" />
-                Monthly Filing
-              </Link>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="border-t border-sidebar-border p-2 space-y-1">
-        <div className={`flex items-center gap-2 rounded-md p-2 ${collapsed && !mobile ? "justify-center" : ""}`}>
-          <ThemeToggle showLabel={!collapsed || mobile} />
-        </div>
-
-        <Link
-          href="/profile"
-          className={`flex items-center gap-2.5 rounded-md p-2 transition-colors hover:bg-sidebar-accent ${collapsed && !mobile ? "justify-center" : ""}`}
-        >
-          <div
-            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-              isSuperAdmin
-                ? "bg-amber-950 text-amber-300 ring-1 ring-amber-500/40"
-                : "bg-primary text-primary-foreground"
-            }`}
-          >
-            {initials}
-          </div>
-          {(!collapsed || mobile) && (
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-semibold text-sidebar-foreground leading-tight">{fullName}</p>
-              <p className="truncate text-[10px] text-muted-foreground capitalize">
-                {isSuperAdmin ? "CEO · Super Admin" : role === "admin" ? "Administrator" : "Staff Member"}
-              </p>
-            </div>
-          )}
-        </Link>
-
-        {(!collapsed || mobile) && (
-          <button
-            type="button"
-            onClick={toggleCollapse}
-            className="hidden lg:flex w-full items-center justify-center gap-1.5 rounded-md py-1.5 text-xs text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          >
-            <IconChevronLeft size={14} />
-            <span>Collapse</span>
-          </button>
-        )}
-
-        {collapsed && !mobile && (
-          <button
-            type="button"
-            onClick={toggleCollapse}
-            title="Expand sidebar"
-            className="hidden lg:flex w-full items-center justify-center rounded-md py-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          >
-            <IconChevronRight size={14} />
-          </button>
-        )}
-      </div>
-    </>
-  );
-
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       {/* Desktop Sidebar */}
@@ -305,7 +354,15 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
           collapsed ? "w-[60px]" : "w-[240px]"
         }`}
       >
-        <SidebarContent />
+        <SidebarContent
+          collapsed={collapsed}
+          navGroups={navGroups}
+          fullName={fullName}
+          initials={initials}
+          role={role}
+          isSuperAdmin={isSuperAdmin}
+          onToggleCollapse={toggleCollapse}
+        />
       </aside>
 
       {/* Mobile Drawer */}
@@ -325,7 +382,17 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
                 <IconX size={16} />
               </button>
             </div>
-            <SidebarContent mobile />
+            <SidebarContent
+              mobile
+              collapsed={collapsed}
+              navGroups={navGroups}
+              fullName={fullName}
+              initials={initials}
+              role={role}
+              isSuperAdmin={isSuperAdmin}
+              onToggleCollapse={toggleCollapse}
+              onNavigate={() => setMobileOpen(false)}
+            />
           </div>
         </div>
       )}
@@ -399,7 +466,7 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
               <button
                 type="button"
                 onClick={() => setAvatarOpen((p) => !p)}
-                className="flex items-center gap-2 rounded-md p-1 transition-colors hover:bg-accent"
+                className="flex items-center gap-2 rounded-md p-1 transition-colors hover:bg-muted"
                 title={fullName}
               >
                 <div
@@ -427,17 +494,19 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
                   </div>
                   <Link
                     href="/profile"
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                    onClick={() => setAvatarOpen(false)}
+                    className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    <IconUser size={14} className="text-muted-foreground" />
+                    <IconUser size={14} className="text-muted-foreground group-hover:text-accent-foreground" />
                     Profile & Settings
                   </Link>
                   {isAdmin && (
                     <Link
                       href="/admin"
-                      className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                      onClick={() => setAvatarOpen(false)}
+                      className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
-                      <IconShield size={14} className="text-muted-foreground" />
+                      <IconShield size={14} className="text-muted-foreground group-hover:text-accent-foreground" />
                       Admin Console
                     </Link>
                   )}

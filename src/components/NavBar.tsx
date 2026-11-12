@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { IconCrown, IconFileText, IconPlus, IconShield, IconUser } from "./Icons";
 import { ThemeToggle } from "./ThemeProvider";
@@ -15,7 +14,6 @@ interface NavUser {
 }
 
 export default function NavBar({ user }: { user: NavUser | null }) {
-  const pathname = usePathname();
   const [newReportOpen, setNewReportOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const newReportRef = useRef<HTMLDivElement>(null);
@@ -28,11 +26,6 @@ export default function NavBar({ user }: { user: NavUser | null }) {
   const initials = fullName
     ? fullName.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()
     : "YH";
-
-  useEffect(() => {
-    setNewReportOpen(false);
-    setProfileOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -90,16 +83,18 @@ export default function NavBar({ user }: { user: NavUser | null }) {
                 <div className="absolute right-0 top-full mt-1.5 w-48 rounded-lg border border-border bg-popover p-1 shadow-lg z-50 animate-in fade-in-50">
                   <Link
                     href="/reports/new/weekly"
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                    onClick={() => setNewReportOpen(false)}
+                    className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    <IconFileText size={14} className="text-muted-foreground" />
+                    <IconFileText size={14} className="text-muted-foreground group-hover:text-accent-foreground" />
                     Weekly Report
                   </Link>
                   <Link
                     href="/reports/new/monthly"
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                    onClick={() => setNewReportOpen(false)}
+                    className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    <IconFileText size={14} className="text-muted-foreground" />
+                    <IconFileText size={14} className="text-muted-foreground group-hover:text-accent-foreground" />
                     Monthly Report
                   </Link>
                 </div>
@@ -129,7 +124,7 @@ export default function NavBar({ user }: { user: NavUser | null }) {
               <button
                 type="button"
                 onClick={() => { setProfileOpen((p) => !p); setNewReportOpen(false); }}
-                className="flex items-center gap-2 rounded-md p-1 transition-colors hover:bg-accent"
+                className="flex items-center gap-2 rounded-md p-1 transition-colors hover:bg-muted"
                 title={fullName || "Profile"}
               >
                 <div
@@ -157,9 +152,10 @@ export default function NavBar({ user }: { user: NavUser | null }) {
                   </div>
                   <Link
                     href="/profile"
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                    onClick={() => setProfileOpen(false)}
+                    className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    <IconUser size={14} className="text-muted-foreground" />
+                    <IconUser size={14} className="text-muted-foreground group-hover:text-accent-foreground" />
                     Profile & Settings
                   </Link>
                   <div className="my-1 border-t border-border" />

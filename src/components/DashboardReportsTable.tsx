@@ -14,7 +14,6 @@ import {
   IconPlus,
   IconSearch,
   IconTrash,
-  IconUser,
 } from "@/components/Icons";
 import type { ReportRow } from "@/types/report";
 import { formatDate } from "@/lib/dateUtils";
@@ -23,7 +22,6 @@ import { HoldingDepartmentScorecard } from "@/components/HoldingDepartmentScorec
 export function DashboardReportsTable({
   initialReports,
   showAuthor = false,
-  isPrivileged = false,
   windowLocked = false,
 }: {
   initialReports: ReportRow[];

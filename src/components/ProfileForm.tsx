@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconBuilding, IconCheck, IconLock, IconUser } from "./Icons";
+import { IconCheck, IconLock, IconUser } from "./Icons";
 
 const DEPARTMENTS = [
   "Office of the CEO & Board",

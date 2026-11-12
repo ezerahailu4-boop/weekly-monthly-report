@@ -26,6 +26,15 @@ interface CommandItem {
   group: string;
 }
 
+function triggerCsvDownload() {
+  const link = document.createElement("a");
+  link.href = "/api/reports/export/csv";
+  link.download = "";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
 export function CommandPalette({
   isOpen,
   onClose,
@@ -49,7 +58,7 @@ export function CommandPalette({
     ...(isPrivileged ? [
       { id: "users", group: "Admin", title: "User Management", subtitle: "Create and manage staff accounts", icon: isSuperAdmin ? IconCrown : IconShield, href: "/admin?tab=team", badge: "Admin" },
       { id: "settings", group: "Admin", title: "Window & Telegram Settings", subtitle: "Configure reporting schedule and bot", icon: IconSliders, href: "/admin?tab=settings", badge: "Settings" },
-      { id: "export", group: "Admin", title: "Export All Reports (CSV)", subtitle: "Download Excel-ready summary spreadsheet", icon: IconDownload, action: () => { window.location.href = "/api/reports/export/csv"; }, badge: "Export" },
+      { id: "export", group: "Admin", title: "Export All Reports (CSV)", subtitle: "Download Excel-ready summary spreadsheet", icon: IconDownload, action: triggerCsvDownload, badge: "Export" },
     ] : []),
     { id: "profile", group: "Account", title: "Profile & Security", subtitle: "Update name, department, or password", icon: IconUser, href: "/profile" },
   ];
@@ -80,8 +89,6 @@ export function CommandPalette({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, filtered, selectedIndex, onClose, router]);
 
-  useEffect(() => { setSelectedIndex(0); }, [query]);
-
   if (!isOpen) return null;
 
   let globalIndex = 0;
@@ -103,7 +110,10 @@ export function CommandPalette({
             type="text"
             placeholder="Type a command or search..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setSelectedIndex(0);
+            }}
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
           <kbd className="hidden sm:inline-flex h-5 items-center rounded border border-border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground">
@@ -129,19 +139,19 @@ export function CommandPalette({
                       type="button"
                       onClick={() => { if (item.action) item.action(); else if (item.href) router.push(item.href); onClose(); }}
                       onMouseEnter={() => setSelectedIndex(idx)}
-                      className={`flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors ${
+                      className={`group flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors ${
                         isSelected ? "bg-accent text-accent-foreground" : "hover:bg-accent hover:text-accent-foreground"
                       }`}
                     >
-                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border ${isSelected ? "border-border bg-background" : "border-border bg-muted"}`}>
-                        <Icon size={14} className="text-muted-foreground" />
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border ${isSelected ? "border-border bg-background text-foreground" : "border-border bg-muted text-muted-foreground"}`}>
+                        <Icon size={14} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
-                        <p className="truncate text-xs text-muted-foreground">{item.subtitle}</p>
+                        <p className={`truncate text-sm font-medium ${isSelected ? "text-accent-foreground" : "text-foreground group-hover:text-accent-foreground"}`}>{item.title}</p>
+                        <p className={`truncate text-xs ${isSelected ? "text-accent-foreground/80" : "text-muted-foreground group-hover:text-accent-foreground/80"}`}>{item.subtitle}</p>
                       </div>
                       {item.badge && (
-                        <span className="shrink-0 rounded-md border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        <span className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-medium ${isSelected ? "border-accent-foreground/20 bg-background/15 text-accent-foreground" : "border-border bg-muted text-muted-foreground group-hover:border-accent-foreground/20 group-hover:bg-background/15 group-hover:text-accent-foreground"}`}>
                           {item.badge}
                         </span>
                       )}

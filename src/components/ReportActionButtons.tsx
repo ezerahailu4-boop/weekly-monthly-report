@@ -5,12 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   IconArrowLeft,
-  IconCheck,
   IconCheckCircle,
   IconCrown,
   IconDownload,
   IconEdit,
-  IconMessageSquare,
   IconPrinter,
   IconSend,
   IconShield,

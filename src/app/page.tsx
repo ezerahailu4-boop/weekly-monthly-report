@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import NavBar from "@/components/NavBar";
 import { getCurrentUser } from "@/lib/auth";
 import {
