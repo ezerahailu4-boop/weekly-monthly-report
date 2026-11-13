@@ -17,5 +17,5 @@ export default async function NewWeeklyReportGatePage() {
     }
   }
 
-  return <WeeklyReportForm />;
+  return <WeeklyReportForm userName={user.full_name} />;
 }

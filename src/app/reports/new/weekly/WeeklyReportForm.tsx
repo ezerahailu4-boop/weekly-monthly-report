@@ -20,7 +20,7 @@ import {
   type WeeklyReportData,
 } from "@/types/report";
 
-export default function NewWeeklyReportPage() {
+export default function NewWeeklyReportPage({ userName }: { userName: string }) {
   const router = useRouter();
   const [data, setData] = useState<WeeklyReportData>(() => {
     if (typeof window !== "undefined") {
@@ -33,7 +33,7 @@ export default function NewWeeklyReportPage() {
         // ignore
       }
     }
-    return emptyWeeklyReport();
+    return { ...emptyWeeklyReport(), preparedBy: userName };
   });
   const [error, setError] = useState<string | null>(null);
   const [savingStatus, setSavingStatus] = useState<"idle" | "draft" | "submitted">("idle");
@@ -239,13 +239,11 @@ export default function NewWeeklyReportPage() {
                 onChange={(e) => update("reportingWeekTo", e.target.value)}
               />
             </Field>
-            <Field label="Prepared By" required hint="Full Name & Title">
+            <Field label="Prepared By" hint="Auto-filled from your account">
               <input
-                required
-                placeholder="e.g. Operations Department Lead"
-                className={inputClass}
+                readOnly
+                className={`${inputClass} cursor-default opacity-70`}
                 value={data.preparedBy}
-                onChange={(e) => update("preparedBy", e.target.value)}
               />
             </Field>
           </div>

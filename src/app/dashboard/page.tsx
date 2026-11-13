@@ -567,6 +567,7 @@ export default async function DashboardPage({
             <div className="inline-flex h-9 items-center rounded-lg bg-muted p-1 text-muted-foreground text-xs border border-border/60">
               <Link
                 href="/dashboard?view=company"
+                scroll={false}
                 className={`rounded-md px-3 py-1 font-semibold transition-all ${
                   activeView === "company"
                     ? "bg-card text-foreground shadow-2xs"
@@ -577,6 +578,7 @@ export default async function DashboardPage({
               </Link>
               <Link
                 href="/dashboard?view=personal"
+                scroll={false}
                 className={`rounded-md px-3 py-1 font-semibold transition-all ${
                   isPersonalView
                     ? "bg-card text-foreground shadow-2xs"
@@ -587,6 +589,7 @@ export default async function DashboardPage({
               </Link>
               <Link
                 href="/dashboard?view=not_submitted"
+                scroll={false}
                 className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 font-semibold transition-all ${
                   isMissingView
                     ? "bg-card text-foreground shadow-2xs"
