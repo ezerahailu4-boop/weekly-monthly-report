@@ -86,10 +86,10 @@ function SidebarContent({
   return (
     <>
       {/* Brand */}
-      <div className={`flex h-14 items-center border-b border-sidebar-border px-4 ${collapsed && !mobile ? "justify-center" : "gap-3"}`}>
+      <div className={`flex h-16 items-center border-b border-sidebar-border px-3 ${collapsed && !mobile ? "justify-center" : "gap-3"}`}>
         <Link href="/dashboard" onClick={onNavigate} className="flex items-center gap-3 min-w-0" title="YETAF Holding">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg ring-1 ring-border">
-            <Image src="/logo.jpg" alt="YETAF" width={64} height={64} className="h-full w-full object-contain" priority />
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl ring-1 ring-border">
+            <Image src="/logo.jpg" alt="YETAF" width={96} height={96} className="h-full w-full object-contain" priority />
           </div>
           {(!collapsed || mobile) && (
             <div className="min-w-0">
