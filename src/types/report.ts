@@ -67,6 +67,7 @@ export const emptyMonthlyGoalRow = (): MonthlyGoalRow => ({
 });
 
 export interface MonthlyReportData {
+  preparedBy: string;
   statusOfDirections: string;
   executiveSummary: string;
   goalRows: MonthlyGoalRow[];
@@ -79,6 +80,7 @@ export interface MonthlyReportData {
 }
 
 export const emptyMonthlyReport = (): MonthlyReportData => ({
+  preparedBy: "",
   statusOfDirections: "",
   executiveSummary: "",
   goalRows: [emptyMonthlyGoalRow()],

@@ -17,5 +17,5 @@ export default async function NewMonthlyReportGatePage() {
     }
   }
 
-  return <MonthlyReportForm />;
+  return <MonthlyReportForm userName={user.full_name} />;
 }

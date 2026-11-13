@@ -27,7 +27,7 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
       try {
         const cached = localStorage.getItem("yetta_weekly_draft");
         if (cached) {
-          return { ...emptyWeeklyReport(), ...JSON.parse(cached) };
+          return { ...emptyWeeklyReport(), ...JSON.parse(cached), preparedBy: userName };
         }
       } catch {
         // ignore
@@ -119,7 +119,7 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
     const sample: WeeklyReportData = {
       reportingWeekFrom: lastWeek.toISOString().slice(0, 10),
       reportingWeekTo: today.toISOString().slice(0, 10),
-      preparedBy: "Operations Department Lead",
+      preparedBy: userName,
       executiveSummary:
         "1. Completed Q4 distribution logistics turnaround 1.5 days ahead of schedule.\n2. Subsidiary fleet uptime reached 98.4%, exceeding the 95% target.\n3. Fuel price volatility continues to require active freight indexing and board tariff review.",
       kpiRows: [

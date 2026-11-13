@@ -19,7 +19,7 @@ import {
   type MonthlyReportData,
 } from "@/types/report";
 
-export default function NewMonthlyReportPage() {
+export default function NewMonthlyReportPage({ userName }: { userName: string }) {
   const router = useRouter();
   const [periodStart, setPeriodStart] = useState(() => {
     if (typeof window !== "undefined") {
@@ -47,12 +47,12 @@ export default function NewMonthlyReportPage() {
     if (typeof window !== "undefined") {
       try {
         const cached = localStorage.getItem("yetta_monthly_draft");
-        if (cached) return { ...emptyMonthlyReport(), ...(JSON.parse(cached).data || {}) };
+        if (cached) return { ...emptyMonthlyReport(), ...(JSON.parse(cached).data || {}), preparedBy: userName };
       } catch {
         // ignore
       }
     }
-    return emptyMonthlyReport();
+    return { ...emptyMonthlyReport(), preparedBy: userName };
   });
   const [error, setError] = useState<string | null>(null);
   const [savingStatus, setSavingStatus] = useState<"idle" | "draft" | "submitted">("idle");
@@ -145,6 +145,7 @@ export default function NewMonthlyReportPage() {
     setPeriodEnd(endStr);
 
     const sample: MonthlyReportData = {
+      preparedBy: userName,
       statusOfDirections:
         "1. Executive Committee mandated restructuring of subsidiary warehousing logistics: 100% completed with revised operational SLAs.\n2. Treasury requirement to hedge FX exposure: Treasury committee approved hedging policy on October 14th.\n3. IT security posture hardening: Multi-factor authentication rolled out to 100% of corporate accounts.",
       executiveSummary:
@@ -253,7 +254,7 @@ export default function NewMonthlyReportPage() {
           title="Monthly Reporting Period"
           description="Specify the monthly reporting cycle window."
         >
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-3 gap-4">
             <Field label="Period Start" required>
               <input
                 type="date"
@@ -270,6 +271,13 @@ export default function NewMonthlyReportPage() {
                 className={inputClass}
                 value={periodEnd}
                 onChange={(e) => setPeriodEnd(e.target.value)}
+              />
+            </Field>
+            <Field label="Prepared By" hint="Auto-filled from your account">
+              <input
+                readOnly
+                className={`${inputClass} cursor-default opacity-70`}
+                value={data.preparedBy}
               />
             </Field>
           </div>
