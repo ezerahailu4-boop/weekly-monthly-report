@@ -12,6 +12,11 @@ import {
   type StaffTaskCounts,
   type TrackedStaffMember,
 } from "@/components/StaffSubmissionTracker";
+import {
+  buildMonthOptions,
+  buildWeekOptions,
+  findBestReportInPeriod,
+} from "@/lib/compliancePeriods";
 import { AppShell } from "@/components/AppShell";
 import {
   IconAlertCircle,
@@ -49,6 +54,8 @@ export default async function DashboardPage({
 
   // By default, Super Admin and Admin view all group submissions; employees view their own.
   const activeView = params.view || (isPrivileged ? "company" : "personal");
+  const isMissingView = activeView === "not_submitted" || activeView === "missing";
+  const isPersonalView = activeView === "personal";
 
   interface DbReportRow {
     id: string;
@@ -70,41 +77,24 @@ export default async function DashboardPage({
   }
 
   // Query reports from Neon
-  let reportRows: DbReportRow[];
+  let rawReportRows: DbReportRow[];
   if (isPrivileged) {
-    if (activeView === "personal") {
-      reportRows = (await sql`
-        SELECT r.id, r.user_id, r.report_type,
-               to_char(r.period_start, 'YYYY-MM-DD') as period_start,
-               to_char(r.period_end, 'YYYY-MM-DD') as period_end,
-               r.status, r.data, r.review_notes, r.reviewed_by, r.reviewed_at,
-               r.created_at, r.updated_at,
-               u.full_name as author_name, u.department as author_department, u.email as author_email,
-               rev.full_name as reviewer_name
-        FROM reports r
-        LEFT JOIN users u ON r.user_id = u.id
-        LEFT JOIN users rev ON r.reviewed_by = rev.id
-        WHERE r.user_id = ${user.id}
-        ORDER BY r.created_at DESC;
-      `) as DbReportRow[];
-    } else {
-      // Company-wide view: CEO & Admin see EVERYTHING
-      reportRows = (await sql`
-        SELECT r.id, r.user_id, r.report_type,
-               to_char(r.period_start, 'YYYY-MM-DD') as period_start,
-               to_char(r.period_end, 'YYYY-MM-DD') as period_end,
-               r.status, r.data, r.review_notes, r.reviewed_by, r.reviewed_at,
-               r.created_at, r.updated_at,
-               u.full_name as author_name, u.department as author_department, u.email as author_email,
-               rev.full_name as reviewer_name
-        FROM reports r
-        LEFT JOIN users u ON r.user_id = u.id
-        LEFT JOIN users rev ON r.reviewed_by = rev.id
-        ORDER BY r.created_at DESC;
-      `) as DbReportRow[];
-    }
+    // For CEO & Admins, retrieve all submissions to evaluate group compliance and missing staff
+    rawReportRows = (await sql`
+      SELECT r.id, r.user_id, r.report_type,
+             to_char(r.period_start, 'YYYY-MM-DD') as period_start,
+             to_char(r.period_end, 'YYYY-MM-DD') as period_end,
+             r.status, r.data, r.review_notes, r.reviewed_by, r.reviewed_at,
+             r.created_at, r.updated_at,
+             u.full_name as author_name, u.department as author_department, u.email as author_email,
+             rev.full_name as reviewer_name
+      FROM reports r
+      LEFT JOIN users u ON r.user_id = u.id
+      LEFT JOIN users rev ON r.reviewed_by = rev.id
+      ORDER BY r.created_at DESC;
+    `) as DbReportRow[];
   } else {
-    reportRows = (await sql`
+    rawReportRows = (await sql`
       SELECT r.id, r.user_id, r.report_type,
              to_char(r.period_start, 'YYYY-MM-DD') as period_start,
              to_char(r.period_end, 'YYYY-MM-DD') as period_end,
@@ -120,7 +110,7 @@ export default async function DashboardPage({
     `) as DbReportRow[];
   }
 
-  const reportList: ReportRow[] = reportRows.map((r) => ({
+  const allReportList: ReportRow[] = rawReportRows.map((r) => ({
     id: r.id,
     user_id: r.user_id,
     report_type: r.report_type,
@@ -143,6 +133,10 @@ export default async function DashboardPage({
     },
   }));
 
+  const reportList: ReportRow[] = isPersonalView
+    ? allReportList.filter((r) => r.user_id === user.id)
+    : allReportList;
+
   // Fetch portal settings, open tasks, warnings, and (for CEO/Admin) staff compliance data in parallel
   const [settings, myOpenTasks, staffRows, taskSummaryRows, allWarnings, myWarnings] =
     await Promise.all([
@@ -154,14 +148,14 @@ export default async function DashboardPage({
         ORDER BY due_date ASC NULLS LAST, created_at DESC
         LIMIT 4;
       `,
-      isPrivileged && activeView === "company"
+      isPrivileged
         ? sql`
             SELECT id, full_name, email, department, role, telegram_chat_id
             FROM users
             ORDER BY full_name ASC;
           `
         : Promise.resolve([]),
-      isPrivileged && activeView === "company"
+      isPrivileged
         ? sql`
             SELECT assigned_to,
                    COUNT(*) FILTER (WHERE status != 'completed')::int AS pending_tasks,
@@ -170,7 +164,7 @@ export default async function DashboardPage({
             GROUP BY assigned_to;
           `
         : Promise.resolve([]),
-      isPrivileged && activeView === "company"
+      isPrivileged
         ? getWarningsList()
         : Promise.resolve([]),
       getWarningsList(user.id),
@@ -201,6 +195,26 @@ export default async function DashboardPage({
   const todayEthYmd = new Intl.DateTimeFormat("en-CA", {
     timeZone: ETHIOPIA_TIMEZONE,
   }).format(new Date());
+
+  const activeWeekOption = buildWeekOptions(todayEthYmd, allReportList)[0];
+  const activeMonthOption = buildMonthOptions(todayEthYmd, allReportList)[0];
+
+  const notSubmittedStaff = isPrivileged
+    ? staffList.filter((m) => {
+        if (m.role !== "employee") return false;
+        const weekly = activeWeekOption
+          ? findBestReportInPeriod(allReportList, m.id, "weekly", activeWeekOption.start, activeWeekOption.end)
+          : null;
+        const monthly = activeMonthOption
+          ? findBestReportInPeriod(allReportList, m.id, "monthly", activeMonthOption.start, activeMonthOption.end)
+          : null;
+        const weeklySub = weekly?.status === "submitted" || weekly?.status === "reviewed";
+        const monthlySub = monthly?.status === "submitted" || monthly?.status === "reviewed";
+        return !weeklySub || !monthlySub;
+      })
+    : [];
+
+  const notSubmittedCount = notSubmittedStaff.length;
 
   const totalCount = reportList.length;
   const weeklyCount = reportList.filter((r) => r.report_type === "weekly").length;
@@ -549,7 +563,7 @@ export default async function DashboardPage({
 
         {/* View Switcher (for CEO / Admin) */}
         {isPrivileged && (
-          <div className="flex items-center justify-between border-b border-border pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-3">
             <div className="inline-flex h-9 items-center rounded-lg bg-muted p-1 text-muted-foreground text-xs border border-border/60">
               <Link
                 href="/dashboard?view=company"
@@ -564,56 +578,87 @@ export default async function DashboardPage({
               <Link
                 href="/dashboard?view=personal"
                 className={`rounded-md px-3 py-1 font-semibold transition-all ${
-                  activeView === "personal"
+                  isPersonalView
                     ? "bg-card text-foreground shadow-2xs"
                     : "hover:text-foreground"
                 }`}
               >
                 My Personal Reports
               </Link>
+              <Link
+                href="/dashboard?view=not_submitted"
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 font-semibold transition-all ${
+                  isMissingView
+                    ? "bg-card text-foreground shadow-2xs"
+                    : "hover:text-foreground"
+                }`}
+              >
+                <span>Not Submitted</span>
+                {notSubmittedCount > 0 && (
+                  <span
+                    className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                      isMissingView
+                        ? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
+                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                    }`}
+                  >
+                    {notSubmittedCount}
+                  </span>
+                )}
+              </Link>
             </div>
 
             <span className="text-xs text-muted-foreground hidden sm:inline">
-              Viewing {activeView === "company" ? "all subsidiary entities" : "personal workspace"}
+              Viewing{" "}
+              {activeView === "company"
+                ? "all subsidiary entities"
+                : isMissingView
+                ? `personnel with missing submissions (${notSubmittedCount} pending)`
+                : "personal workspace"}
             </span>
           </div>
         )}
 
         {/* Registered Staff Weekly & Monthly Compliance Tracker (for CEO / Admin) */}
-        {isPrivileged && activeView === "company" && staffList.length > 0 && (
+        {isPrivileged && (activeView === "company" || isMissingView) && staffList.length > 0 && (
           <StaffSubmissionTracker
+            key={activeView}
             staffList={staffList}
-            reports={reportList}
+            reports={allReportList}
             taskStats={taskStats}
             todayEthYmd={todayEthYmd}
             telegramBotConfigured={!!settings.telegram_bot_token}
             initialWarnings={allWarnings}
+            initialComplianceFilter={isMissingView ? "missing_any" : "all"}
+            highlightMissingOnly={isMissingView}
           />
         )}
 
-        {/* Reports Table Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-              <IconFileText size={18} className="text-muted-foreground" />
-              <span>
-                {isPrivileged && activeView === "company"
-                  ? "Group Performance Submissions & Reviews"
-                  : "Report Submissions & Records"}
+        {/* Reports Table Section: hidden when in Not Submitted view */}
+        {!isMissingView && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                <IconFileText size={18} className="text-muted-foreground" />
+                <span>
+                  {isPrivileged && activeView === "company"
+                    ? "Group Performance Submissions & Reviews"
+                    : "Report Submissions & Records"}
+                </span>
+              </h2>
+              <span className="text-xs text-muted-foreground font-mono tabular-nums">
+                {reportList.length} records in view
               </span>
-            </h2>
-            <span className="text-xs text-muted-foreground font-mono tabular-nums">
-              {reportList.length} records in view
-            </span>
-          </div>
+            </div>
 
-          <DashboardReportsTable
-            initialReports={reportList}
-            showAuthor={isPrivileged && activeView === "company"}
-            isPrivileged={isPrivileged}
-            windowLocked={windowLocked}
-          />
-        </div>
+            <DashboardReportsTable
+              initialReports={reportList}
+              showAuthor={isPrivileged && activeView === "company"}
+              isPrivileged={isPrivileged}
+              windowLocked={windowLocked}
+            />
+          </div>
+        )}
       </div>
     </AppShell>
   );

@@ -53,6 +53,8 @@ export function StaffSubmissionTracker({
   todayEthYmd,
   telegramBotConfigured = false,
   initialWarnings = [],
+  initialComplianceFilter = "all",
+  highlightMissingOnly = false,
 }: {
   staffList: TrackedStaffMember[];
   reports: ReportRow[];
@@ -60,6 +62,8 @@ export function StaffSubmissionTracker({
   todayEthYmd: string;
   telegramBotConfigured?: boolean;
   initialWarnings?: DisciplinaryWarningRow[];
+  initialComplianceFilter?: ComplianceFilter;
+  highlightMissingOnly?: boolean;
 }) {
   const weekOptions = buildWeekOptions(todayEthYmd, reports);
   const monthOptions = buildMonthOptions(todayEthYmd, reports);
@@ -72,7 +76,7 @@ export function StaffSubmissionTracker({
   );
   const [roleScope, setRoleScope] = useState<"staff" | "all">("staff");
   const [complianceFilter, setComplianceFilter] =
-    useState<ComplianceFilter>("all");
+    useState<ComplianceFilter>(initialComplianceFilter);
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [remindingKey, setRemindingKey] = useState<string | null>(null);
@@ -390,15 +394,36 @@ export function StaffSubmissionTracker({
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-border pb-4">
         <div className="flex items-start gap-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-            <IconCheckCircle size={18} />
+          <div
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+              highlightMissingOnly
+                ? "bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                : "bg-accent/10 text-accent"
+            }`}
+          >
+            {highlightMissingOnly ? (
+              <IconAlertCircle size={18} />
+            ) : (
+              <IconCheckCircle size={18} />
+            )}
           </div>
           <div>
-            <h3 className="font-display text-sm sm:text-base font-bold text-foreground">
-              Registered Staff Weekly &amp; Monthly Submission Tracker
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-display text-sm sm:text-base font-bold text-foreground">
+                {highlightMissingOnly
+                  ? "Personnel With Missing Submissions"
+                  : "Registered Staff Weekly & Monthly Submission Tracker"}
+              </h3>
+              {highlightMissingOnly && (
+                <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-300 border border-rose-500/25">
+                  Action Required
+                </span>
+              )}
+            </div>
             <p className="text-[11px] sm:text-xs text-muted-foreground">
-              Compare every registered user side-by-side to see who submitted or missed their Weekly and Monthly reports.
+              {highlightMissingOnly
+                ? "Staff members who have not submitted their required weekly or monthly reports. Remind them via Telegram or issue verbal/written warnings."
+                : "Compare every registered user side-by-side to see who submitted or missed their Weekly and Monthly reports."}
             </p>
           </div>
         </div>
@@ -598,13 +623,21 @@ export function StaffSubmissionTracker({
 
         <div className="inline-flex flex-wrap items-center rounded-lg bg-muted p-1 text-muted-foreground text-xs border border-border/60">
           {(
-            [
-              { id: "all", label: "All" },
-              { id: "missing_weekly", label: "Missing Weekly" },
-              { id: "missing_monthly", label: "Missing Monthly" },
-              { id: "missing_any", label: "Missing Either" },
-              { id: "compliant", label: "Both Submitted" },
-            ] as const
+            highlightMissingOnly
+              ? [
+                  { id: "missing_any", label: "Missing Either" },
+                  { id: "missing_weekly", label: "Missing Weekly" },
+                  { id: "missing_monthly", label: "Missing Monthly" },
+                  { id: "all", label: "All Staff" },
+                  { id: "compliant", label: "Both Submitted" },
+                ] as const
+              : [
+                  { id: "all", label: "All Staff" },
+                  { id: "missing_weekly", label: "Missing Weekly" },
+                  { id: "missing_monthly", label: "Missing Monthly" },
+                  { id: "missing_any", label: "Missing Either" },
+                  { id: "compliant", label: "Both Submitted" },
+                ] as const
           ).map((pill) => (
             <button
               key={pill.id}
@@ -625,7 +658,9 @@ export function StaffSubmissionTracker({
       {/* Staff Compliance Table */}
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border py-10 text-center text-xs text-muted-foreground">
-          No registered users match the active filters.
+          {highlightMissingOnly
+            ? "All registered staff have submitted their required reports for this period. No missing submissions!"
+            : "No registered users match the active filters."}
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-border bg-card">
