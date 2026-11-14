@@ -7,6 +7,7 @@ import { getWarningsList } from "@/lib/warnings";
 import { ETHIOPIA_TIMEZONE } from "@/lib/windowSchedule";
 import { AdminUserManagement, type TeamMember } from "@/components/AdminUserManagement";
 import { AdminWindowSettings } from "@/components/AdminWindowSettings";
+import { AdminAnalytics } from "@/components/AdminAnalytics";
 import { DashboardReportsTable } from "@/components/DashboardReportsTable";
 import {
   StaffSubmissionTracker,
@@ -15,6 +16,7 @@ import {
 import { TaskWorkspace, type AssignableUser } from "@/components/TaskWorkspace";
 import { AppShell } from "@/components/AppShell";
 import {
+  IconBarChart,
   IconCheckSquare,
   IconCrown,
   IconFileText,
@@ -51,7 +53,8 @@ export default async function AdminPage({
   const activeTab =
     params.tab === "reports" ||
     params.tab === "tasks" ||
-    params.tab === "settings"
+    params.tab === "settings" ||
+    params.tab === "analytics"
       ? params.tab
       : "team";
 
@@ -279,6 +282,18 @@ export default async function AdminPage({
               <IconFileText size={14} />
               <span>Reports ({allReports.length})</span>
             </Link>
+
+            <Link
+              href="/admin?tab=analytics"
+              className={`inline-flex items-center gap-2 rounded-md px-3.5 py-1.5 font-semibold transition-all ${
+                activeTab === "analytics"
+                  ? "bg-card text-foreground shadow-2xs"
+                  : "hover:text-foreground"
+              }`}
+            >
+              <IconBarChart size={14} />
+              <span>Analytics</span>
+            </Link>
           </div>
         </div>
 
@@ -315,6 +330,18 @@ export default async function AdminPage({
               maskedToken: maskToken(settings.telegram_bot_token),
               envOverride: !!process.env.TELEGRAM_BOT_TOKEN,
             }}
+          />
+        )}
+
+        {activeTab === "analytics" && (
+          <AdminAnalytics
+            reports={allReports}
+            staffList={teamList.map((m) => ({
+              id: m.id,
+              full_name: m.full_name ?? "",
+              department: m.department ?? "",
+              role: m.role,
+            }))}
           />
         )}
 
