@@ -5,7 +5,9 @@ import { sql } from "@/lib/db";
 import { getPortalSettings } from "@/lib/portalSettings";
 import { getWarningsList } from "@/lib/warnings";
 import { ETHIOPIA_TIMEZONE } from "@/lib/windowSchedule";
+import { getWeekBounds, getMonthBounds } from "@/lib/compliancePeriods";
 import { AdminUserManagement, type TeamMember } from "@/components/AdminUserManagement";
+import { OverdueAlertsPanel, type OverdueEntry } from "@/components/OverdueAlertsPanel";
 import { AdminWindowSettings } from "@/components/AdminWindowSettings";
 import { AdminAnalytics } from "@/components/AdminAnalytics";
 import { DashboardReportsTable } from "@/components/DashboardReportsTable";
@@ -185,6 +187,36 @@ export default async function AdminPage({
     timeZone: ETHIOPIA_TIMEZONE,
   }).format(new Date());
 
+  // Compute overdue staff for current week + month
+  const currentWeekBounds = getWeekBounds(todayEthDate);
+  const currentMonthBounds = getMonthBounds(todayEthDate.slice(0, 7));
+  const submittedSet = new Set(
+    allReports
+      .filter((r) => r.status === "submitted" || r.status === "reviewed")
+      .filter(
+        (r) =>
+          (r.report_type === "weekly" &&
+            r.period_start <= currentWeekBounds.end &&
+            r.period_end >= currentWeekBounds.start) ||
+          (r.report_type === "monthly" &&
+            r.period_start <= currentMonthBounds.end &&
+            r.period_end >= currentMonthBounds.start)
+      )
+      .map((r) => `${r.user_id}:${r.report_type}`)
+  );
+  const overdueList: OverdueEntry[] = teamList
+    .filter((m) => m.role === "employee")
+    .map((m) => ({
+      id: m.id,
+      full_name: m.full_name ?? m.email ?? "",
+      email: m.email ?? "",
+      department: m.department ?? null,
+      telegram_chat_id: m.telegram_chat_id ?? null,
+      missingWeekly: !submittedSet.has(`${m.id}:weekly`),
+      missingMonthly: !submittedSet.has(`${m.id}:monthly`),
+    }))
+    .filter((e) => e.missingWeekly || e.missingMonthly);
+
   const taskStats: Record<string, StaffTaskCounts> = {};
   for (const t of allTasks) {
     if (!taskStats[t.assigned_to]) {
@@ -347,6 +379,13 @@ export default async function AdminPage({
 
         {activeTab === "reports" && (
           <div className="space-y-6">
+            <OverdueAlertsPanel
+              initialOverdue={overdueList}
+              telegramConfigured={!!settings.telegram_bot_token}
+              weekLabel={`${currentWeekBounds.start} – ${currentWeekBounds.end}`}
+              monthLabel={currentMonthBounds.start.slice(0, 7)}
+            />
+
             <StaffSubmissionTracker
               staffList={teamList.map((m) => ({
                 id: m.id,
