@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { getReportingWindowStatus } from "@/lib/portalSettings";
+import { notifyAdminsReportSubmitted } from "@/lib/telegram";
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -44,6 +45,20 @@ export async function POST(request: Request) {
       )
       RETURNING id, user_id, report_type, period_start, period_end, status, created_at;
     `;
+
+    // Notify admins via Telegram when a report is submitted (not draft)
+    if ((status || "submitted") === "submitted") {
+      const origin = request.headers.get("origin") || request.headers.get("referer")?.split("/").slice(0, 3).join("/") || null;
+      notifyAdminsReportSubmitted({
+        reportId: rows[0].id,
+        reportType: report_type,
+        authorName: user.full_name,
+        authorDepartment: user.department,
+        periodStart: period_start,
+        periodEnd: period_end,
+        portalOrigin: origin,
+      }).catch(() => {});
+    }
 
     return NextResponse.json({ success: true, report: rows[0] });
   } catch (err: unknown) {

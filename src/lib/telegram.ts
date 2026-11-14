@@ -266,6 +266,87 @@ export async function syncTelegramConnections(): Promise<{
   }
 }
 
+export async function notifyAdminsReportSubmitted(params: {
+  reportId: string;
+  reportType: string;
+  authorName: string;
+  authorDepartment: string;
+  periodStart: string;
+  periodEnd: string;
+  portalOrigin?: string | null;
+}): Promise<void> {
+  const settings = await getPortalSettings();
+  if (!settings.telegram_bot_token) return;
+
+  const admins = await sql`
+    SELECT telegram_chat_id FROM users
+    WHERE role IN ('admin', 'super_admin') AND telegram_chat_id IS NOT NULL;
+  `;
+  if (admins.length === 0) return;
+
+  const reportUrl = params.portalOrigin
+    ? `${params.portalOrigin.replace(/\/$/, "")}/reports/${params.reportId}`
+    : null;
+
+  const text =
+    `📥 <b>New Report Submitted — YETAF HOLDING</b>\n\n` +
+    `<b>Author:</b> ${escapeTelegramHtml(params.authorName)}\n` +
+    `<b>Department:</b> ${escapeTelegramHtml(params.authorDepartment)}\n` +
+    `<b>Type:</b> ${params.reportType === "weekly" ? "Weekly Performance" : "Monthly Progress"}\n` +
+    `<b>Period:</b> ${escapeTelegramHtml(params.periodStart)} → ${escapeTelegramHtml(params.periodEnd)}\n\n` +
+    `Open the portal to review and sign off.`;
+
+  await Promise.all(
+    admins.map((a: Record<string, string>) =>
+      sendTelegramMessage({
+        botToken: settings.telegram_bot_token!,
+        chatId: a.telegram_chat_id,
+        text,
+        portalHttpsUrl: reportUrl,
+        buttonText: "Review Report",
+      })
+    )
+  );
+}
+
+export async function notifyAuthorReportReviewed(params: {
+  reportId: string;
+  reportType: string;
+  reviewerName: string;
+  reviewNotes?: string | null;
+  portalOrigin?: string | null;
+  authorUserId: string;
+}): Promise<void> {
+  const settings = await getPortalSettings();
+  if (!settings.telegram_bot_token) return;
+
+  const rows = await sql`
+    SELECT telegram_chat_id, full_name FROM users WHERE id = ${params.authorUserId} LIMIT 1;
+  `;
+  if (rows.length === 0 || !rows[0].telegram_chat_id) return;
+
+  const reportUrl = params.portalOrigin
+    ? `${params.portalOrigin.replace(/\/$/, "")}/reports/${params.reportId}`
+    : null;
+
+  const notesText = params.reviewNotes
+    ? `\n\n<b>Feedback:</b>\n${escapeTelegramHtml(params.reviewNotes)}`
+    : "";
+
+  const text =
+    `✅ <b>Report Reviewed — YETAF HOLDING</b>\n\n` +
+    `Your ${params.reportType === "weekly" ? "Weekly Performance" : "Monthly Progress"} report has been reviewed and signed off by <b>${escapeTelegramHtml(params.reviewerName)}</b>.` +
+    notesText;
+
+  await sendTelegramMessage({
+    botToken: settings.telegram_bot_token,
+    chatId: rows[0].telegram_chat_id,
+    text,
+    portalHttpsUrl: reportUrl,
+    buttonText: "View Report & Feedback",
+  });
+}
+
 const PRIORITY_BADGE: Record<string, string> = {
   urgent: "🔴 URGENT",
   high: "🟠 HIGH",

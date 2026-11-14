@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { getReportingWindowStatus } from "@/lib/portalSettings";
+import { notifyAuthorReportReviewed } from "@/lib/telegram";
 
 export async function PUT(
   request: Request,
@@ -86,6 +87,19 @@ export async function PUT(
         WHERE id = ${id}
         RETURNING id, report_type, status, review_notes, reviewed_by, reviewed_at, updated_at;
       `;
+    }
+
+    // Notify report author via Telegram when marked as reviewed
+    if (isMarkingReviewed && !report.reviewed_by) {
+      const origin = request.headers.get("origin") || request.headers.get("referer")?.split("/").slice(0, 3).join("/") || null;
+      notifyAuthorReportReviewed({
+        reportId: id,
+        reportType: updatedRows[0].report_type,
+        reviewerName: user.full_name,
+        reviewNotes: review_notes ?? null,
+        portalOrigin: origin,
+        authorUserId: report.user_id,
+      }).catch(() => {});
     }
 
     return NextResponse.json({ success: true, report: updatedRows[0] });
