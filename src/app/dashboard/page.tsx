@@ -6,6 +6,7 @@ import { getPortalSettings } from "@/lib/portalSettings";
 import { getWarningsList } from "@/lib/warnings";
 import { evaluateReportingWindow, ETHIOPIA_TIMEZONE } from "@/lib/windowSchedule";
 import { DashboardReportsTable } from "@/components/DashboardReportsTable";
+import { ExecutiveSummaryTrigger } from "@/components/ExecutiveSummaryModal";
 import { ReportingWindowBanner } from "@/components/ReportingWindowBanner";
 import {
   StaffSubmissionTracker,
@@ -275,6 +276,12 @@ export default async function DashboardPage({
           <div className="flex flex-wrap items-center gap-2">
             {isPrivileged && (
               <>
+                <ExecutiveSummaryTrigger
+                  reports={allReportList}
+                  staff={staffList}
+                  todayEthYmd={todayEthYmd}
+                />
+
                 <a
                   href="/api/reports/export/csv"
                   download
