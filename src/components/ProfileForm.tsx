@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { IconCheck, IconLock, IconUser } from "./Icons";
 
 const DEPARTMENTS = [
-  "Office of the CEO & Board",
+  "Office of Direction & Board",
   "Executive Management",
   "Logistics",
   "Finance & Accounting",
@@ -187,7 +187,7 @@ export function ProfileForm({
               </span>
               <span className="text-xs text-muted-foreground">
                 {initialProfile.role === "super_admin"
-                  ? "Office of the CEO: Panoramic holding-wide oversight and executive governance."
+                  ? "Office of Direction: Panoramic holding-wide oversight and directive governance."
                   : initialProfile.role === "admin"
                   ? "Full administrative and account provisioning privileges."
                   : "Department reporting and personal submission access."}

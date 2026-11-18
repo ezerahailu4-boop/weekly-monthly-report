@@ -1,6 +1,4 @@
 import {
-  AlignmentType,
-  BorderStyle,
   Document,
   Packer,
   Paragraph,
@@ -11,7 +9,15 @@ import {
   TextRun,
   WidthType,
 } from "docx";
+import { buildOfficialDocxLetterhead } from "./officialLetterhead";
 import type { ReportType } from "@/types/report";
+
+/*
+ * [AUDIT FLAG — HR POLICY REVIEW PENDING]
+ * Hardcoded 2-strike penalty letter wording & escalation logic.
+ * Automatic enforcement has been paused (auto_warn_enabled = false, cron disabled)
+ * pending formal HR policy verification.
+ */
 
 export interface WarningLetterInput {
   letterRef: string;
@@ -124,47 +130,11 @@ export async function buildWarningLetterDocx(
     sections: [
       {
         children: [
-          // Corporate Header
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 60 },
-            children: [
-              new TextRun({
-                text: "YETAF HOLDING LIMITED",
-                bold: true,
-                size: 32,
-                color: "18181B",
-              }),
-            ],
-          }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 200 },
-            border: {
-              bottom: { style: BorderStyle.SINGLE, size: 12, color: "B48628" },
-            },
-            children: [
-              new TextRun({
-                text: "OFFICE OF EXECUTIVE ADMINISTRATION & HUMAN RESOURCES · ADDIS ABABA, ETHIOPIA",
-                bold: true,
-                size: 18,
-                color: "78716C",
-              }),
-            ],
-          }),
-
-          // Classification Badge Title
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 240, after: 220 },
-            children: [
-              new TextRun({
-                text: "OFFICIAL WRITTEN WARNING LETTER",
-                bold: true,
-                size: 26,
-                color: "991B1B",
-              }),
-            ],
+          ...buildOfficialDocxLetterhead({
+            documentTitle: "Official Written Warning Letter",
+            documentSubtitle: `HR Compliance Notice · Ref ${input.letterRef}`,
+            referenceCode: input.letterRef,
+            dateLabel: input.issuedDateLabel,
           }),
 
           // Metadata Table
@@ -255,7 +225,7 @@ export async function buildWarningLetterDocx(
             spacing: { before: 240 },
             children: [
               new TextRun({
-                text: "CC: Office of the Chief Executive Officer · Personnel Compliance Record",
+                text: "CC: Office of Direction · Personnel Compliance Record",
                 italics: true,
                 size: 18,
                 color: "71717A",

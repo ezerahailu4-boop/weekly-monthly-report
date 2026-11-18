@@ -26,6 +26,7 @@ import {
   IconCheckCircle,
   IconCheckSquare,
   IconClock,
+  IconCompass,
   IconCrown,
   IconDownload,
   IconFileText,
@@ -33,6 +34,7 @@ import {
   IconLock,
   IconPlus,
   IconShield,
+  IconTarget,
   IconTrendingUp,
   IconUser,
 } from "@/components/Icons";
@@ -80,7 +82,7 @@ export default async function DashboardPage({
   // Query reports from Neon
   let rawReportRows: DbReportRow[];
   if (isPrivileged) {
-    // For CEO & Admins, retrieve all submissions to evaluate group compliance and missing staff
+    // For Direction & Admins, retrieve all submissions to evaluate group compliance and missing staff
     rawReportRows = (await sql`
       SELECT r.id, r.user_id, r.report_type,
              to_char(r.period_start, 'YYYY-MM-DD') as period_start,
@@ -138,7 +140,7 @@ export default async function DashboardPage({
     ? allReportList.filter((r) => r.user_id === user.id)
     : allReportList;
 
-  // Fetch portal settings, open tasks, warnings, and (for CEO/Admin) staff compliance data in parallel
+  // Fetch portal settings, open tasks, warnings, and (for Direction/Admin) staff compliance data in parallel
   const [settings, myOpenTasks, staffRows, taskSummaryRows, allWarnings, myWarnings] =
     await Promise.all([
       getPortalSettings(),
@@ -229,8 +231,8 @@ export default async function DashboardPage({
   return (
     <AppShell
       user={user}
-      title={isSuperAdmin ? "CEO Command Center" : "Executive Dashboard"}
-      subtitle={isSuperAdmin ? "Yetaf Holding Group Oversight" : undefined}
+      title={isSuperAdmin ? "Direction Command Center" : "Report Follow-up Center"}
+      subtitle={isSuperAdmin ? "Directive Follow-up System · Yetaf Holding" : "Directive Follow-up System"}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
         {/* Executive Header Banner */}
@@ -240,7 +242,7 @@ export default async function DashboardPage({
               {isSuperAdmin ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-950 px-2.5 py-0.5 text-[11px] font-bold text-amber-300 ring-1 ring-amber-500/30">
                   <IconCrown size={12} className="text-amber-400" />
-                  Office of the CEO &amp; Board
+                  Office of Direction &amp; Board
                 </span>
               ) : isAdmin ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-bold text-primary-foreground">
@@ -254,14 +256,14 @@ export default async function DashboardPage({
                 </span>
               )}
               <span>&middot;</span>
-              <span>YETAF HOLDING LIMITED</span>
+              <span>DIRECTIVE FOLLOW-UP SYSTEM</span>
             </div>
 
             <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
               {isSuperAdmin
-                ? "Executive Command Center"
+                ? "Direction Follow-up Command Center"
                 : isAdmin
-                ? `Executive Portal · Welcome, ${displayName}`
+                ? `Report Follow-up Center · ${displayName}`
                 : `Welcome back, ${displayName}`}
             </h1>
             <p className="mt-1 text-xs sm:text-sm text-muted-foreground max-w-3xl">
@@ -329,6 +331,22 @@ export default async function DashboardPage({
                 </Link>
               </>
             )}
+
+            <Link
+              href="/directives"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs transition-all hover:bg-muted"
+            >
+              <IconCompass size={14} className="text-accent" />
+              Directives
+            </Link>
+
+            <Link
+              href="/plans"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs transition-all hover:bg-muted"
+            >
+              <IconTarget size={14} className="text-accent" />
+              Action Plans
+            </Link>
 
             <Link
               href="/tasks"
@@ -568,7 +586,7 @@ export default async function DashboardPage({
           </div>
         </div>
 
-        {/* View Switcher (for CEO / Admin) */}
+        {/* View Switcher (for Direction / Admin) */}
         {isPrivileged && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-3">
             <div className="inline-flex h-9 items-center rounded-lg bg-muted p-1 text-muted-foreground text-xs border border-border/60">
@@ -581,7 +599,7 @@ export default async function DashboardPage({
                     : "hover:text-foreground"
                 }`}
               >
-                {isSuperAdmin ? "CEO Panoramic View (All Subsidiaries)" : "All Company Submissions"}
+                {isSuperAdmin ? "Direction Panoramic View (All Subsidiaries)" : "All Company Submissions"}
               </Link>
               <Link
                 href="/dashboard?view=personal"
@@ -629,7 +647,7 @@ export default async function DashboardPage({
           </div>
         )}
 
-        {/* Registered Staff Weekly & Monthly Compliance Tracker (for CEO / Admin) */}
+        {/* Registered Staff Weekly & Monthly Compliance Tracker (for Direction / Admin) */}
         {isPrivileged && (activeView === "company" || isMissingView) && staffList.length > 0 && (
           <StaffSubmissionTracker
             key={activeView}

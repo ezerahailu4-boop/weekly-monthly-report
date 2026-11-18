@@ -17,32 +17,36 @@ export default async function TasksPage() {
   const [taskRows, userRows] = await Promise.all([
     isPrivileged
       ? sql`
-          SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by,
+          SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by, t.directive_id,
                  t.status, t.priority, to_char(t.due_date, 'YYYY-MM-DD') as due_date,
                  t.completion_note, t.completed_at, t.telegram_notified_at, t.telegram_error,
                  t.created_at, t.updated_at,
                  u.full_name as assignee_name, u.email as assignee_email,
                  u.department as assignee_department, u.telegram_chat_id as assignee_telegram_chat_id,
-                 ab.full_name as assigned_by_name
+                 ab.full_name as assigned_by_name,
+                 d.reference_code as directive_ref, d.title as directive_title
           FROM tasks t
           JOIN users u ON t.assigned_to = u.id
           LEFT JOIN users ab ON t.assigned_by = ab.id
+          LEFT JOIN directives d ON t.directive_id = d.id
           ORDER BY
             CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END ASC,
             t.due_date ASC NULLS LAST,
             t.created_at DESC;
         `
       : sql`
-          SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by,
+          SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by, t.directive_id,
                  t.status, t.priority, to_char(t.due_date, 'YYYY-MM-DD') as due_date,
                  t.completion_note, t.completed_at, t.telegram_notified_at, t.telegram_error,
                  t.created_at, t.updated_at,
                  u.full_name as assignee_name, u.email as assignee_email,
                  u.department as assignee_department, u.telegram_chat_id as assignee_telegram_chat_id,
-                 ab.full_name as assigned_by_name
+                 ab.full_name as assigned_by_name,
+                 d.reference_code as directive_ref, d.title as directive_title
           FROM tasks t
           JOIN users u ON t.assigned_to = u.id
           LEFT JOIN users ab ON t.assigned_by = ab.id
+          LEFT JOIN directives d ON t.directive_id = d.id
           WHERE t.assigned_to = ${user.id}
           ORDER BY
             CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END ASC,
@@ -64,6 +68,9 @@ export default async function TasksPage() {
     description: t.description || "",
     assigned_to: t.assigned_to,
     assigned_by: t.assigned_by,
+    directive_id: t.directive_id ?? null,
+    directive_ref: t.directive_ref ?? null,
+    directive_title: t.directive_title ?? null,
     status: t.status,
     priority: t.priority,
     due_date: t.due_date,

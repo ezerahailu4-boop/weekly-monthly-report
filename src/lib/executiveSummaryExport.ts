@@ -244,7 +244,7 @@ export function renderExecutiveSummaryHtml(summary: ExecutiveSummaryResult): str
 </head>
 <body>
   <div class="header">
-    <div class="header-kicker">YETAF HOLDING LIMITED · OFFICE OF THE CEO &amp; EXECUTIVE MANAGEMENT</div>
+    <div class="header-kicker">YETAF HOLDING LIMITED · OFFICE OF DIRECTION &amp; REPORT FOLLOW-UP CENTER</div>
     <h1>${esc(reportTypeTitle)}</h1>
     <div class="header-meta">
       <span><strong>Period:</strong> ${esc(meta.periodLabel)}</span>

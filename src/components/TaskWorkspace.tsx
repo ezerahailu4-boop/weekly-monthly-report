@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   IconAlertCircle,
@@ -633,6 +634,16 @@ export function TaskWorkspace({
                       >
                         {task.priority}
                       </span>
+
+                      {task.directive_id && task.directive_ref && (
+                        <Link
+                          href={`/directives/${task.directive_id}`}
+                          className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold text-accent border border-accent/25 hover:bg-accent/20 transition-colors"
+                          title={task.directive_title || "Open linked directive"}
+                        >
+                          Directive {task.directive_ref}
+                        </Link>
+                      )}
 
                       {isOverdue && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-300 border border-rose-500/30">

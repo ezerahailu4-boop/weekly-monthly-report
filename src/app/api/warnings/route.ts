@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
   if (user.role !== "admin" && user.role !== "super_admin") {
     return NextResponse.json(
-      { error: "Forbidden: Admin or CEO privileges required." },
+      { error: "Forbidden: Admin or Direction privileges required." },
       { status: 403 }
     );
   }

@@ -9,6 +9,7 @@ import {
   IconCheckSquare,
   IconChevronLeft,
   IconChevronRight,
+  IconCompass,
   IconCrown,
   IconFileText,
   IconLayers,
@@ -16,6 +17,7 @@ import {
   IconPlus,
   IconSearch,
   IconShield,
+  IconTarget,
   IconUser,
   IconX,
 } from "./Icons";
@@ -93,8 +95,8 @@ function SidebarContent({
           </div>
           {(!collapsed || mobile) && (
             <div className="min-w-0">
-              <p className="text-sm font-semibold tracking-tight text-sidebar-foreground truncate">YETAF Holding</p>
-              <p className="text-[10px] text-muted-foreground truncate">Executive Portal</p>
+              <p className="text-sm font-bold tracking-tight text-sidebar-foreground truncate">Directive Follow-up</p>
+              <p className="text-[10px] text-muted-foreground truncate">Report Follow-up Center</p>
             </div>
           )}
         </Link>
@@ -196,7 +198,7 @@ function SidebarContent({
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-semibold text-sidebar-foreground leading-tight">{fullName}</p>
               <p className="truncate text-[10px] text-muted-foreground capitalize">
-                {isSuperAdmin ? "CEO · Super Admin" : role === "admin" ? "Administrator" : "Staff Member"}
+                {isSuperAdmin ? "Direction · Super Admin" : role === "admin" ? "Administrator" : "Staff Member"}
               </p>
             </div>
           )}
@@ -284,13 +286,25 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
 
   const navGroups: NavGroup[] = [
     {
-      label: "Overview",
+      label: "Follow-up Center",
       links: [
         {
-          label: isSuperAdmin ? "CEO Command Center" : "Dashboard",
+          label: isSuperAdmin ? "Direction Command" : "Dashboard",
           href: "/dashboard",
           icon: IconLayers,
           active: pathname === "/dashboard",
+        },
+        {
+          label: "Directives",
+          href: "/directives",
+          icon: IconCompass,
+          active: pathname.startsWith("/directives"),
+        },
+        {
+          label: "Action Plans",
+          href: "/plans",
+          icon: IconTarget,
+          active: pathname.startsWith("/plans"),
         },
         {
           label: isAdmin ? "Tasks & Alerts" : "My Tasks",
@@ -413,7 +427,7 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
 
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-foreground">
-                {title || "Executive Portal"}
+                {title || "Directive Follow-up System"}
               </span>
               {subtitle && (
                 <span className="hidden sm:inline text-xs text-muted-foreground">
@@ -481,7 +495,7 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
                 <div className="hidden md:block text-left">
                   <p className="text-xs font-medium text-foreground leading-tight">{fullName}</p>
                   <p className="text-[10px] text-muted-foreground capitalize">
-                    {isSuperAdmin ? "CEO" : role === "admin" ? "Admin" : "Staff"}
+                    {isSuperAdmin ? "Direction" : role === "admin" ? "Admin" : "Staff"}
                   </p>
                 </div>
               </button>

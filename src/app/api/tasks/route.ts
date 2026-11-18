@@ -16,32 +16,36 @@ export async function GET(request: Request) {
   const rows =
     isPrivileged && scope !== "mine"
       ? await sql`
-          SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by,
+          SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by, t.directive_id,
                  t.status, t.priority, to_char(t.due_date, 'YYYY-MM-DD') as due_date,
                  t.completion_note, t.completed_at, t.telegram_notified_at, t.telegram_error,
                  t.created_at, t.updated_at,
                  u.full_name as assignee_name, u.email as assignee_email,
                  u.department as assignee_department, u.telegram_chat_id as assignee_telegram_chat_id,
-                 ab.full_name as assigned_by_name
+                 ab.full_name as assigned_by_name,
+                 d.reference_code as directive_ref, d.title as directive_title
           FROM tasks t
           JOIN users u ON t.assigned_to = u.id
           LEFT JOIN users ab ON t.assigned_by = ab.id
+          LEFT JOIN directives d ON t.directive_id = d.id
           ORDER BY
             CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END ASC,
             t.due_date ASC NULLS LAST,
             t.created_at DESC;
         `
       : await sql`
-          SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by,
+          SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by, t.directive_id,
                  t.status, t.priority, to_char(t.due_date, 'YYYY-MM-DD') as due_date,
                  t.completion_note, t.completed_at, t.telegram_notified_at, t.telegram_error,
                  t.created_at, t.updated_at,
                  u.full_name as assignee_name, u.email as assignee_email,
                  u.department as assignee_department, u.telegram_chat_id as assignee_telegram_chat_id,
-                 ab.full_name as assigned_by_name
+                 ab.full_name as assigned_by_name,
+                 d.reference_code as directive_ref, d.title as directive_title
           FROM tasks t
           JOIN users u ON t.assigned_to = u.id
           LEFT JOIN users ab ON t.assigned_by = ab.id
+          LEFT JOIN directives d ON t.directive_id = d.id
           WHERE t.assigned_to = ${user.id}
           ORDER BY
             CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END ASC,
@@ -95,10 +99,16 @@ async function handleBulkCreate(
   body: {
     tasks: BulkTaskInput[];
     assigned_to: string[];
+    directive_id?: string | null;
     notify_telegram?: boolean;
   }
 ) {
-  const { tasks: taskInputs, assigned_to: assigneeIds, notify_telegram = true } = body;
+  const {
+    tasks: taskInputs,
+    assigned_to: assigneeIds,
+    directive_id = null,
+    notify_telegram = true,
+  } = body;
 
   if (!taskInputs.length || !assigneeIds.length) {
     return NextResponse.json(
@@ -160,12 +170,13 @@ async function handleBulkCreate(
 
     for (const assigneeId of assigneeIds) {
       const inserted = await sql`
-        INSERT INTO tasks (title, description, assigned_to, assigned_by, priority, due_date)
+        INSERT INTO tasks (title, description, assigned_to, assigned_by, directive_id, priority, due_date)
         VALUES (
           ${String(taskInput.title).trim()},
           ${typeof taskInput.description === "string" ? taskInput.description.trim() : ""},
           ${assigneeId},
           ${user.id},
+          ${directive_id || null},
           ${priority},
           ${cleanDueDate}
         )
@@ -194,16 +205,18 @@ async function handleBulkCreate(
   // Fetch all created tasks with full join data
   const taskIds = createdTasks.map((ct) => ct.id);
   const fullRows = await sql`
-    SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by,
+    SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by, t.directive_id,
            t.status, t.priority, to_char(t.due_date, 'YYYY-MM-DD') as due_date,
            t.completion_note, t.completed_at, t.telegram_notified_at, t.telegram_error,
            t.created_at, t.updated_at,
            u.full_name as assignee_name, u.email as assignee_email,
            u.department as assignee_department, u.telegram_chat_id as assignee_telegram_chat_id,
-           ab.full_name as assigned_by_name
+           ab.full_name as assigned_by_name,
+           d.reference_code as directive_ref, d.title as directive_title
     FROM tasks t
     JOIN users u ON t.assigned_to = u.id
     LEFT JOIN users ab ON t.assigned_by = ab.id
+    LEFT JOIN directives d ON t.directive_id = d.id
     WHERE t.id = ANY(${taskIds})
     ORDER BY t.created_at DESC;
   `;
@@ -230,6 +243,7 @@ async function handleSingleCreate(
     title?: string;
     description?: string;
     assigned_to?: string;
+    directive_id?: string | null;
     priority?: string;
     due_date?: string | null;
     notify_telegram?: boolean;
@@ -239,6 +253,7 @@ async function handleSingleCreate(
     title,
     description,
     assigned_to,
+    directive_id = null,
     priority = "medium",
     due_date,
     notify_telegram = true,
@@ -271,12 +286,13 @@ async function handleSingleCreate(
       : null;
 
   const inserted = await sql`
-    INSERT INTO tasks (title, description, assigned_to, assigned_by, priority, due_date)
+    INSERT INTO tasks (title, description, assigned_to, assigned_by, directive_id, priority, due_date)
     VALUES (
       ${String(title).trim()},
       ${typeof description === "string" ? description.trim() : ""},
       ${assigned_to},
       ${user.id},
+      ${directive_id || null},
       ${priority},
       ${cleanDueDate}
     )
@@ -295,16 +311,18 @@ async function handleSingleCreate(
   }
 
   const fullRows = await sql`
-    SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by,
+    SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by, t.directive_id,
            t.status, t.priority, to_char(t.due_date, 'YYYY-MM-DD') as due_date,
            t.completion_note, t.completed_at, t.telegram_notified_at, t.telegram_error,
            t.created_at, t.updated_at,
            u.full_name as assignee_name, u.email as assignee_email,
            u.department as assignee_department, u.telegram_chat_id as assignee_telegram_chat_id,
-           ab.full_name as assigned_by_name
+           ab.full_name as assigned_by_name,
+           d.reference_code as directive_ref, d.title as directive_title
     FROM tasks t
     JOIN users u ON t.assigned_to = u.id
     LEFT JOIN users ab ON t.assigned_by = ab.id
+    LEFT JOIN directives d ON t.directive_id = d.id
     WHERE t.id = ${taskId}
     LIMIT 1;
   `;

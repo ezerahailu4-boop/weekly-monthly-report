@@ -527,7 +527,7 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
         {/* Sticky Bottom Action Bar */}
         <div className="sticky bottom-6 z-20 flex items-center justify-between rounded-xl border border-border bg-card/95 p-4 shadow-xl backdrop-blur-md">
           <div className="text-xs text-muted-foreground hidden sm:block">
-            Drafts remain private. Submitting sends this report directly to the Admin and CEO review queues.
+            Drafts remain private. Submitting sends this report directly to the Admin and Direction review queues.
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -549,7 +549,7 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
               <IconCheck size={14} className="text-emerald-400" />
               {savingStatus === "submitted"
                 ? "Submitting to Leadership..."
-                : "Submit to Management (Send to Admin & CEO)"}
+                : "Submit to Management (Send to Admin & Direction)"}
             </button>
           </div>
         </div>

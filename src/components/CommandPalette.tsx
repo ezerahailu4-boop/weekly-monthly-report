@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   IconCalendar,
   IconCheckSquare,
+  IconCompass,
   IconCrown,
   IconDownload,
   IconFileText,
@@ -12,6 +13,7 @@ import {
   IconSearch,
   IconShield,
   IconSliders,
+  IconTarget,
   IconUser,
 } from "./Icons";
 
@@ -51,13 +53,15 @@ export function CommandPalette({
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const items: CommandItem[] = [
-    { id: "dashboard", group: "Navigation", title: isSuperAdmin ? "CEO Command Center" : "Dashboard", subtitle: "View submissions and performance overview", icon: isSuperAdmin ? IconCrown : IconFileText, href: "/dashboard" },
+    { id: "dashboard", group: "Navigation", title: isSuperAdmin ? "Direction Command Center" : "Dashboard", subtitle: "View submissions and performance overview", icon: isSuperAdmin ? IconCrown : IconFileText, href: "/dashboard" },
+    { id: "directives", group: "Navigation", title: "Directives Follow-up", subtitle: "AI summaries, concurrent tasks & SLA discussion threads", icon: IconCompass, href: "/directives", badge: "Directives" },
+    { id: "plans", group: "Navigation", title: "Action Plans", subtitle: "Submit and track divisional action plans", icon: IconTarget, href: "/plans", badge: "Plans" },
     { id: "tasks", group: "Navigation", title: isPrivileged ? "Tasks & Telegram" : "My Tasks", subtitle: "Track and complete assigned tasks", icon: IconCheckSquare, href: "/tasks", badge: "Tasks" },
     { id: "new-weekly", group: "Reports", title: "New Weekly Report", subtitle: "7-section operational performance template", icon: IconPlus, href: "/reports/new/weekly", badge: "Weekly" },
     { id: "new-monthly", group: "Reports", title: "New Monthly Report", subtitle: "Strategic directives & milestones template", icon: IconCalendar, href: "/reports/new/monthly", badge: "Monthly" },
     ...(isPrivileged ? [
       { id: "users", group: "Admin", title: "User Management", subtitle: "Create and manage staff accounts", icon: isSuperAdmin ? IconCrown : IconShield, href: "/admin?tab=team", badge: "Admin" },
-      { id: "settings", group: "Admin", title: "Window & Telegram Settings", subtitle: "Configure reporting schedule and bot", icon: IconSliders, href: "/admin?tab=settings", badge: "Settings" },
+      { id: "settings", group: "Admin", title: "SLA, Letterhead & ERP Settings", subtitle: "Configure SLA countdown, letterhead & ERP API", icon: IconSliders, href: "/admin?tab=settings", badge: "Governance" },
       { id: "export", group: "Admin", title: "Export All Reports (CSV)", subtitle: "Download Excel-ready summary spreadsheet", icon: IconDownload, action: triggerCsvDownload, badge: "Export" },
     ] : []),
     { id: "profile", group: "Account", title: "Profile & Security", subtitle: "Update name, department, or password", icon: IconUser, href: "/profile" },

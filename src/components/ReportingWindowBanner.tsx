@@ -59,7 +59,7 @@ export function ReportingWindowBanner({
               <> · Staff report submissions are locked until reopening; your Tasks remain accessible anytime.</>
             )}
             {isPrivileged && !isOpen && (
-              <> · Leadership override active: Admins &amp; CEO keep full access anytime.</>
+              <> · Leadership override active: Admins &amp; Direction keep full access anytime.</>
             )}
           </p>
         </div>

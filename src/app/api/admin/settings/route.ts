@@ -1,7 +1,11 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { getPortalSettings } from "@/lib/portalSettings";
+import {
+  getPortalSettings,
+  normalizeLetterheadConfig,
+} from "@/lib/portalSettings";
 import { evaluateReportingWindow, type WindowMode } from "@/lib/windowSchedule";
 import { fetchTelegramBotInfo } from "@/lib/telegram";
 
@@ -27,6 +31,14 @@ export async function GET() {
     success: true,
     windowStatus,
     autoWarnEnabled: settings.auto_warn_enabled,
+    penaltyPolicyVerified: settings.penalty_policy_verified,
+    slaResponseDays: settings.sla_response_days,
+    systemName: settings.system_name,
+    letterheadConfig: settings.letterhead_config,
+    erp: {
+      configured: !!settings.erp_api_key,
+      maskedKey: isPrivileged ? maskToken(settings.erp_api_key) : null,
+    },
     telegram: {
       configured: !!settings.telegram_bot_token,
       botUsername: settings.telegram_bot_username,
@@ -44,7 +56,7 @@ export async function PUT(request: Request) {
 
   if (user.role !== "admin" && user.role !== "super_admin") {
     return NextResponse.json(
-      { error: "Forbidden: Admin privileges required." },
+      { error: "Forbidden: Admin or Direction privileges required." },
       { status: 403 }
     );
   }
@@ -83,12 +95,44 @@ export async function PUT(request: Request) {
       );
     }
 
+    const slaResponseDays =
+      body.sla_response_days !== undefined
+        ? Number(body.sla_response_days)
+        : current.sla_response_days;
+    if (!Number.isInteger(slaResponseDays) || slaResponseDays < 1 || slaResponseDays > 60) {
+      return NextResponse.json(
+        { error: "SLA response countdown must be an integer between 1 and 60 days." },
+        { status: 400 }
+      );
+    }
+
+    const systemName =
+      typeof body.system_name === "string" && body.system_name.trim()
+        ? body.system_name.trim().slice(0, 80)
+        : current.system_name;
+
+    const letterheadConfig = body.letterhead_config
+      ? normalizeLetterheadConfig({
+          ...current.letterhead_config,
+          ...body.letterhead_config,
+        })
+      : current.letterhead_config;
+
     const dbRows = await sql`
-      SELECT telegram_bot_token, telegram_bot_username
+      SELECT telegram_bot_token, telegram_bot_username, erp_api_key
       FROM portal_settings WHERE id = 'default' LIMIT 1;
     `;
     let nextBotToken: string | null = dbRows[0]?.telegram_bot_token ?? null;
     let nextBotUsername: string | null = dbRows[0]?.telegram_bot_username ?? null;
+    let nextErpKey: string | null = dbRows[0]?.erp_api_key ?? null;
+    let newlyGeneratedErpKey: string | null = null;
+
+    if (body.generate_erp_api_key === true) {
+      newlyGeneratedErpKey = `yh_erp_${crypto.randomBytes(20).toString("hex")}`;
+      nextErpKey = newlyGeneratedErpKey;
+    } else if (body.revoke_erp_api_key === true) {
+      nextErpKey = null;
+    }
 
     if (body.clear_telegram_token === true) {
       nextBotToken = null;
@@ -120,6 +164,7 @@ export async function PUT(request: Request) {
       INSERT INTO portal_settings (
         id, window_mode, open_day, open_time, close_day, close_time,
         timezone, telegram_bot_token, telegram_bot_username, auto_warn_enabled,
+        sla_response_days, system_name, letterhead_config, erp_api_key,
         updated_by, updated_at
       )
       VALUES (
@@ -133,6 +178,10 @@ export async function PUT(request: Request) {
         ${body.clear_telegram_token ? null : nextBotToken},
         ${nextBotUsername},
         ${autoWarnEnabled},
+        ${slaResponseDays},
+        ${systemName},
+        ${JSON.stringify(letterheadConfig)}::jsonb,
+        ${nextErpKey},
         ${user.id},
         now()
       )
@@ -146,6 +195,10 @@ export async function PUT(request: Request) {
         telegram_bot_token = EXCLUDED.telegram_bot_token,
         telegram_bot_username = EXCLUDED.telegram_bot_username,
         auto_warn_enabled = EXCLUDED.auto_warn_enabled,
+        sla_response_days = EXCLUDED.sla_response_days,
+        system_name = EXCLUDED.system_name,
+        letterhead_config = EXCLUDED.letterhead_config,
+        erp_api_key = EXCLUDED.erp_api_key,
         updated_by = EXCLUDED.updated_by,
         updated_at = now();
     `;
@@ -157,6 +210,15 @@ export async function PUT(request: Request) {
       success: true,
       windowStatus,
       autoWarnEnabled: updated.auto_warn_enabled,
+      penaltyPolicyVerified: updated.penalty_policy_verified,
+      slaResponseDays: updated.sla_response_days,
+      systemName: updated.system_name,
+      letterheadConfig: updated.letterhead_config,
+      erp: {
+        configured: !!updated.erp_api_key,
+        maskedKey: maskToken(updated.erp_api_key),
+        plaintextKeyOnce: newlyGeneratedErpKey,
+      },
       telegram: {
         configured: !!updated.telegram_bot_token,
         botUsername: updated.telegram_bot_username,

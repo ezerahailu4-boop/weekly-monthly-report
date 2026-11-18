@@ -3,9 +3,9 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
-  title: "YETAF HOLDING | Executive Reporting Portal",
+  title: "YETAF HOLDING | Directive Follow-up System · Report Follow-up Center",
   description:
-    "Submit, track, and export weekly and monthly performance reports across Yetaf Holding.",
+    "Modern Directive Follow-up System and Report Follow-up Center for Yetaf Holding Limited — AI summarization, multi-tasking, contextual chat, SLA enforcement, and action plan tracking.",
 };
 
 const themeScript = `

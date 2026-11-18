@@ -295,8 +295,8 @@ export function AdminWindowSettings({
           </div>
         </div>
 
-        {/* Automatic Disciplinary Enforcement Toggle */}
-        <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3.5 cursor-pointer hover:bg-muted/50 transition-colors">
+        {/* Automatic Disciplinary Enforcement Toggle (Quarantined Pending HR Policy Alignment) */}
+        <label className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3.5 cursor-pointer hover:bg-amber-500/10 transition-colors">
           <input
             type="checkbox"
             checked={autoWarnEnabled}
@@ -305,13 +305,11 @@ export function AdminWindowSettings({
           />
           <div className="space-y-0.5 text-xs">
             <span className="font-semibold text-foreground block">
-              Automatic Disciplinary Escalation (1st Verbal → 2nd Written Letter)
+              Legacy Penalty Escalation [Paused — Pending HR Policy Verification]
             </span>
             <span className="text-[11px] text-muted-foreground block">
-              After the reporting window closes (daily at 5:00 AM EAT), automatically send a{" "}
-              <strong>1st Verbal Warning</strong> via Telegram to staff who missed their report,
-              and prepare &amp; send a <strong>Formal Written Warning Letter (.docx)</strong> on
-              their 2nd missed report.
+              Audited &amp; disabled by default. Previously triggered a 1st Verbal Warning on Telegram
+              and a 2nd Written Warning Letter (.docx). Keep disabled until aligned with official HR policy.
             </span>
           </div>
         </label>

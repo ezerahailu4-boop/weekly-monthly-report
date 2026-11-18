@@ -46,9 +46,9 @@ function LoginForm() {
     }
   }
 
-  function fillCredentials(type: "ceo" | "admin" | "staff") {
+  function fillCredentials(type: "direction" | "admin" | "staff") {
     const creds = {
-      ceo: { email: "ceo@yetaf-holding.com", password: "YetafCeo2026!" },
+      direction: { email: "ceo@yetaf-holding.com", password: "YetafCeo2026!" },
       admin: { email: "admin@yetaf-holding.com", password: "YetafAdmin2026!" },
       staff: { email: "operations@yetaf-holding.com", password: "YetafStaff2026!" },
     };
@@ -140,7 +140,7 @@ function LoginForm() {
             <p className="mb-3 text-xs font-medium text-muted-foreground">Demo accounts</p>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { type: "ceo" as const, label: "CEO", sub: "Super Admin", icon: IconCrown, color: "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20" },
+                { type: "direction" as const, label: "Direction", sub: "Super Admin", icon: IconCrown, color: "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20" },
                 { type: "admin" as const, label: "Admin", sub: "Manager", icon: IconShield, color: "border-border bg-muted/50 text-foreground hover:bg-muted" },
                 { type: "staff" as const, label: "Staff", sub: "Employee", icon: IconUser, color: "border-green-200 bg-green-50 text-green-900 hover:bg-green-100 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200 dark:hover:bg-green-500/20" },
               ].map(({ type, label, sub, icon: Icon, color }) => (

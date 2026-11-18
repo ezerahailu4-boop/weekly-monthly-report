@@ -28,7 +28,7 @@ export interface TeamMember {
 }
 
 const DEPARTMENTS = [
-  "Office of the CEO & Board",
+  "Office of Direction & Board",
   "Executive Management",
   "Logistics",
   "Finance & Accounting",
@@ -244,7 +244,7 @@ export function AdminUserManagement({
             </h2>
             {isSuperAdmin && (
               <span className="rounded-full bg-zinc-950 px-2 py-0.5 text-[10px] font-bold text-amber-300 ring-1 ring-amber-500/30">
-                Full CEO Control
+                Full Direction Control
               </span>
             )}
           </div>
@@ -280,7 +280,7 @@ export function AdminUserManagement({
 
         <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Super Admins (CEO)
+            Super Admins (Direction)
           </p>
           <p className="font-display text-2xl font-bold text-amber-700 dark:text-amber-300 mt-1 tabular-nums">
             {superAdminCount}
@@ -445,7 +445,7 @@ export function AdminUserManagement({
                       {isSuper ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-zinc-950 px-2.5 py-0.5 text-[10px] font-bold text-amber-300 ring-1 ring-amber-500/40">
                           <IconCrown size={11} className="text-amber-400" />
-                          SUPER ADMIN (CEO)
+                          SUPER ADMIN (DIRECTION)
                         </span>
                       ) : isAdm ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold text-primary-foreground">
@@ -629,7 +629,7 @@ export function AdminUserManagement({
                   </option>
                   {isSuperAdmin && (
                     <option value="super_admin">
-                      Super Admin (CEO &amp; Board · Full panoramic access)
+                      Super Admin (Direction &amp; Board · Full panoramic access)
                     </option>
                   )}
                 </select>
@@ -750,7 +750,7 @@ export function AdminUserManagement({
                   <option value="employee">Staff Member</option>
                   <option value="admin">Administrator</option>
                   {isSuperAdmin && (
-                    <option value="super_admin">Super Admin (CEO)</option>
+                    <option value="super_admin">Super Admin (Direction)</option>
                   )}
                 </select>
               </div>

@@ -7,6 +7,9 @@ export interface TaskRow {
   description: string;
   assigned_to: string;
   assigned_by: string | null;
+  directive_id?: string | null;
+  directive_ref?: string | null;
+  directive_title?: string | null;
   status: TaskStatus;
   priority: TaskPriority;
   due_date: string | null;

@@ -13,39 +13,39 @@ import {
 const features = [
   {
     icon: IconCrown,
-    title: "CEO Executive Command",
+    title: "Direction Command & AI Summarization",
     description:
-      "Holding-wide visibility for executive leadership to review subsidiary performance, inspect KPIs, and issue strategic directives.",
+      "Synthesize 2–3 corporate directions into a crisp executive summary and maintain holding-wide visibility over every subsidiary.",
   },
   {
     icon: IconFileText,
-    title: "Dual Official Templates",
+    title: "Official Company Letterhead Exports",
     description:
-      "Exact word-for-word replicas of Yetaf Holding's official Weekly Performance and Monthly Strategic Progress formats.",
+      "Generate standardized PDF and Word (.docx) directives, action plans, and weekly/monthly reports on official Yetaf Holding letterhead.",
   },
   {
     icon: IconTrendingUp,
-    title: "Granular KPI Tracking",
+    title: "Multi-Tasking & Action Plan Tracking",
     description:
-      "Dynamic activity rows with planned target versus actual performance, percentage calculation, and roadblock logging.",
+      "Spawn multiple concurrent tasks under a single directive, submit structured ERP action plans or file uploads, and track live progress.",
   },
   {
     icon: IconDownload,
-    title: "Executive Export Suite",
+    title: "Contextual Chat & SLA Countdowns",
     description:
-      "Download high-res Word (.docx) files with official Section 8 review sign-offs, printable PDFs, and consolidated CSV spreadsheets.",
+      "Collaborate directly inside each directive view with real-time comments backed by configurable SLA response deadlines.",
   },
   {
     icon: IconShield,
-    title: "Enterprise Governance",
+    title: "RBAC Governance & ERP Readiness",
     description:
-      "Admin-provisioned accounts with strict 3-tier access: Super Admin (CEO), Department Administrator, and Staff Contributor.",
+      "Strict 3-tier access (Direction, Admin, Staff) plus standardized REST APIs and dual form/upload entry ready for seamless ERP integration.",
   },
   {
     icon: IconFileText,
-    title: "Local Draft Safety",
+    title: "Weekly & Monthly Performance Reports",
     description:
-      "Automatic local draft caching protects long narrative entries from browser crashes or network interruptions.",
+      "Structured KPI tables, automated Executive Holding Summaries, and local draft safety across every division.",
   },
 ];
 
@@ -63,18 +63,18 @@ export default async function Home() {
               <div className="lg:col-span-7">
                 <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-2xs mb-6">
                   <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  YETAF HOLDING Enterprise Reporting Portal
+                  YETAF HOLDING · Directive Follow-up System &amp; Report Follow-up Center
                 </div>
 
                 <h1 className="font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl sm:leading-[1.1]">
-                  Executive reporting. <br />
-                  <span className="text-muted-foreground italic">Structured, instant, centralized.</span>
+                  Directive follow-up. <br />
+                  <span className="text-muted-foreground italic">Accountable, instant, centralized.</span>
                 </h1>
 
                 <p className="mt-4 sm:mt-5 text-sm sm:text-base leading-relaxed text-muted-foreground max-w-2xl">
-                  Replace fragmented Word attachments with a unified enterprise governance system.
-                  Empower subsidiary teams to submit weekly achievements and monthly milestones,
-                  while providing the CEO with complete panoramic visibility.
+                  Unify executive directives, concurrent multi-tasking, contextual SLA-tracked chat,
+                  action plan submissions, and weekly/monthly reports in one ERP-ready Report Follow-up Center
+                  built for Direction and subsidiary leadership.
                 </p>
 
                 <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -100,7 +100,7 @@ export default async function Home() {
                   </div>
                   <div>
                     <p className="font-display text-2xl font-bold text-foreground">3 Roles</p>
-                    <p className="text-xs text-muted-foreground font-medium mt-0.5">CEO, Admin, Staff</p>
+                    <p className="text-xs text-muted-foreground font-medium mt-0.5">Direction, Admin, Staff</p>
                   </div>
                   <div>
                     <p className="font-display text-2xl font-bold text-foreground">DOCX + PDF</p>
@@ -222,7 +222,7 @@ export default async function Home() {
       </main>
 
       <footer suppressHydrationWarning className="border-t border-border bg-card py-8 text-center text-xs text-muted-foreground">
-        &copy; {new Date().getFullYear()} YETAF HOLDING LIMITED. Confidential Executive Reporting System.
+        &copy; {new Date().getFullYear()} YETAF HOLDING LIMITED. Directive Follow-up System &amp; Report Follow-up Center.
       </footer>
     </div>
   );

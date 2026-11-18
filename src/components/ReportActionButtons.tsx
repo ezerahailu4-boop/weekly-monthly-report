@@ -93,7 +93,7 @@ export function ReportActionButtons({
           </button>
         )}
 
-        {/* 2. Admin & CEO: Review Action with Guidance Notes */}
+        {/* 2. Admin & Direction: Review Action with Guidance Notes */}
         {isAdmin && (
           <button
             type="button"
@@ -148,7 +148,7 @@ export function ReportActionButtons({
         </a>
       </div>
 
-      {/* Executive Review Modal (for Admins and CEO) */}
+      {/* Executive Review Modal (for Admins and Direction) */}
       {showReviewModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs animate-in fade-in-50">
           <div className="w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-150">
@@ -165,7 +165,7 @@ export function ReportActionButtons({
                 )}
                 <div>
                   <h3 className="font-display text-base font-bold text-foreground">
-                    {isSuperAdmin ? "CEO Executive Sign-off" : "Management Review & Feedback"}
+                    {isSuperAdmin ? "Direction Executive Sign-off" : "Management Review & Feedback"}
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
                     Provide governance feedback, directions, or approval notes.

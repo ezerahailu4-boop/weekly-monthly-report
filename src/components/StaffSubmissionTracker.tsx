@@ -716,7 +716,7 @@ export function StaffSubmissionTracker({
                                 {member.role !== "employee" && (
                                   <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-bold uppercase text-muted-foreground border border-border">
                                     {member.role === "super_admin"
-                                      ? "CEO"
+                                      ? "Direction"
                                       : "Admin"}
                                   </span>
                                 )}

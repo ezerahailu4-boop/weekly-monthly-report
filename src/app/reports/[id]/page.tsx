@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { getReportingWindowStatus } from "@/lib/portalSettings";
+import { getPortalSettings, getReportingWindowStatus } from "@/lib/portalSettings";
 import { renderReportHtml } from "@/lib/reportHtml";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ReportActionButtons } from "@/components/ReportActionButtons";
@@ -52,7 +52,10 @@ export default async function ReportDetailPage({
 
   if (!isOwnerOrAdmin) notFound();
 
-  const windowStatus = await getReportingWindowStatus();
+  const [windowStatus, settings] = await Promise.all([
+    getReportingWindowStatus(),
+    getPortalSettings(),
+  ]);
   const windowLocked = !windowStatus.isOpen && !isPrivileged;
 
   const report: ReportRow = {
@@ -77,7 +80,7 @@ export default async function ReportDetailPage({
     },
   };
 
-  const html = renderReportHtml(report);
+  const html = renderReportHtml(report, settings.letterhead_config);
   const bodyMatch = html.match(/<body>([\s\S]*)<\/body>/);
   const bodyHtml = bodyMatch ? bodyMatch[1] : html;
 
@@ -117,7 +120,7 @@ export default async function ReportDetailPage({
             <p className="font-bold">Private In-Progress Draft</p>
             <p className="mt-0.5">
               This report is currently only visible to you. When you are ready for management review, click{" "}
-              <strong>&quot;Submit to Management&quot;</strong> in the toolbar above to submit it to the Admin and CEO review queues.
+              <strong>&quot;Submit to Management&quot;</strong> in the toolbar above to submit it to the Admin and Direction review queues.
             </p>
           </div>
         </div>

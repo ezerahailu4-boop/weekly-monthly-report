@@ -85,7 +85,7 @@ export function DashboardReportsTable({
 
   return (
     <div className="space-y-4">
-      {/* CEO & Executive Subsidiary Performance Scorecard */}
+      {/* Direction & Executive Subsidiary Performance Scorecard */}
       {showAuthor && (
         <HoldingDepartmentScorecard
           reports={reports}
@@ -120,7 +120,7 @@ export function DashboardReportsTable({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          {/* Department Filter (for CEO / Admin) */}
+          {/* Department Filter (for Direction / Admin) */}
           {showAuthor && departments.length > 0 && (
             <select
               value={departmentFilter}

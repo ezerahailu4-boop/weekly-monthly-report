@@ -48,15 +48,15 @@ export default function NavBar({ user }: { user: NavUser | null }) {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-semibold tracking-tight text-foreground">YETAF Holding</span>
+              <span className="text-sm font-semibold tracking-tight text-foreground">Directive Follow-up System</span>
               {isSuperAdmin && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-950 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300 ring-1 ring-amber-500/30">
                   <IconCrown size={9} />
-                  CEO
+                  Direction
                 </span>
               )}
             </div>
-            <p className="text-[10px] text-muted-foreground">Executive Reporting Portal</p>
+            <p className="text-[10px] text-muted-foreground">YETAF Report Follow-up Center</p>
           </div>
         </Link>
 
@@ -66,7 +66,19 @@ export default function NavBar({ user }: { user: NavUser | null }) {
               href="/dashboard"
               className="hidden sm:inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
-              {isSuperAdmin ? "CEO Overview" : "Dashboard"}
+              {isSuperAdmin ? "Direction Overview" : "Dashboard"}
+            </Link>
+            <Link
+              href="/directives"
+              className="hidden sm:inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              Directives
+            </Link>
+            <Link
+              href="/plans"
+              className="hidden sm:inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              Action Plans
             </Link>
 
             {/* New Report Dropdown */}
@@ -139,7 +151,7 @@ export default function NavBar({ user }: { user: NavUser | null }) {
                 <div className="hidden md:block text-left">
                   <p className="text-xs font-medium text-foreground leading-tight">{fullName}</p>
                   <p className="text-[10px] text-muted-foreground capitalize">
-                    {isSuperAdmin ? "CEO" : role === "admin" ? "Admin" : "Staff"}
+                    {isSuperAdmin ? "Direction" : role === "admin" ? "Admin" : "Staff"}
                   </p>
                 </div>
               </button>

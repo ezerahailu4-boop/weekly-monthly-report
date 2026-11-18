@@ -9,19 +9,28 @@ import {
   TableCell,
   WidthType,
   TextRun,
-  AlignmentType,
+  ShadingType,
 } from "docx";
 import { getReportForExport } from "@/lib/getReportForExport";
+import { getPortalSettings, type LetterheadConfig } from "@/lib/portalSettings";
+import {
+  buildOfficialDocxFooterBlock,
+  buildOfficialDocxLetterhead,
+} from "@/lib/officialLetterhead";
 import type { WeeklyReportData, MonthlyReportData, ReportRow } from "@/types/report";
 
 function heading(text: string) {
-  return new Paragraph({ text, heading: HeadingLevel.HEADING_2, spacing: { before: 280, after: 120 } });
+  return new Paragraph({
+    text,
+    heading: HeadingLevel.HEADING_2,
+    spacing: { before: 260, after: 110 },
+  });
 }
 
 function subheading(text: string) {
   return new Paragraph({
     children: [new TextRun({ text, bold: true })],
-    spacing: { before: 160, after: 60 },
+    spacing: { before: 150, after: 60 },
   });
 }
 
@@ -32,9 +41,11 @@ function body(text: string) {
 function cell(text: string, opts: { header?: boolean } = {}) {
   return new TableCell({
     width: { size: 100, type: WidthType.PERCENTAGE },
+    shading: opts.header ? { type: ShadingType.CLEAR, fill: "F1F5F9" } : undefined,
     children: [
       new Paragraph({
-        children: [new TextRun({ text: text || "", bold: !!opts.header })],
+        spacing: { before: 40, after: 40 },
+        children: [new TextRun({ text: text || "", bold: !!opts.header, size: 20 })],
       }),
     ],
   });
@@ -44,24 +55,24 @@ function table(headerCells: string[], rows: string[][]) {
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [
-      new TableRow({ children: headerCells.map((h) => cell(h, { header: true })) }),
+      new TableRow({
+        tableHeader: true,
+        children: headerCells.map((h) => cell(h, { header: true })),
+      }),
       ...rows.map((r) => new TableRow({ children: r.map((c) => cell(c)) })),
     ],
   });
 }
 
-function buildWeeklyDoc(report: ReportRow) {
+function buildWeeklyDoc(report: ReportRow, letterhead: LetterheadConfig) {
   const d = report.data as WeeklyReportData;
+  const refCode = `${letterhead.referencePrefix || "YH-DFC"}-WK-${report.period_start.replace(/-/g, "")}`;
   const elements: (Paragraph | Table)[] = [
-    new Paragraph({
-      text: "Weekly Performance Report",
-      heading: HeadingLevel.TITLE,
-      alignment: AlignmentType.CENTER,
-    }),
-    new Paragraph({
-      text: `${report.period_start} to ${report.period_end} · Yetaf Holding Limited`,
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 300 },
+    ...buildOfficialDocxLetterhead({
+      config: letterhead,
+      documentTitle: "Weekly Performance Report",
+      documentSubtitle: `${report.period_start} to ${report.period_end} · ${report.author_department || "Division"}`,
+      referenceCode: refCode,
     }),
 
     heading("1. Reporting Information"),
@@ -89,42 +100,46 @@ function buildWeeklyDoc(report: ReportRow) {
     heading("6. Priorities for the Coming Week"),
     body(d.prioritiesNextWeek),
 
-    heading("7. Support or Decisions Required from the Holding"),
+    heading("7. Support or Decisions Required from Direction"),
     body(d.supportRequired),
   ];
 
   if (report.status === "reviewed" || report.review_notes) {
     elements.push(
-      heading("8. Executive Management & Board Review"),
+      heading("8. Direction & Board Review"),
       body(`Review Status: ${report.status === "reviewed" ? "Approved & Reviewed" : "Under Review"}`),
-      body(`Reviewing Executive: ${report.reviewer_name || "Office of the CEO & Executive Management"}`),
+      body(`Reviewing Officer: ${report.reviewer_name || "Office of Direction & Management"}`),
       body(`Review Date: ${report.reviewed_at ? report.reviewed_at.slice(0, 10) : "Recorded in Portal"}`),
-      subheading("Executive Leadership Guidance & Directives:"),
+      subheading("Direction Guidance & Follow-up Directives:"),
       body(report.review_notes || "Report accepted and signed off with no exceptions.")
     );
   }
 
+  elements.push(
+    ...buildOfficialDocxFooterBlock({
+      config: letterhead,
+      signatoryName: report.reviewer_name || report.author_name,
+    })
+  );
+
   return elements;
 }
 
-function buildMonthlyDoc(report: ReportRow) {
+function buildMonthlyDoc(report: ReportRow, letterhead: LetterheadConfig) {
   const d = report.data as MonthlyReportData;
+  const refCode = `${letterhead.referencePrefix || "YH-DFC"}-MO-${report.period_start.replace(/-/g, "")}`;
   const elements: (Paragraph | Table)[] = [
-    new Paragraph({
-      text: "YETAF HOLDING Month progress report",
-      heading: HeadingLevel.TITLE,
-      alignment: AlignmentType.CENTER,
-    }),
-    new Paragraph({
-      text: `${report.period_start} to ${report.period_end} · Yetaf Holding Limited`,
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 300 },
+    ...buildOfficialDocxLetterhead({
+      config: letterhead,
+      documentTitle: "Monthly Progress Report",
+      documentSubtitle: `${report.period_start} to ${report.period_end} · ${report.author_department || "Division"}`,
+      referenceCode: refCode,
     }),
 
     heading("1. Status of Management Directions Given in the last reporting section"),
     body(d.statusOfDirections),
 
-    heading("2. Executive summary"),
+    heading("2. Executive Summary"),
     body(d.executiveSummary),
 
     heading("3. Goals and planned activities Performance"),
@@ -163,14 +178,21 @@ function buildMonthlyDoc(report: ReportRow) {
 
   if (report.status === "reviewed" || report.review_notes) {
     elements.push(
-      heading("8. Executive Management & Board Review"),
+      heading("8. Direction & Board Review"),
       body(`Review Status: ${report.status === "reviewed" ? "Approved & Reviewed" : "Under Review"}`),
-      body(`Reviewing Executive: ${report.reviewer_name || "Office of the CEO & Executive Management"}`),
+      body(`Reviewing Officer: ${report.reviewer_name || "Office of Direction & Management"}`),
       body(`Review Date: ${report.reviewed_at ? report.reviewed_at.slice(0, 10) : "Recorded in Portal"}`),
-      subheading("Executive Leadership Guidance & Directives:"),
+      subheading("Direction Guidance & Follow-up Directives:"),
       body(report.review_notes || "Report accepted and signed off with no exceptions.")
     );
   }
+
+  elements.push(
+    ...buildOfficialDocxFooterBlock({
+      config: letterhead,
+      signatoryName: report.reviewer_name || report.author_name,
+    })
+  );
 
   return elements;
 }
@@ -180,15 +202,18 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const report = await getReportForExport(id);
+  const [report, settings] = await Promise.all([
+    getReportForExport(id),
+    getPortalSettings(),
+  ]);
   if (!report) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const children =
     report.report_type === "weekly"
-      ? buildWeeklyDoc(report)
-      : buildMonthlyDoc(report);
+      ? buildWeeklyDoc(report, settings.letterhead_config)
+      : buildMonthlyDoc(report, settings.letterhead_config);
 
   const doc = new Document({ sections: [{ children }] });
   const buffer = await Packer.toBuffer(doc);
@@ -196,7 +221,8 @@ export async function GET(
   return new NextResponse(new Uint8Array(buffer), {
     status: 200,
     headers: {
-      "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "Content-Type":
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "Content-Disposition": `attachment; filename="${report.report_type}-report-${report.period_start}.docx"`,
     },
   });

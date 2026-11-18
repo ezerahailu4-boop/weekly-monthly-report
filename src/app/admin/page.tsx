@@ -9,6 +9,7 @@ import { getWeekBounds, getMonthBounds } from "@/lib/compliancePeriods";
 import { AdminUserManagement, type TeamMember } from "@/components/AdminUserManagement";
 import { OverdueAlertsPanel, type OverdueEntry } from "@/components/OverdueAlertsPanel";
 import { AdminWindowSettings } from "@/components/AdminWindowSettings";
+import { AdminGovernanceControls } from "@/components/AdminGovernanceControls";
 import { AdminAnalytics } from "@/components/AdminAnalytics";
 import { DashboardReportsTable } from "@/components/DashboardReportsTable";
 import {
@@ -232,8 +233,8 @@ export default async function AdminPage({
   return (
     <AppShell
       user={user}
-      title={isSuperAdmin ? "CEO Governance Console" : "Admin Console"}
-      subtitle="Users, Tasks, Reporting Window & Telegram"
+      title={isSuperAdmin ? "Direction Governance Console" : "Admin Console"}
+      subtitle="RBAC, SLA Timers, Letterhead, ERP & Schedule"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
         {/* Header */}
@@ -242,7 +243,7 @@ export default async function AdminPage({
             {isSuperAdmin ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-950 px-2.5 py-0.5 text-[11px] font-bold text-amber-300 ring-1 ring-amber-500/30">
                 <IconCrown size={12} className="text-amber-400" />
-                Office of the CEO &amp; Board
+                Office of Direction &amp; Board
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-bold text-primary-foreground">
@@ -251,18 +252,18 @@ export default async function AdminPage({
               </span>
             )}
             <span>&middot;</span>
-            <span>Corporate Governance, Schedule &amp; Tasks</span>
+            <span>Directive Follow-up Governance, SLA &amp; ERP Control</span>
           </div>
 
           <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
             {isSuperAdmin
-              ? "CEO Executive Governance Console"
+              ? "Direction Governance Console"
               : "Administrator Governance Console"}
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl">
             {isSuperAdmin
-              ? "Oversee user accounts, assign tasks with Telegram alerts, customize Ethiopian Time submission windows, and review subsidiary reports."
-              : "Manage staff accounts, assign tasks with Telegram notifications, configure Ethiopian Time reporting hours, and review submissions."}
+              ? "Oversee user RBAC accounts, configure directive SLA countdowns, official company letterhead, ERP REST API keys, and reporting windows."
+              : "Manage staff accounts, configure SLA response timers, official letterhead templates, Telegram alerts, and review submissions."}
           </p>
 
           {/* Segmented Tab Control */}
@@ -300,7 +301,7 @@ export default async function AdminPage({
               }`}
             >
               <IconSliders size={14} />
-              <span>Window &amp; Telegram</span>
+              <span>SLA, Letterhead &amp; ERP</span>
             </Link>
 
             <Link
@@ -346,23 +347,32 @@ export default async function AdminPage({
         )}
 
         {activeTab === "settings" && (
-          <AdminWindowSettings
-            initialConfig={{
-              window_mode: settings.window_mode,
-              open_day: settings.open_day,
-              open_time: settings.open_time,
-              close_day: settings.close_day,
-              close_time: settings.close_time,
-              timezone: settings.timezone,
-            }}
-            initialAutoWarnEnabled={settings.auto_warn_enabled}
-            initialTelegram={{
-              configured: !!settings.telegram_bot_token,
-              botUsername: settings.telegram_bot_username,
-              maskedToken: maskToken(settings.telegram_bot_token),
-              envOverride: !!process.env.TELEGRAM_BOT_TOKEN,
-            }}
-          />
+          <div>
+            <AdminWindowSettings
+              initialConfig={{
+                window_mode: settings.window_mode,
+                open_day: settings.open_day,
+                open_time: settings.open_time,
+                close_day: settings.close_day,
+                close_time: settings.close_time,
+                timezone: settings.timezone,
+              }}
+              initialAutoWarnEnabled={settings.auto_warn_enabled}
+              initialTelegram={{
+                configured: !!settings.telegram_bot_token,
+                botUsername: settings.telegram_bot_username,
+                maskedToken: maskToken(settings.telegram_bot_token),
+                envOverride: !!process.env.TELEGRAM_BOT_TOKEN,
+              }}
+            />
+            <AdminGovernanceControls
+              initialSlaDays={settings.sla_response_days}
+              initialSystemName={settings.system_name}
+              initialLetterhead={settings.letterhead_config}
+              initialErpConfigured={!!settings.erp_api_key}
+              initialErpMaskedKey={maskToken(settings.erp_api_key)}
+            />
+          </div>
         )}
 
         {activeTab === "analytics" && (

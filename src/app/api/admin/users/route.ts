@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     if (role === "super_admin") {
       if (currentUser.role !== "super_admin") {
         return NextResponse.json(
-          { error: "Only the Super Admin (CEO) can provision another Super Admin." },
+          { error: "Only Direction (Super Admin) can provision another Super Admin." },
           { status: 403 }
         );
       }
@@ -137,7 +137,7 @@ export async function DELETE(request: Request) {
 
     if (targetRole === "admin" && currentUser.role !== "super_admin") {
       return NextResponse.json(
-        { error: "Only the Super Admin (CEO) can delete an Administrator account." },
+        { error: "Only Direction (Super Admin) can delete an Administrator account." },
         { status: 403 }
       );
     }
@@ -187,7 +187,7 @@ export async function PATCH(request: Request) {
     if (role && ["employee", "admin", "super_admin"].includes(role)) {
       if (role === "super_admin" && currentUser.role !== "super_admin") {
         return NextResponse.json(
-          { error: "Only the Super Admin (CEO) can assign the Super Admin role." },
+          { error: "Only Direction (Super Admin) can assign the Super Admin role." },
           { status: 403 }
         );
       }
