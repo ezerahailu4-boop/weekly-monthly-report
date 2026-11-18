@@ -13,19 +13,17 @@ export function ReportingWindowBanner({
 
   return (
     <div
-      className={`rounded-xl border p-4 sm:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 transition-colors ${
-        isOpen
+      className={`rounded-xl border p-4 sm:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 transition-colors ${isOpen
           ? "border-emerald-500/30 bg-emerald-500/10"
           : "border-amber-500/30 bg-amber-500/10"
-      }`}
+        }`}
     >
       <div className="flex items-start gap-3">
         <div
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-            isOpen
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${isOpen
               ? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-300"
               : "bg-amber-500/20 text-amber-800 dark:text-amber-300"
-          }`}
+            }`}
         >
           {isOpen ? <IconClock size={18} /> : <IconLock size={18} />}
         </div>
@@ -33,16 +31,14 @@ export function ReportingWindowBanner({
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold border ${
-                isOpen
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold border ${isOpen
                   ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/30"
                   : "bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-500/30"
-              }`}
+                }`}
             >
               <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  isOpen ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
-                }`}
+                className={`h-1.5 w-1.5 rounded-full ${isOpen ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                  }`}
               />
               {isOpen ? "Reporting Window OPEN" : "Reporting Window CLOSED"}
             </span>

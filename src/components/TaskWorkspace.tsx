@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   IconAlertCircle,
@@ -10,12 +10,15 @@ import {
   IconCheck,
   IconCheckCircle,
   IconCheckSquare,
+  IconChevronDown,
   IconClock,
+  IconMinus,
   IconPlus,
   IconSearch,
   IconSend,
   IconTrash,
   IconUser,
+  IconUsers,
   IconX,
 } from "./Icons";
 import { TelegramConnectCard } from "./TelegramConnectCard";
@@ -76,13 +79,123 @@ export function TaskWorkspace({
 
   // Create Task modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newDescription, setNewDescription] = useState("");
-  const [newAssignee, setNewAssignee] = useState(users[0]?.id || "");
-  const [newPriority, setNewPriority] = useState<TaskPriority>("medium");
-  const [newDueDate, setNewDueDate] = useState("");
+
+  // Bulk task rows — each row has its own title/desc/priority/due_date
+  interface TaskDraft {
+    id: number;
+    title: string;
+    description: string;
+    priority: TaskPriority;
+    dueDate: string;
+  }
+  const nextDraftId = useRef(1);
+  const [taskDrafts, setTaskDrafts] = useState<TaskDraft[]>([
+    { id: 0, title: "", description: "", priority: "medium", dueDate: "" },
+  ]);
+
+  // Multi-select assignees
+  const [selectedAssignees, setSelectedAssignees] = useState<Set<string>>(new Set());
+  const [assigneeSearch, setAssigneeSearch] = useState("");
+  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+  const assigneeDropdownRef = useRef<HTMLDivElement>(null);
+
   const [notifyTelegram, setNotifyTelegram] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
+
+  // Close assignee dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        assigneeDropdownRef.current &&
+        !assigneeDropdownRef.current.contains(e.target as Node)
+      ) {
+        setShowAssigneeDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Filtered users for the assignee picker
+  const filteredAssigneeUsers = useMemo(() => {
+    const q = assigneeSearch.toLowerCase();
+    if (!q) return users;
+    return users.filter(
+      (u) =>
+        u.full_name.toLowerCase().includes(q) ||
+        u.department.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q)
+    );
+  }, [users, assigneeSearch]);
+
+  // Group users by department for the assignee picker
+  const departmentGroups = useMemo(() => {
+    const groups = new Map<string, AssignableUser[]>();
+    for (const u of filteredAssigneeUsers) {
+      const dept = u.department || "Other";
+      if (!groups.has(dept)) groups.set(dept, []);
+      groups.get(dept)!.push(u);
+    }
+    return groups;
+  }, [filteredAssigneeUsers]);
+
+  function toggleAssignee(userId: string) {
+    setSelectedAssignees((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  }
+
+  function toggleAllAssignees() {
+    if (selectedAssignees.size === filteredAssigneeUsers.length) {
+      setSelectedAssignees(new Set());
+    } else {
+      setSelectedAssignees(new Set(filteredAssigneeUsers.map((u) => u.id)));
+    }
+  }
+
+  function toggleDepartment(dept: string) {
+    const deptUsers = departmentGroups.get(dept) || [];
+    const allSelected = deptUsers.every((u) => selectedAssignees.has(u.id));
+    setSelectedAssignees((prev) => {
+      const next = new Set(prev);
+      for (const u of deptUsers) {
+        if (allSelected) next.delete(u.id);
+        else next.add(u.id);
+      }
+      return next;
+    });
+  }
+
+  function addTaskDraft() {
+    nextDraftId.current += 1;
+    setTaskDrafts((prev) => [
+      ...prev,
+      { id: nextDraftId.current, title: "", description: "", priority: "medium", dueDate: "" },
+    ]);
+  }
+
+  function removeTaskDraft(id: number) {
+    setTaskDrafts((prev) => (prev.length <= 1 ? prev : prev.filter((d) => d.id !== id)));
+  }
+
+  function updateTaskDraft(id: number, field: keyof Omit<TaskDraft, "id">, value: string) {
+    setTaskDrafts((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, [field]: value } : d))
+    );
+  }
+
+  function resetCreateModal() {
+    setShowCreateModal(false);
+    nextDraftId.current = 1;
+    setTaskDrafts([{ id: 0, title: "", description: "", priority: "medium", dueDate: "" }]);
+    setSelectedAssignees(new Set());
+    setAssigneeSearch("");
+    setBulkProgress(null);
+  }
 
   // Complete Task modal state
   const [completingTask, setCompletingTask] = useState<TaskRow | null>(null);
@@ -123,51 +236,66 @@ export function TaskWorkspace({
 
   async function handleCreateTask(e: React.FormEvent) {
     e.preventDefault();
+    if (selectedAssignees.size === 0) {
+      setBanner({ type: "err", text: "Select at least one assignee." });
+      return;
+    }
+
+    const validDrafts = taskDrafts.filter((d) => d.title.trim());
+    if (validDrafts.length === 0) {
+      setBanner({ type: "err", text: "Add at least one task with a title." });
+      return;
+    }
+
     setCreating(true);
     setBanner(null);
+    const totalToCreate = validDrafts.length * selectedAssignees.size;
+    setBulkProgress({ current: 0, total: totalToCreate });
 
     try {
       const res = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: newTitle,
-          description: newDescription,
-          assigned_to: newAssignee,
-          priority: newPriority,
-          due_date: newDueDate || null,
+          tasks: validDrafts.map((d) => ({
+            title: d.title,
+            description: d.description,
+            priority: d.priority,
+            due_date: d.dueDate || null,
+          })),
+          assigned_to: Array.from(selectedAssignees),
           notify_telegram: notifyTelegram,
         }),
       });
       const data = await res.json();
-      if (!res.ok || !data.success) {
-        setBanner({ type: "err", text: data.error || "Failed to assign task." });
-      } else {
-        setTasks((prev) => [data.task, ...prev]);
-        setShowCreateModal(false);
-        setNewTitle("");
-        setNewDescription("");
-        setNewDueDate("");
-        setNewPriority("medium");
 
-        if (notifyTelegram) {
-          if (data.telegram?.sent) {
+      if (!res.ok || !data.success) {
+        setBanner({ type: "err", text: data.error || "Failed to assign tasks." });
+      } else {
+        // Prepend all new tasks
+        setTasks((prev) => [...(data.tasks || []), ...prev]);
+        resetCreateModal();
+
+        const taskCount = data.created || totalToCreate;
+        const telegramSent = data.telegram?.sent || 0;
+        const telegramTotal = data.telegram?.total || 0;
+
+        if (notifyTelegram && telegramTotal > 0) {
+          if (telegramSent === telegramTotal) {
             setBanner({
               type: "ok",
-              text: `Task assigned to ${data.task.assignee_name} and Telegram notification delivered!`,
+              text: `${taskCount} task${taskCount > 1 ? "s" : ""} assigned successfully! All ${telegramSent} Telegram notification${telegramSent > 1 ? "s" : ""} delivered.`,
             });
           } else {
             setBanner({
               type: "warn",
-              text: `Task created for ${data.task.assignee_name}, but Telegram alert was not sent (${
-                data.telegram?.error || "user not linked yet"
-              }).`,
+              text: `${taskCount} task${taskCount > 1 ? "s" : ""} created. ${telegramSent}/${telegramTotal} Telegram notification${telegramTotal > 1 ? "s" : ""} delivered.`,
             });
           }
         } else {
           setBanner({
             type: "ok",
-            text: `Task assigned to ${data.task.assignee_name}.`,
+            text: `${taskCount} task${taskCount > 1 ? "s" : ""} assigned successfully!`,
           });
         }
         router.refresh();
@@ -179,6 +307,7 @@ export function TaskWorkspace({
       });
     } finally {
       setCreating(false);
+      setBulkProgress(null);
     }
   }
 
@@ -435,7 +564,6 @@ export function TaskWorkspace({
             <button
               type="button"
               onClick={() => {
-                if (!newAssignee && users.length > 0) setNewAssignee(users[0].id);
                 setShowCreateModal(true);
               }}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:opacity-90 transition-all"
@@ -663,138 +791,401 @@ export function TaskWorkspace({
         </div>
       )}
 
-      {/* Assign New Task Modal (Admin / Super Admin) */}
+      {/* Bulk Assign Tasks Modal (Admin / Super Admin) */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs animate-in fade-in-50">
-          <div className="w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+          <div className="w-full max-w-2xl max-h-[90vh] rounded-xl border border-border bg-card shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <IconCheckSquare size={16} />
                 </div>
                 <div>
                   <h3 className="font-display text-base font-bold text-foreground">
-                    Assign Task to Registered User
+                    Assign Tasks
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
-                    Assigns task directly and notifies the user via Telegram.
+                    Create multiple tasks for multiple staff members at once.
                   </p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setShowCreateModal(false)}
+                onClick={resetCreateModal}
                 className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <IconX size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateTask} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
-                  Assign To (Registered User) *
-                </label>
-                <select
-                  required
-                  value={newAssignee}
-                  onChange={(e) => setNewAssignee(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                >
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.full_name} — {u.department} (
-                      {u.telegram_chat_id ? "Telegram Linked ✓" : "No Telegram"})
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {/* Scrollable content */}
+            <form onSubmit={handleCreateTask} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
 
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
-                  Task Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Submit Q4 Fleet Fuel Audit Sheet"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
-                  Instructions / Details
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Describe deliverables, context, or expected outcome..."
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+                {/* ─── SECTION 1: Assign To (Multi-select) ─── */}
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">
-                    Priority
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-foreground mb-2">
+                    <IconUsers size={14} className="text-muted-foreground" />
+                    Assign To *
+                    {selectedAssignees.size > 0 && (
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                        {selectedAssignees.size} selected
+                      </span>
+                    )}
                   </label>
-                  <select
-                    value={newPriority}
-                    onChange={(e) => setNewPriority(e.target.value as TaskPriority)}
-                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
-                  </select>
+
+                  <div ref={assigneeDropdownRef} className="relative">
+                    {/* Selected users preview / trigger */}
+                    <button
+                      type="button"
+                      onClick={() => setShowAssigneeDropdown((v) => !v)}
+                      className="w-full flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2.5 text-xs text-foreground hover:bg-muted/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-colors"
+                    >
+                      <span className={selectedAssignees.size === 0 ? "text-muted-foreground/60" : ""}>
+                        {selectedAssignees.size === 0
+                          ? "Click to select staff members..."
+                          : selectedAssignees.size === users.length
+                          ? `All ${users.length} staff selected`
+                          : `${selectedAssignees.size} staff member${selectedAssignees.size > 1 ? "s" : ""} selected`}
+                      </span>
+                      <IconChevronDown
+                        size={14}
+                        className={`text-muted-foreground transition-transform ${showAssigneeDropdown ? "rotate-180" : ""}`}
+                      />
+                    </button>
+
+                    {/* Selected pills (show first 6) */}
+                    {selectedAssignees.size > 0 && !showAssigneeDropdown && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {users
+                          .filter((u) => selectedAssignees.has(u.id))
+                          .slice(0, 6)
+                          .map((u) => (
+                            <span
+                              key={u.id}
+                              className="inline-flex items-center gap-1 rounded-full bg-primary/8 border border-primary/15 px-2 py-0.5 text-[10px] font-medium text-foreground"
+                            >
+                              {u.full_name}
+                              {u.telegram_chat_id && (
+                                <span className="text-emerald-500" title="Telegram linked">✓</span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => toggleAssignee(u.id)}
+                                className="text-muted-foreground hover:text-rose-500 ml-0.5"
+                              >
+                                <IconX size={10} />
+                              </button>
+                            </span>
+                          ))}
+                        {selectedAssignees.size > 6 && (
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            +{selectedAssignees.size - 6} more
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Dropdown panel */}
+                    {showAssigneeDropdown && (
+                      <div className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-card shadow-xl max-h-64 flex flex-col animate-in slide-in-from-top-1 duration-100">
+                        {/* Search + select all */}
+                        <div className="border-b border-border p-2 space-y-1.5 shrink-0">
+                          <div className="relative">
+                            <IconSearch
+                              size={13}
+                              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Search by name, department..."
+                              value={assigneeSearch}
+                              onChange={(e) => setAssigneeSearch(e.target.value)}
+                              className="w-full rounded-md border border-border bg-muted/40 py-1.5 pl-8 pr-2 text-[11px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+                              autoFocus
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={toggleAllAssignees}
+                            className="text-[11px] font-semibold text-primary hover:underline"
+                          >
+                            {selectedAssignees.size === filteredAssigneeUsers.length
+                              ? "Deselect All"
+                              : `Select All (${filteredAssigneeUsers.length})`}
+                          </button>
+                        </div>
+
+                        {/* User list grouped by department */}
+                        <div className="overflow-y-auto flex-1">
+                          {Array.from(departmentGroups.entries()).map(([dept, deptUsers]) => {
+                            const allInDeptSelected = deptUsers.every((u) =>
+                              selectedAssignees.has(u.id)
+                            );
+                            return (
+                              <div key={dept}>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleDepartment(dept)}
+                                  className="flex w-full items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/30 hover:bg-muted/50"
+                                >
+                                  <span
+                                    className={`flex h-3.5 w-3.5 items-center justify-center rounded border text-[9px] ${
+                                      allInDeptSelected
+                                        ? "border-primary bg-primary text-primary-foreground"
+                                        : "border-border"
+                                    }`}
+                                  >
+                                    {allInDeptSelected && <IconCheck size={9} />}
+                                  </span>
+                                  {dept} ({deptUsers.length})
+                                </button>
+                                {deptUsers.map((u) => {
+                                  const isSelected = selectedAssignees.has(u.id);
+                                  return (
+                                    <button
+                                      key={u.id}
+                                      type="button"
+                                      onClick={() => toggleAssignee(u.id)}
+                                      className={`flex w-full items-center gap-2.5 px-4 py-2 text-xs hover:bg-muted/50 transition-colors ${
+                                        isSelected ? "bg-primary/5" : ""
+                                      }`}
+                                    >
+                                      <span
+                                        className={`flex h-4 w-4 items-center justify-center rounded border shrink-0 ${
+                                          isSelected
+                                            ? "border-primary bg-primary text-primary-foreground"
+                                            : "border-border"
+                                        }`}
+                                      >
+                                        {isSelected && <IconCheck size={10} />}
+                                      </span>
+                                      <span className="flex-1 text-left truncate font-medium text-foreground">
+                                        {u.full_name}
+                                      </span>
+                                      <span className="text-[10px] text-muted-foreground shrink-0">
+                                        {u.role}
+                                      </span>
+                                      {u.telegram_chat_id ? (
+                                        <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold shrink-0">
+                                          TG ✓
+                                        </span>
+                                      ) : (
+                                        <span className="text-[9px] text-muted-foreground/60 shrink-0">
+                                          No TG
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })}
+                          {filteredAssigneeUsers.length === 0 && (
+                            <p className="p-4 text-center text-xs text-muted-foreground">
+                              No staff found matching &quot;{assigneeSearch}&quot;
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
+                {/* ─── SECTION 2: Tasks (Dynamic rows) ─── */}
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">
-                    Due Date (Optional)
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                      <IconCheckSquare size={14} className="text-muted-foreground" />
+                      Tasks *
+                      <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">
+                        {taskDrafts.length}
+                      </span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={addTaskDraft}
+                      disabled={taskDrafts.length >= 20}
+                      className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-[11px] font-semibold text-foreground hover:bg-muted/80 transition-colors disabled:opacity-40"
+                    >
+                      <IconPlus size={12} />
+                      Add Task
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {taskDrafts.map((draft, idx) => (
+                      <div
+                        key={draft.id}
+                        className="rounded-lg border border-border bg-muted/20 p-3 space-y-2.5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                            Task {idx + 1}
+                          </span>
+                          {taskDrafts.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeTaskDraft(draft.id)}
+                              className="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                            >
+                              <IconMinus size={10} />
+                              Remove
+                            </button>
+                          )}
+                        </div>
+
+                        <input
+                          type="text"
+                          required
+                          placeholder="Task title *"
+                          value={draft.title}
+                          onChange={(e) => updateTaskDraft(draft.id, "title", e.target.value)}
+                          className="w-full rounded-md border border-border bg-card px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        />
+
+                        <textarea
+                          rows={2}
+                          placeholder="Instructions / details (optional)"
+                          value={draft.description}
+                          onChange={(e) => updateTaskDraft(draft.id, "description", e.target.value)}
+                          className="w-full rounded-md border border-border bg-card px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        />
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-semibold text-muted-foreground mb-0.5">
+                              Priority
+                            </label>
+                            <select
+                              value={draft.priority}
+                              onChange={(e) =>
+                                updateTaskDraft(draft.id, "priority", e.target.value)
+                              }
+                              className="w-full rounded-md border border-border bg-card px-2 py-1.5 text-xs text-foreground focus:border-accent focus:outline-none"
+                            >
+                              <option value="low">Low</option>
+                              <option value="medium">Medium</option>
+                              <option value="high">High</option>
+                              <option value="urgent">Urgent</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-semibold text-muted-foreground mb-0.5">
+                              Due Date
+                            </label>
+                            <input
+                              type="date"
+                              value={draft.dueDate}
+                              onChange={(e) =>
+                                updateTaskDraft(draft.id, "dueDate", e.target.value)
+                              }
+                              className="w-full rounded-md border border-border bg-card px-2 py-1.5 text-xs text-foreground focus:border-accent focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ─── SECTION 3: Telegram toggle ─── */}
+                <label className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-3 text-xs cursor-pointer">
                   <input
-                    type="date"
-                    value={newDueDate}
-                    onChange={(e) => setNewDueDate(e.target.value)}
-                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                    type="checkbox"
+                    checked={notifyTelegram}
+                    onChange={(e) => setNotifyTelegram(e.target.checked)}
+                    className="h-4 w-4 rounded border-border accent-emerald-600"
                   />
-                </div>
+                  <span className="font-medium text-foreground">
+                    Send instant Telegram notification to all assignees
+                  </span>
+                </label>
+
+                {/* ─── Summary ─── */}
+                {selectedAssignees.size > 0 && taskDrafts.some((d) => d.title.trim()) && (
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs">
+                    <p className="font-semibold text-foreground flex items-center gap-1.5">
+                      <IconSend size={12} className="text-primary" />
+                      Assignment Summary
+                    </p>
+                    <p className="mt-1 text-muted-foreground">
+                      <span className="font-bold text-foreground">
+                        {taskDrafts.filter((d) => d.title.trim()).length}
+                      </span>
+                      {" task"}
+                      {taskDrafts.filter((d) => d.title.trim()).length > 1 ? "s" : ""} ×{" "}
+                      <span className="font-bold text-foreground">
+                        {selectedAssignees.size}
+                      </span>
+                      {" assignee"}
+                      {selectedAssignees.size > 1 ? "s" : ""} ={" "}
+                      <span className="font-bold text-primary">
+                        {taskDrafts.filter((d) => d.title.trim()).length * selectedAssignees.size}
+                      </span>
+                      {" total task"}
+                      {taskDrafts.filter((d) => d.title.trim()).length * selectedAssignees.size > 1
+                        ? "s"
+                        : ""}{" "}
+                      will be created
+                    </p>
+                  </div>
+                )}
               </div>
 
-              <label className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-3 text-xs cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={notifyTelegram}
-                  onChange={(e) => setNotifyTelegram(e.target.checked)}
-                  className="h-4 w-4 rounded border-border accent-emerald-600"
-                />
-                <span className="font-medium text-foreground">
-                  Send instant Telegram notification to assignee
-                </span>
-              </label>
-
-              <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
-                >
-                  <IconSend size={13} />
-                  {creating ? "Assigning..." : "Assign & Notify"}
-                </button>
+              {/* Footer */}
+              <div className="flex items-center justify-between gap-2 border-t border-border px-6 py-4 shrink-0 bg-card">
+                {bulkProgress ? (
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{
+                            width: `${
+                              bulkProgress.total > 0
+                                ? (bulkProgress.current / bulkProgress.total) * 100
+                                : 0
+                            }%`,
+                          }}
+                        />
+                      </div>
+                      <span className="tabular-nums font-medium">
+                        Creating...
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div />
+                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={resetCreateModal}
+                    className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={creating || selectedAssignees.size === 0}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    <IconSend size={13} />
+                    {creating
+                      ? "Assigning..."
+                      : selectedAssignees.size > 1 || taskDrafts.length > 1
+                      ? `Assign ${
+                          taskDrafts.filter((d) => d.title.trim()).length * selectedAssignees.size
+                        } Task${
+                          taskDrafts.filter((d) => d.title.trim()).length * selectedAssignees.size > 1
+                            ? "s"
+                            : ""
+                        }`
+                      : "Assign & Notify"}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
