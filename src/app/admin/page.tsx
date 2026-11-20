@@ -266,6 +266,10 @@ export default async function AdminPage({
               : "Manage staff accounts, configure SLA response timers, official letterhead templates, Telegram alerts, and review submissions."}
           </p>
 
+          <a href="/api/admin/backup" className="inline-flex w-fit items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <IconFileText size={14} /> Download data backup
+          </a>
+
           {/* Segmented Tab Control */}
           <div className="mt-4 flex flex-wrap items-center gap-1 rounded-lg bg-muted p-1 text-muted-foreground text-xs w-fit border border-border/60">
             <Link

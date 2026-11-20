@@ -20,16 +20,19 @@ import {
 } from "@/lib/compliancePeriods";
 import { AppShell } from "@/components/AppShell";
 import {
+  Button,
+  Badge,
+  Card,
+} from "@/components/ui";
+import {
   IconAlertCircle,
   IconBell,
-  IconCalendar,
   IconCheckCircle,
   IconCheckSquare,
   IconClock,
   IconCompass,
   IconCrown,
   IconDownload,
-  IconFileText,
   IconLayers,
   IconLock,
   IconPlus,
@@ -55,9 +58,8 @@ export default async function DashboardPage({
   const isAdmin = user.role === "admin";
   const isPrivileged = isSuperAdmin || isAdmin;
 
-  // By default, Super Admin and Admin view all group submissions; employees view their own.
+  // View mode
   const activeView = params.view || (isPrivileged ? "company" : "personal");
-  const isMissingView = activeView === "not_submitted" || activeView === "missing";
   const isPersonalView = activeView === "personal";
 
   interface DbReportRow {
@@ -82,7 +84,6 @@ export default async function DashboardPage({
   // Query reports from Neon
   let rawReportRows: DbReportRow[];
   if (isPrivileged) {
-    // For Direction & Admins, retrieve all submissions to evaluate group compliance and missing staff
     rawReportRows = (await sql`
       SELECT r.id, r.user_id, r.report_type,
              to_char(r.period_start, 'YYYY-MM-DD') as period_start,
@@ -140,40 +141,103 @@ export default async function DashboardPage({
     ? allReportList.filter((r) => r.user_id === user.id)
     : allReportList;
 
-  // Fetch portal settings, open tasks, warnings, and (for Direction/Admin) staff compliance data in parallel
-  const [settings, myOpenTasks, staffRows, taskSummaryRows, allWarnings, myWarnings] =
-    await Promise.all([
-      getPortalSettings(),
-      sql`
-        SELECT id, title, priority, status, to_char(due_date, 'YYYY-MM-DD') as due_date
-        FROM tasks
-        WHERE assigned_to = ${user.id} AND status != 'completed'
-        ORDER BY due_date ASC NULLS LAST, created_at DESC
-        LIMIT 4;
-      `,
-      isPrivileged
-        ? sql`
-            SELECT id, full_name, email, department, role, telegram_chat_id
-            FROM users
-            ORDER BY full_name ASC;
-          `
-        : Promise.resolve([]),
-      isPrivileged
-        ? sql`
-            SELECT assigned_to,
-                   COUNT(*) FILTER (WHERE status != 'completed')::int AS pending_tasks,
-                   COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_tasks
-            FROM tasks
-            GROUP BY assigned_to;
-          `
-        : Promise.resolve([]),
-      isPrivileged
-        ? getWarningsList()
-        : Promise.resolve([]),
-      getWarningsList(user.id),
-    ]);
+  // Fetch parallel dependencies: portal settings, open tasks, warnings, compliance, directives, and SLA stats
+  const [
+    settings,
+    myOpenTasks,
+    staffRows,
+    taskSummaryRows,
+    allWarnings,
+    myWarnings,
+    overdueDirectivesRows,
+    slaBreachesRows,
+    kpiCountsRows,
+  ] = await Promise.all([
+    getPortalSettings(),
+    sql`
+      SELECT id, title, priority, status, to_char(due_date, 'YYYY-MM-DD') as due_date
+      FROM tasks
+      WHERE assigned_to = ${user.id} AND status != 'completed'
+      ORDER BY due_date ASC NULLS LAST, created_at DESC
+      LIMIT 4;
+    `,
+    isPrivileged
+      ? sql`
+          SELECT id, full_name, email, department, role, telegram_chat_id
+          FROM users
+          ORDER BY full_name ASC;
+        `
+      : Promise.resolve([]),
+    isPrivileged
+      ? sql`
+          SELECT assigned_to,
+                 COUNT(*) FILTER (WHERE status != 'completed')::int AS pending_tasks,
+                 COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_tasks
+          FROM tasks
+          GROUP BY assigned_to;
+        `
+      : Promise.resolve([]),
+    isPrivileged ? getWarningsList() : Promise.resolve([]),
+    getWarningsList(user.id),
+    sql`
+      SELECT id, reference_code, title, department, priority, to_char(due_date, 'YYYY-MM-DD') as due_date
+      FROM directives
+      WHERE status != 'closed' AND due_date IS NOT NULL AND due_date < CURRENT_DATE
+      ORDER BY due_date ASC
+      LIMIT 4;
+    `,
+    sql`
+      SELECT id, reference_code, title, department, priority, to_char(sla_due_at, 'YYYY-MM-DD HH24:MI') as sla_due_str
+      FROM directives
+      WHERE status = 'open' AND sla_due_at IS NOT NULL AND sla_due_at < NOW()
+      ORDER BY sla_due_at ASC
+      LIMIT 4;
+    `,
+    sql`
+      SELECT
+        (SELECT COUNT(*) FROM directives)::int AS total_directives,
+        (SELECT COUNT(*) FROM directives WHERE status != 'closed')::int AS active_directives,
+        (SELECT COUNT(*) FROM action_plans)::int AS total_plans,
+        (SELECT COUNT(*) FROM action_plans WHERE status = 'submitted')::int AS submitted_plans,
+        (SELECT COUNT(*) FROM tasks)::int AS total_tasks,
+        (SELECT COUNT(*) FROM tasks WHERE status = 'completed')::int AS completed_tasks;
+    `,
+  ]);
 
-  const activePersonalWarnings = myWarnings.filter((w) => w.status !== "revoked");
+  const activePersonalWarnings = (
+    isPrivileged && !isPersonalView ? allWarnings : myWarnings
+  ).filter((w) => w.status !== "revoked");
+  const overdueDirectives = overdueDirectivesRows as {
+    id: string;
+    reference_code: string;
+    title: string;
+    department: string;
+    priority: string;
+    due_date: string;
+  }[];
+  const slaBreaches = slaBreachesRows as {
+    id: string;
+    reference_code: string;
+    title: string;
+    department: string;
+    priority: string;
+    sla_due_str: string;
+  }[];
+  const kpiCounts = (kpiCountsRows[0] || {
+    total_directives: 0,
+    active_directives: 0,
+    total_plans: 0,
+    submitted_plans: 0,
+    total_tasks: 0,
+    completed_tasks: 0,
+  }) as {
+    total_directives: number;
+    active_directives: number;
+    total_plans: number;
+    submitted_plans: number;
+    total_tasks: number;
+    completed_tasks: number;
+  };
 
   const windowStatus = evaluateReportingWindow(settings);
   const windowLocked = !windowStatus.isOpen && !isPrivileged;
@@ -218,13 +282,19 @@ export default async function DashboardPage({
     : [];
 
   const notSubmittedCount = notSubmittedStaff.length;
-
   const totalCount = reportList.length;
-  const weeklyCount = reportList.filter((r) => r.report_type === "weekly").length;
-  const monthlyCount = reportList.filter((r) => r.report_type === "monthly").length;
   const pendingReviewCount = reportList.filter((r) => r.status === "submitted").length;
   const reviewedCount = reportList.filter((r) => r.status === "reviewed").length;
-  const draftCount = reportList.filter((r) => r.status === "draft").length;
+
+  const taskResolutionRate =
+    kpiCounts.total_tasks > 0
+      ? Math.round((kpiCounts.completed_tasks / kpiCounts.total_tasks) * 100)
+      : 100;
+
+  const totalPriorityIssues =
+    overdueDirectives.length +
+    slaBreaches.length +
+    activePersonalWarnings.length;
 
   const displayName = user.full_name || user.email.split("@")[0] || "Executive";
 
@@ -268,10 +338,10 @@ export default async function DashboardPage({
             </h1>
             <p className="mt-1 text-xs sm:text-sm text-muted-foreground max-w-3xl">
               {isSuperAdmin
-                ? "Panoramic group-wide oversight: Inspect every performance report across all subsidiaries, review pending submissions, and steer holding milestones."
+                ? "Panoramic group-wide oversight: Directives follow-up, action plans review, SLA accountability, and subsidiary reporting."
                 : isAdmin
-                ? "Manage reports, review department submissions, and provision user accounts across the holding company."
-                : "Author, track, and submit your weekly and monthly performance reports directly to executive leadership."}
+                ? "Manage directives, inspect department submissions, track SLA compliance, and supervise holding operations."
+                : "Execute assigned directives, submit action plans, and file scheduled weekly & monthly performance reports."}
             </p>
           </div>
 
@@ -288,18 +358,16 @@ export default async function DashboardPage({
                   href="/api/reports/export/csv"
                   download
                   title="Download consolidated spreadsheet summary of all group submissions"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
                 >
-                  <IconDownload size={14} className="text-muted-foreground" />
-                  Export All (CSV)
+                  <Button variant="outline" size="sm" leftIcon={<IconDownload size={14} />}>
+                    Export CSV
+                  </Button>
                 </a>
 
-                <Link
-                  href="/admin"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
-                >
-                  <IconUser size={14} className="text-muted-foreground" />
-                  Manage Users
+                <Link href="/admin">
+                  <Button variant="outline" size="sm" leftIcon={<IconUser size={14} />}>
+                    Manage Users
+                  </Button>
                 </Link>
               </>
             )}
@@ -314,379 +382,434 @@ export default async function DashboardPage({
               </span>
             ) : (
               <>
-                <Link
-                  href="/reports/new/weekly"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs transition-all hover:bg-muted"
-                >
-                  <IconPlus size={14} className="text-muted-foreground" />
-                  New Weekly
+                <Link href="/reports/new/weekly">
+                  <Button variant="outline" size="sm" leftIcon={<IconPlus size={14} />}>
+                    New Weekly
+                  </Button>
                 </Link>
 
-                <Link
-                  href="/reports/new/monthly"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs transition-all hover:opacity-90"
-                >
-                  <IconPlus size={14} />
-                  New Monthly
+                <Link href="/reports/new/monthly">
+                  <Button variant="primary" size="sm" leftIcon={<IconPlus size={14} />}>
+                    New Monthly
+                  </Button>
                 </Link>
               </>
             )}
 
-            <Link
-              href="/directives"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs transition-all hover:bg-muted"
-            >
-              <IconCompass size={14} className="text-accent" />
-              Directives
+            <Link href="/directives">
+              <Button variant="brand" size="sm" leftIcon={<IconCompass size={14} />}>
+                Directives
+              </Button>
             </Link>
 
-            <Link
-              href="/plans"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs transition-all hover:bg-muted"
-            >
-              <IconTarget size={14} className="text-accent" />
-              Action Plans
+            <Link href="/plans">
+              <Button variant="outline" size="sm" leftIcon={<IconTarget size={14} />}>
+                Action Plans
+              </Button>
             </Link>
 
-            <Link
-              href="/tasks"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs transition-all hover:bg-muted"
-            >
-              <IconCheckSquare size={14} className="text-accent" />
-              Tasks{myOpenTasks.length > 0 ? ` (${myOpenTasks.length})` : ""}
+            <Link href="/tasks">
+              <Button variant="outline" size="sm" leftIcon={<IconCheckSquare size={14} />}>
+                Tasks{myOpenTasks.length > 0 ? ` (${myOpenTasks.length})` : ""}
+              </Button>
             </Link>
           </div>
         </div>
 
-        {/* Live Ethiopian Time Reporting Window Status */}
-        <ReportingWindowBanner status={windowStatus} isPrivileged={isPrivileged} />
+        {/* ========================================================================= */}
+        {/* PRIORITY ZONE: High-contrast Alert Cards at the Very Top                   */}
+        {/* ========================================================================= */}
+        <section aria-label="Priority Attention Zone" className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-accent animate-pulse" />
+              <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Priority Attention Zone
+              </h2>
+            </div>
+            {totalPriorityIssues > 0 ? (
+              <Badge variant="destructive" size="sm" pulse>
+                {totalPriorityIssues} Priority Alert{totalPriorityIssues === 1 ? "" : "s"}
+              </Badge>
+            ) : (
+              <Badge variant="success" size="sm">
+                All Operations On Track
+              </Badge>
+            )}
+          </div>
 
-        {/* Personal Disciplinary Warnings / Written Warning Letters */}
-        {activePersonalWarnings.length > 0 && (
-          <div className="rounded-xl border border-rose-500/35 bg-rose-500/10 p-4 sm:p-5 space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div className="flex items-start gap-2.5">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-500/20 text-rose-700 dark:text-rose-300">
-                  <IconAlertCircle size={18} />
+          {totalPriorityIssues === 0 ? (
+            <Card className="border-emerald-500/30 bg-emerald-500/5 p-4 sm:p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                  <IconCheckCircle size={20} />
                 </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm font-bold text-rose-900 dark:text-rose-200">
-                    Disciplinary Notice: {activePersonalWarnings.length} Active Warning
-                    {activePersonalWarnings.length === 1 ? "" : "s"} on Record
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    Zero SLA Breaches &middot; Zero Overdue Directives
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-rose-800/85 dark:text-rose-300/85">
-                    1st missed report triggers a Verbal Warning on Telegram; a 2nd missed report automatically issues an Official Written Warning Letter.
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    All holding directives, action plans, and SLA response countdowns are currently healthy and compliant.
                   </p>
                 </div>
+                <Link href="/directives">
+                  <Button variant="outline" size="xs">
+                    Inspect Directives
+                  </Button>
+                </Link>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              {activePersonalWarnings.slice(0, 3).map((w) => {
-                const isLetter = w.warning_level === "written_letter";
-                return (
-                  <div
-                    key={w.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-rose-500/25 bg-card/90 px-3.5 py-2.5 text-xs"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold border ${
-                          isLetter
-                            ? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30"
-                            : "bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30"
-                        }`}
-                      >
-                        {isLetter
-                          ? `Strike #${w.strike_number} · Written Letter`
-                          : "Strike #1 · Verbal Warning"}
-                      </span>
-                      <span className="font-semibold text-foreground">
-                        {w.report_type === "monthly" ? "Monthly" : "Weekly"} Report ({w.period_label})
-                      </span>
-                      {w.letter_ref && (
-                        <span className="font-mono text-[10px] text-muted-foreground">
-                          {w.letter_ref}
-                        </span>
-                      )}
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {/* Overdue Directives Alert Card */}
+              {overdueDirectives.length > 0 && (
+                <div className="rounded-xl border border-red-500/40 bg-red-500/10 dark:bg-red-500/15 p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-500/20 text-red-700 dark:text-red-300">
+                        <IconAlertCircle size={16} />
+                      </div>
+                      <h3 className="text-xs font-bold text-red-950 dark:text-red-200">
+                        {overdueDirectives.length} Overdue Directive{overdueDirectives.length === 1 ? "" : "s"}
+                      </h3>
                     </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Link
-                        href={`/warnings/${w.id}`}
-                        className="inline-flex items-center gap-1 rounded-md bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 transition-colors"
-                      >
-                        <IconFileText size={12} />
-                        {isLetter ? "Open & Acknowledge Letter" : "View Warning"}
-                      </Link>
-                      {isLetter && (
-                        <a
-                          href={`/api/warnings/${w.id}/docx`}
-                          className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-muted transition-colors"
-                        >
-                          <IconDownload size={12} />
-                          .docx
-                        </a>
-                      )}
-                    </div>
+                    <Badge variant="destructive" size="sm">
+                      Critical
+                    </Badge>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* My Open Tasks & Telegram Notification Card */}
-        {(myOpenTasks.length > 0 || !user.telegram_chat_id) && (
-          <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-foreground">
-                  <IconCheckSquare size={15} className="text-accent" />
-                  {myOpenTasks.length > 0
-                    ? `You have ${myOpenTasks.length} pending assigned task${myOpenTasks.length === 1 ? "" : "s"}`
-                    : "Stay notified on Telegram"}
-                </span>
-                {!user.telegram_chat_id && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-800 dark:text-sky-300 border border-sky-500/25">
-                    <IconBell size={10} />
-                    Telegram Not Linked
-                  </span>
-                )}
-              </div>
-              {myOpenTasks.length > 0 ? (
-                <div className="flex flex-wrap gap-2 pt-0.5">
-                  {myOpenTasks.map((t) => (
-                    <Link
-                      key={t.id}
-                      href="/tasks"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
-                    >
-                      <span className="truncate max-w-[200px]">{t.title}</span>
-                      {t.due_date && (
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          ({t.due_date})
+                  <div className="space-y-1.5">
+                    {overdueDirectives.slice(0, 2).map((d) => (
+                      <Link
+                        key={d.id}
+                        href={`/directives/${d.id}`}
+                        className="flex items-center justify-between gap-2 rounded-lg bg-card/80 p-2 text-xs hover:bg-card transition-colors"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground truncate">{d.title}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {d.reference_code} &middot; {d.department}
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-mono text-destructive shrink-0">
+                          Due {d.due_date}
                         </span>
-                      )}
-                    </Link>
-                  ))}
+                      </Link>
+                    ))}
+                  </div>
+                  <Link href="/directives" className="block text-right">
+                    <Button variant="destructive" size="xs">
+                      Resolve Directives &rarr;
+                    </Button>
+                  </Link>
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Link your Telegram account to receive instant task notifications from management.
-                </p>
+              )}
+
+              {/* SLA Breaches Alert Card */}
+              {slaBreaches.length > 0 && (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 dark:bg-amber-500/15 p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                        <IconClock size={16} />
+                      </div>
+                      <h3 className="text-xs font-bold text-amber-950 dark:text-amber-200">
+                        {slaBreaches.length} SLA Response Breach{slaBreaches.length === 1 ? "" : "es"}
+                      </h3>
+                    </div>
+                    <Badge variant="warning" size="sm">
+                      SLA Warning
+                    </Badge>
+                  </div>
+                  <div className="space-y-1.5">
+                    {slaBreaches.slice(0, 2).map((d) => (
+                      <Link
+                        key={d.id}
+                        href={`/directives/${d.id}`}
+                        className="flex items-center justify-between gap-2 rounded-lg bg-card/80 p-2 text-xs hover:bg-card transition-colors"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground truncate">{d.title}</p>
+                          <p className="text-[10px] text-muted-foreground">{d.department}</p>
+                        </div>
+                        <span className="text-[10px] font-mono text-amber-800 dark:text-amber-300 shrink-0">
+                          Breached {d.sla_due_str}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                  <Link href="/directives" className="block text-right">
+                    <Button variant="brand" size="xs">
+                      Enforce Action Plan &rarr;
+                    </Button>
+                  </Link>
+                </div>
+              )}
+
+              {/* Active Personal / Disciplinary Warnings */}
+              {activePersonalWarnings.length > 0 && (
+                <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 dark:bg-rose-500/15 p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-rose-500/20 text-rose-700 dark:text-rose-300">
+                        <IconAlertCircle size={16} />
+                      </div>
+                      <h3 className="text-xs font-bold text-rose-950 dark:text-rose-200">
+                        {activePersonalWarnings.length} Active Warning Notice
+                      </h3>
+                    </div>
+                    <Badge variant="destructive" size="sm">
+                      Attention
+                    </Badge>
+                  </div>
+                  <div className="space-y-1.5">
+                    {activePersonalWarnings.slice(0, 2).map((w) => (
+                      <Link
+                        key={w.id}
+                        href={`/warnings/${w.id}`}
+                        className="flex items-center justify-between gap-2 rounded-lg bg-card/80 p-2 text-xs hover:bg-card transition-colors"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground truncate">
+                            {w.report_type === "monthly" ? "Monthly" : "Weekly"} Filing
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">{w.period_label}</p>
+                        </div>
+                        <span className="text-[10px] font-semibold text-rose-700 dark:text-rose-300 shrink-0">
+                          Strike #{w.strike_number}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    <Link href={`/warnings/${activePersonalWarnings[0].id}`}>
+                      <Button variant="destructive" size="xs">
+                        Acknowledge &rarr;
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
               )}
             </div>
+          )}
+        </section>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <Link
-                href="/tasks"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-all"
-              >
-                <IconCheckSquare size={13} />
-                {myOpenTasks.length > 0 ? "Open & Complete Tasks" : "Connect Telegram & View Tasks"}
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* Executive "Needs Attention" alert card if there are pending items */}
-        {pendingReviewCount > 0 && isPrivileged && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-in fade-in-50">
-            <div className="flex items-start sm:items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300">
-                <IconAlertCircle size={18} />
-              </div>
-              <div>
-                <h3 className="text-xs sm:text-sm font-bold text-amber-950 dark:text-amber-200">
-                  {pendingReviewCount} Submission{pendingReviewCount === 1 ? "" : "s"} Awaiting Executive Review
-                </h3>
-                <p className="text-[11px] sm:text-xs text-amber-900 dark:text-amber-300/85">
-                  Business units have submitted weekly &amp; monthly filings ready for leadership feedback and sign-off.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-              <span className="text-[11px] font-semibold text-amber-950 dark:text-amber-200">
-                Action Required
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* 4 Polished Stat Cards with Trend Indicators */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {/* Total Reports */}
-          <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs transition-all hover:shadow-sm">
+        {/* ========================================================================= */}
+        {/* KPI STAT CARDS: Clean Linear/Vercel-level Metrics Grid                    */}
+        {/* ========================================================================= */}
+        <section aria-label="Key Performance Indicators" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          {/* Directives KPI */}
+          <Card hoverable className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {isPrivileged && activeView === "company" ? "Total Group Filings" : "My Filings"}
+                Active Directives
               </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                <IconCompass size={16} />
+              </div>
+            </div>
+            <p className="font-display text-2xl sm:text-3xl font-extrabold text-foreground mt-3 tabular-nums">
+              {kpiCounts.active_directives}
+            </p>
+            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground tabular-nums">
+              <span>{kpiCounts.total_directives} total strategic issued</span>
+            </div>
+          </Card>
+
+          {/* Action Plans KPI */}
+          <Card hoverable className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Action Plans
+              </span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <IconTarget size={16} />
+              </div>
+            </div>
+            <p className="font-display text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-3 tabular-nums">
+              {kpiCounts.submitted_plans}
+            </p>
+            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground tabular-nums">
+              <span>{kpiCounts.total_plans} total division commitments</span>
+            </div>
+          </Card>
+
+          {/* Task Resolution Rate */}
+          <Card hoverable className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Task Resolution
+              </span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                <IconCheckSquare size={16} />
+              </div>
+            </div>
+            <p className="font-display text-2xl sm:text-3xl font-extrabold text-foreground mt-3 tabular-nums">
+              {taskResolutionRate}%
+            </p>
+            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground tabular-nums">
+              <span>{kpiCounts.completed_tasks} completed &middot; {kpiCounts.total_tasks - kpiCounts.completed_tasks} open</span>
+            </div>
+          </Card>
+
+          {/* Submissions & Governance */}
+          <Card hoverable className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Governance Filings
+              </span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
                 <IconLayers size={16} />
               </div>
             </div>
-            <p className="font-display text-2xl sm:text-3xl font-bold text-foreground mt-3 tabular-nums">
+            <p className="font-display text-2xl sm:text-3xl font-extrabold text-foreground mt-3 tabular-nums">
               {totalCount}
             </p>
             <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground tabular-nums">
               <IconTrendingUp size={12} className="text-accent" />
-              <span>{weeklyCount} weekly &middot; {monthlyCount} monthly</span>
+              <span>{reviewedCount} approved &middot; {pendingReviewCount} in review</span>
             </div>
-          </div>
+          </Card>
+        </section>
 
-          {/* Pending Review */}
-          <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs transition-all hover:shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Pending Review
-              </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300">
-                <IconClock size={16} />
+        {/* Live Ethiopian Time Reporting Window Status */}
+        <ReportingWindowBanner status={windowStatus} isPrivileged={isPrivileged} />
+
+        {/* Staff Assigned Tasks Quick Bar */}
+        {(myOpenTasks.length > 0 || !user.telegram_chat_id) && (
+          <Card className="p-4 sm:p-5">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-foreground">
+                    <IconCheckSquare size={15} className="text-accent" />
+                    {myOpenTasks.length > 0
+                      ? `You have ${myOpenTasks.length} pending assigned task${myOpenTasks.length === 1 ? "" : "s"}`
+                      : "Stay notified on Telegram"}
+                  </span>
+                  {!user.telegram_chat_id && (
+                    <Badge variant="warning" size="sm">
+                      <IconBell size={10} className="mr-1" />
+                      Telegram Not Linked
+                    </Badge>
+                  )}
+                </div>
+                {myOpenTasks.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 pt-0.5">
+                    {myOpenTasks.map((t) => (
+                      <Link
+                        key={t.id}
+                        href="/tasks"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
+                      >
+                        <span className="truncate max-w-[200px]">{t.title}</span>
+                        {t.due_date && (
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            ({t.due_date})
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Link your Telegram account in Profile to receive instant task assignments and SLA updates.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <Link href="/tasks">
+                  <Button variant="primary" size="sm" leftIcon={<IconCheckSquare size={13} />}>
+                    {myOpenTasks.length > 0 ? "Open & Complete Tasks" : "View All Tasks"}
+                  </Button>
+                </Link>
               </div>
             </div>
-            <p className="font-display text-2xl sm:text-3xl font-bold text-amber-700 dark:text-amber-300 mt-3 tabular-nums">
-              {pendingReviewCount}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              {isPrivileged ? "Submitted by staff for sign-off" : "Awaiting executive review"}
-            </p>
-          </div>
-
-          {/* Reviewed & Approved */}
-          <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs transition-all hover:shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Reviewed &amp; Approved
-              </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-300">
-                <IconCheckCircle size={16} />
-              </div>
-            </div>
-            <p className="font-display text-2xl sm:text-3xl font-bold text-blue-700 dark:text-blue-300 mt-3 tabular-nums">
-              {reviewedCount}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-1">Governance sign-offs</p>
-          </div>
-
-          {/* In-Progress Drafts */}
-          <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs transition-all hover:shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                In-Progress Drafts
-              </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                <IconCalendar size={16} />
-              </div>
-            </div>
-            <p className="font-display text-2xl sm:text-3xl font-bold text-foreground mt-3 tabular-nums">
-              {draftCount}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-1">Working drafts</p>
-          </div>
-        </div>
+          </Card>
+        )}
 
         {/* View Switcher (for Direction / Admin) */}
         {isPrivileged && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-3">
-            <div className="inline-flex h-9 items-center rounded-lg bg-muted p-1 text-muted-foreground text-xs border border-border/60">
+            <div className="inline-flex h-9 items-center rounded-lg bg-muted/60 p-1 text-muted-foreground text-xs border border-border">
               <Link
                 href="/dashboard?view=company"
                 scroll={false}
-                className={`rounded-md px-3 py-1 font-semibold transition-all ${
+                className={`rounded-md px-3 py-1 font-semibold transition-all cursor-pointer ${
                   activeView === "company"
                     ? "bg-card text-foreground shadow-2xs"
                     : "hover:text-foreground"
                 }`}
               >
-                {isSuperAdmin ? "Direction Panoramic View (All Subsidiaries)" : "All Company Submissions"}
+                All Company Submissions ({allReportList.length})
               </Link>
               <Link
                 href="/dashboard?view=personal"
                 scroll={false}
-                className={`rounded-md px-3 py-1 font-semibold transition-all ${
-                  isPersonalView
+                className={`rounded-md px-3 py-1 font-semibold transition-all cursor-pointer ${
+                  activeView === "personal"
                     ? "bg-card text-foreground shadow-2xs"
                     : "hover:text-foreground"
                 }`}
               >
-                My Personal Reports
+                My Submissions ({allReportList.filter((r) => r.user_id === user.id).length})
               </Link>
               <Link
                 href="/dashboard?view=not_submitted"
                 scroll={false}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 font-semibold transition-all ${
-                  isMissingView
+                className={`rounded-md px-3 py-1 font-semibold transition-all cursor-pointer ${
+                  activeView === "not_submitted"
                     ? "bg-card text-foreground shadow-2xs"
                     : "hover:text-foreground"
                 }`}
               >
-                <span>Not Submitted</span>
-                {notSubmittedCount > 0 && (
-                  <span
-                    className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
-                      isMissingView
-                        ? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
-                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-                    }`}
-                  >
-                    {notSubmittedCount}
-                  </span>
-                )}
+                Not Submitted ({notSubmittedCount})
               </Link>
             </div>
 
-            <span className="text-xs text-muted-foreground hidden sm:inline">
-              Viewing{" "}
-              {activeView === "company"
-                ? "all subsidiary entities"
-                : isMissingView
-                ? `personnel with missing submissions (${notSubmittedCount} pending)`
-                : "personal workspace"}
-            </span>
+            <p className="text-xs text-muted-foreground">
+              {activeView === "personal"
+                ? "Displaying your personally authored filings"
+                : activeView === "not_submitted"
+                ? "Employees who have not filed within the current window"
+                : "Auditing all division filings across the holding company"}
+            </p>
           </div>
         )}
 
-        {/* Registered Staff Weekly & Monthly Compliance Tracker (for Direction / Admin) */}
-        {isPrivileged && (activeView === "company" || isMissingView) && staffList.length > 0 && (
-          <StaffSubmissionTracker
-            key={activeView}
-            staffList={staffList}
-            reports={allReportList}
-            taskStats={taskStats}
-            todayEthYmd={todayEthYmd}
-            telegramBotConfigured={!!settings.telegram_bot_token}
-            initialWarnings={allWarnings}
-            initialComplianceFilter={isMissingView ? "missing_any" : "all"}
-            highlightMissingOnly={isMissingView}
-          />
-        )}
-
-        {/* Reports Table Section: hidden when in Not Submitted view */}
-        {!isMissingView && (
+        {/* Staff Submission Tracker (for Direction / Admin) */}
+        {isPrivileged && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                <IconFileText size={18} className="text-muted-foreground" />
-                <span>
-                  {isPrivileged && activeView === "company"
-                    ? "Group Performance Submissions & Reviews"
-                    : "Report Submissions & Records"}
-                </span>
-              </h2>
-              <span className="text-xs text-muted-foreground font-mono tabular-nums">
-                {reportList.length} records in view
-              </span>
-            </div>
-
-            <DashboardReportsTable
-              initialReports={reportList}
-              showAuthor={isPrivileged && activeView === "company"}
-              isPrivileged={isPrivileged}
-              windowLocked={windowLocked}
+            <StaffSubmissionTracker
+              staffList={staffList}
+              reports={allReportList}
+              taskStats={taskStats}
+              todayEthYmd={todayEthYmd}
+              highlightMissingOnly={activeView === "not_submitted"}
             />
           </div>
         )}
+
+        {/* Reports Archive Table */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold tracking-tight text-foreground">
+                {isPersonalView ? "My Performance Submissions" : "Holding Filings Archive"}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Review, filter, inspect, and export corporate governance submissions.
+              </p>
+            </div>
+          </div>
+
+          <DashboardReportsTable
+            initialReports={reportList}
+            showAuthor={isPrivileged && !isPersonalView}
+            isPrivileged={isPrivileged}
+            windowLocked={windowLocked}
+          />
+        </div>
       </div>
     </AppShell>
   );

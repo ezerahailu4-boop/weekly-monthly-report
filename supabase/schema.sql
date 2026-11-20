@@ -118,13 +118,13 @@ create trigger reports_set_updated_at
   for each row execute procedure public.set_updated_at();
 
 -- =========================================================================
--- DEFAULT ADMIN SEED: admin@yetta-holding.com / YettaAdmin2026!
+-- DEFAULT ADMIN SEED: admin@yetta-holding.com
 -- =========================================================================
 do $$
 declare
   v_user_id uuid := 'a0000000-0000-0000-0000-000000000001';
   v_email text := 'admin@yetta-holding.com';
-  v_password text := 'YettaAdmin2026!';
+  v_password text := coalesce(nullif(current_setting('app.admin_seed_password', true), ''), encode(gen_random_bytes(16), 'hex'));
   v_encrypted_pw text;
 begin
   v_encrypted_pw := crypt(v_password, gen_salt('bf'));

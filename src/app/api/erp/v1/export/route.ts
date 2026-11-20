@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { getPortalSettings } from "@/lib/portalSettings";
+import { safeTimingCompare } from "@/lib/safeCompare";
 
 async function authorizeErpRequest(request: Request): Promise<boolean> {
   const authHeader = request.headers.get("authorization") || "";
   if (authHeader.startsWith("Bearer ")) {
     const token = authHeader.slice(7).trim();
     const settings = await getPortalSettings();
-    if (settings.erp_api_key && token === settings.erp_api_key) {
+    if (settings.erp_api_key && safeTimingCompare(token, settings.erp_api_key)) {
       return true;
     }
   }

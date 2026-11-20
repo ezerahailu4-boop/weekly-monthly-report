@@ -184,17 +184,17 @@ export function ReportActionButtons({
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  Executive Review Guidance &amp; Directives (Optional)
+                  Management feedback <span className="font-normal text-muted-foreground">(required for revision requests)</span>
                 </label>
                 <textarea
                   rows={4}
                   value={reviewNotes}
                   onChange={(e) => setReviewNotes(e.target.value)}
-                  placeholder="Enter strategic feedback, directions for the coming period, or approval remarks..."
+                  placeholder="Share the changes needed, or add approval remarks..."
                   className="w-full rounded-lg border border-border bg-muted/40 p-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:bg-card focus:outline-none focus:ring-2 focus:ring-accent/20"
                 />
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  This note will be permanently stamped on the report and visible to the author and holding executives.
+                  Your feedback is saved with the report and shown to its author.
                 </p>
               </div>
 
@@ -202,10 +202,16 @@ export function ReportActionButtons({
                 <button
                   type="button"
                   disabled={updating}
-                  onClick={() => handleStatusChange("draft")}
+                  onClick={() => {
+                    if (!reviewNotes.trim()) {
+                      alert("Add feedback so the author knows what to revise.");
+                      return;
+                    }
+                    handleStatusChange("draft", reviewNotes.trim());
+                  }}
                   className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 disabled:opacity-50 transition-colors"
                 >
-                  Request Revisions (Reopen Draft)
+                  Send Back for Revisions
                 </button>
 
                 <div className="flex items-center gap-2">

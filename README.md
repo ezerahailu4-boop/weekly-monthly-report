@@ -68,15 +68,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🔐 Default Administrator Credentials
+## 🔐 Administrator Account Setup
 
-Public sign-up is disabled. To access the portal and admin console, use the seeded admin credentials:
+Public sign-up is disabled. Administrator credentials are provisioned during database migration via environment variables (`ADMIN_SEED_PASSWORD`, `CEO_SEED_PASSWORD`, `STAFF_SEED_PASSWORD`) or generated dynamically on initial seed:
 
-* **Email:** `admin@yetta-holding.com`
-* **Password:** `YettaAdmin2026!`
-* **Role:** `admin` (Full access to all reports, governance filters, and staff account provisioning)
-
-*(A handy **"Auto-fill Admin"** button is provided directly on the `/login` screen for fast local testing).*
+* **Email:** `admin@yetaf-holding.com`
+* **Role:** `admin` (Access to reports, governance filters, and account provisioning)
+* Initial passwords are generated and printed once to stdout during migration execution. Never commit production passwords to version control.
 
 ---
 

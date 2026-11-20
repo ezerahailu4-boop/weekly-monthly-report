@@ -32,6 +32,11 @@ import type {
   FileAttachmentMeta,
 } from "@/types/directive";
 import type { AssignableUser } from "./TaskWorkspace";
+import {
+  Button,
+  EmptyState,
+  TablePagination,
+} from "./ui";
 
 const STATUS_BADGE: Record<DirectiveStatus, string> = {
   open: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/25",
@@ -150,6 +155,14 @@ export function DirectivesWorkspace({
       );
     });
   }, [directives, statusFilter, search]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 8;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginatedDirectives = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
 
   const openCount = directives.filter(
     (d) => d.status === "open" || d.status === "in_progress"
@@ -441,35 +454,32 @@ export function DirectivesWorkspace({
         </div>
 
         {isPrivileged && (
-          <button
-            type="button"
+          <Button
+            variant="brand"
+            size="sm"
+            leftIcon={<IconPlus size={14} />}
             onClick={() => setShowModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:opacity-90 transition-opacity cursor-pointer"
           >
-            <IconPlus size={14} />
             Issue New Directive
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Directives List */}
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card py-14 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-            <IconCompass size={22} />
-          </div>
-          <h3 className="mt-3 text-sm font-semibold text-foreground">
-            No directives found
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground max-w-md mx-auto">
-            {isPrivileged
+        <EmptyState
+          title="No directives found"
+          description={
+            isPrivileged
               ? "Issue a new directive with 2–3 direction points, auto-summarize it, assign concurrent follow-up tasks, and collaborate in real time."
-              : "No active directives are currently assigned to your division."}
-          </p>
-        </div>
+              : "No active directives are currently assigned to your division."
+          }
+          actionLabel={isPrivileged ? "Issue New Directive" : undefined}
+          onAction={isPrivileged ? () => setShowModal(true) : undefined}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {filtered.map((d) => {
+          {paginatedDirectives.map((d) => {
             const sla = computeSlaLabel(d.sla_due_at, d.status, nowMs);
             const totalTasks = Number(d.total_tasks || 0);
             const doneTasks = Number(d.completed_tasks || 0);
@@ -494,7 +504,7 @@ export function DirectivesWorkspace({
                         {STATUS_LABEL[d.status]}
                       </span>
                       <span
-                        className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${PRIORITY_BADGE[d.priority]}`}
+                        className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase ${PRIORITY_BADGE[d.priority]}`}
                       >
                         {d.priority}
                       </span>
@@ -588,6 +598,13 @@ export function DirectivesWorkspace({
               </div>
             );
           })}
+
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
         </div>
       )}
 

@@ -56,6 +56,12 @@ export default async function ReportDetailPage({
     getReportingWindowStatus(),
     getPortalSettings(),
   ]);
+  const activityRows = await sql`
+    SELECT a.action, a.details, a.created_at, u.full_name AS actor_name
+    FROM activity_log a LEFT JOIN users u ON a.actor_id = u.id
+    WHERE a.entity_type = 'report' AND a.entity_id = ${id}
+    ORDER BY a.created_at DESC LIMIT 12;
+  `;
   const windowLocked = !windowStatus.isOpen && !isPrivileged;
 
   const report: ReportRow = {
@@ -145,6 +151,23 @@ export default async function ReportDetailPage({
           </p>
         </div>
       )}
+
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-xs sm:p-5 no-print" aria-labelledby="activity-title">
+        <div className="flex items-start justify-between gap-4">
+          <div><h2 id="activity-title" className="text-sm font-bold text-foreground">Activity history</h2><p className="mt-0.5 text-xs text-muted-foreground">A record of report submissions and management actions.</p></div>
+          <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold text-muted-foreground">{activityRows.length} events</span>
+        </div>
+        <ol className="mt-4 space-y-3">
+          {activityRows.map((activity, index) => <li key={`${activity.action}-${index}`} className="flex gap-3">
+            <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${index === 0 ? "bg-accent" : "bg-border"}`} />
+            <div className="flex min-w-0 flex-1 items-baseline justify-between gap-3">
+              <p className="text-xs text-foreground"><span className="font-semibold">{activity.actor_name || "Former user"}</span> {activity.action}</p>
+              <time className="shrink-0 text-[10px] text-muted-foreground" dateTime={new Date(activity.created_at).toISOString()}>{formatDate(typeof activity.created_at === "string" ? activity.created_at : activity.created_at.toISOString())}</time>
+            </div>
+          </li>)}
+          {activityRows.length === 0 && <li className="text-xs text-muted-foreground">No changes have been recorded yet.</li>}
+        </ol>
+      </section>
 
       {/* Governance Lifecycle Stepper */}
       <div className="rounded-xl border border-border bg-card p-4 shadow-xs no-print">

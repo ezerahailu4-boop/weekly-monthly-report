@@ -1,8 +1,18 @@
+import crypto from "crypto";
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
 import { getDatabaseUrl } from "./db-env.mjs";
 
 const sql = neon(getDatabaseUrl());
+
+function getSeedPassword(envName) {
+  const fromEnv = process.env[envName]?.trim();
+  if (fromEnv) {
+    return { password: fromEnv, source: "env" };
+  }
+  const generated = crypto.randomBytes(16).toString("base64url") + "!9A";
+  return { password: generated, source: "generated" };
+}
 
 async function main() {
   console.log("Connecting to Neon database...");
@@ -56,12 +66,11 @@ async function main() {
 
   // 6. Seed default administrator
   const adminEmail = "admin@yetta-holding.com";
-  const adminPassword = "YettaAdmin2026!";
-  const passwordHash = await bcrypt.hash(adminPassword, 10);
-
   const existing = await sql`SELECT id FROM users WHERE email = ${adminEmail};`;
 
   if (existing.length === 0) {
+    const { password: adminPassword, source } = getSeedPassword("ADMIN_SEED_PASSWORD");
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
     await sql`
       INSERT INTO users (email, password_hash, full_name, department, role)
       VALUES (
@@ -72,8 +81,10 @@ async function main() {
         'admin'
       );
     `;
-    console.log(`Seeded default admin: ${adminEmail} (password: ${adminPassword})`);
-  } else {
+    console.log(`[SEED] Created default admin: ${adminEmail}`);
+    console.log(`[CREDENTIAL - ONE-TIME DISPLAY] Admin Password (${source}): ${adminPassword}`);
+  } else if (process.env.ADMIN_SEED_PASSWORD?.trim()) {
+    const passwordHash = await bcrypt.hash(process.env.ADMIN_SEED_PASSWORD.trim(), 10);
     await sql`
       UPDATE users
       SET password_hash = ${passwordHash},
@@ -82,7 +93,16 @@ async function main() {
           department = 'Executive Management'
       WHERE email = ${adminEmail};
     `;
-    console.log(`Updated default admin: ${adminEmail}`);
+    console.log(`[UPDATE] Updated default admin password from ADMIN_SEED_PASSWORD: ${adminEmail}`);
+  } else {
+    await sql`
+      UPDATE users
+      SET role = 'admin',
+          full_name = 'Executive Administrator',
+          department = 'Executive Management'
+      WHERE email = ${adminEmail};
+    `;
+    console.log(`[VERIFIED] Default admin verified: ${adminEmail} (password preserved)`);
   }
 
   console.log("Neon database migration completed successfully!");

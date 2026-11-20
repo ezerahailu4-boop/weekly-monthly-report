@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { getReportingWindowStatus } from "@/lib/portalSettings";
 import { notifyAuthorReportReviewed } from "@/lib/telegram";
+import { createNotification, recordActivity } from "@/lib/activity";
 
 export async function PUT(
   request: Request,
@@ -46,6 +47,13 @@ export async function PUT(
   try {
     const body = await request.json();
     const { period_start, period_end, status, data, review_notes } = body;
+    if (status !== undefined && !["draft", "submitted", "reviewed"].includes(status)) {
+      return NextResponse.json({ error: "Invalid report status." }, { status: 400 });
+    }
+    if (!isPrivileged && status === "reviewed") {
+      return NextResponse.json({ error: "Only management can approve reports." }, { status: 403 });
+    }
+    const nextReviewNotes = isPrivileged && typeof review_notes === "string" ? review_notes.trim() || null : null;
 
     // Determine reviewed metadata
     const isMarkingReviewed = status === "reviewed";
@@ -69,7 +77,7 @@ export async function PUT(
             period_end = COALESCE(${period_end}, period_end),
             status = COALESCE(${status}, status),
             data = ${JSON.stringify(data)},
-            review_notes = COALESCE(${review_notes ?? null}, review_notes),
+            review_notes = COALESCE(${nextReviewNotes}, review_notes),
             reviewed_by = ${nextReviewedBy},
             reviewed_at = ${nextReviewedAt},
             updated_at = now()
@@ -80,7 +88,7 @@ export async function PUT(
       updatedRows = await sql`
         UPDATE reports
         SET status = COALESCE(${status}, status),
-            review_notes = COALESCE(${review_notes ?? null}, review_notes),
+            review_notes = COALESCE(${nextReviewNotes}, review_notes),
             reviewed_by = ${nextReviewedBy},
             reviewed_at = ${nextReviewedAt},
             updated_at = now()
@@ -90,13 +98,21 @@ export async function PUT(
     }
 
     // Notify report author via Telegram when marked as reviewed
+    if (status === "reviewed" || status === "draft") {
+      const approved = status === "reviewed";
+      await recordActivity({ actorId: user.id, action: approved ? "approved report" : "requested revisions", entityType: "report", entityId: id, details: { notes: nextReviewNotes } });
+      if (report.user_id !== user.id) await createNotification({ userId: report.user_id, title: approved ? "Report approved" : "Revisions requested", message: approved ? `${user.full_name} approved your report.` : `${user.full_name} requested changes to your report${nextReviewNotes ? `: ${nextReviewNotes}` : "."}`, href: `/reports/${id}`, kind: approved ? "success" : "warning" });
+    } else if (data !== undefined) {
+      await recordActivity({ actorId: user.id, action: "edited report", entityType: "report", entityId: id });
+    }
+
     if (isMarkingReviewed && !report.reviewed_by) {
       const origin = request.headers.get("origin") || request.headers.get("referer")?.split("/").slice(0, 3).join("/") || null;
       notifyAuthorReportReviewed({
         reportId: id,
         reportType: updatedRows[0].report_type,
         reviewerName: user.full_name,
-        reviewNotes: review_notes ?? null,
+        reviewNotes: nextReviewNotes,
         portalOrigin: origin,
         authorUserId: report.user_id,
       }).catch(() => {});

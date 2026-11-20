@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { notifyTaskAssigneeViaTelegram } from "@/lib/telegram";
+import { createNotification, recordActivity } from "@/lib/activity";
 
 export async function PATCH(
   request: Request,
@@ -14,7 +15,7 @@ export async function PATCH(
 
   const { id } = await params;
   const existingRows = await sql`
-    SELECT id, assigned_to, status, title, description, priority,
+    SELECT id, assigned_to, assigned_by, status, title, description, priority,
            to_char(due_date, 'YYYY-MM-DD') as due_date, completion_note, completed_at
     FROM tasks WHERE id = ${id} LIMIT 1;
   `;
@@ -116,6 +117,13 @@ export async function PATCH(
           updated_at = now()
       WHERE id = ${id};
     `;
+
+    if (nextStatus !== existing.status) {
+      await recordActivity({ actorId: user.id, action: `changed task status to ${nextStatus.replace("_", " ")}`, entityType: "task", entityId: id, details: { previousStatus: existing.status, status: nextStatus } });
+      if (nextStatus === "completed" && existing.assigned_by && existing.assigned_by !== user.id) {
+        await createNotification({ userId: existing.assigned_by, title: "Task completed", message: `${user.full_name} completed: ${existing.title}`, href: "/tasks", kind: "success" });
+      }
+    }
 
     const refreshed = await sql`
       SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by,

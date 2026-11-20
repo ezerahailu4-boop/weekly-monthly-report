@@ -48,12 +48,12 @@ function LoginForm() {
 
   function fillCredentials(type: "direction" | "admin" | "staff") {
     const creds = {
-      direction: { email: "ceo@yetaf-holding.com", password: "YetafCeo2026!" },
-      admin: { email: "admin@yetaf-holding.com", password: "YetafAdmin2026!" },
-      staff: { email: "operations@yetaf-holding.com", password: "YetafStaff2026!" },
+      direction: { email: "ceo@yetaf-holding.com" },
+      admin: { email: "admin@yetaf-holding.com" },
+      staff: { email: "operations@yetaf-holding.com" },
     };
     setEmail(creds[type].email);
-    setPassword(creds[type].password);
+    setPassword("");
     setError(null);
   }
 
@@ -135,9 +135,9 @@ function LoginForm() {
             </button>
           </form>
 
-          {/* Demo accounts */}
+          {/* Role selector shortcut */}
           <div className="mt-5 border-t border-border pt-5">
-            <p className="mb-3 text-xs font-medium text-muted-foreground">Demo accounts</p>
+            <p className="mb-2 text-xs font-medium text-muted-foreground">Select role email to test or sign in</p>
             <div className="grid grid-cols-3 gap-2">
               {[
                 { type: "direction" as const, label: "Direction", sub: "Super Admin", icon: IconCrown, color: "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20" },

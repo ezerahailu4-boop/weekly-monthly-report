@@ -25,6 +25,11 @@ import {
 import { TelegramConnectCard } from "./TelegramConnectCard";
 import { formatDate } from "@/lib/dateUtils";
 import type { TaskPriority, TaskRow, TaskStatus } from "@/types/task";
+import {
+  Button,
+  EmptyState,
+  TablePagination,
+} from "./ui";
 
 export interface AssignableUser {
   id: string;
@@ -225,6 +230,14 @@ export function TaskWorkspace({
       (t.assignee_department || "").toLowerCase().includes(q);
     return matchesStatus && matchesAssignee && matchesSearch;
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(filteredTasks.length / pageSize));
+  const paginatedTasks = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredTasks.slice(start, start + pageSize);
+  }, [filteredTasks, currentPage, pageSize]);
 
   const totalCount = visibleScopeTasks.length;
   const pendingCount = visibleScopeTasks.filter((t) => t.status === "pending").length;
@@ -562,40 +575,35 @@ export function TaskWorkspace({
           </div>
 
           {isPrivileged && (
-            <button
-              type="button"
-              onClick={() => {
-                setShowCreateModal(true);
-              }}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:opacity-90 transition-all"
+            <Button
+              variant="brand"
+              size="sm"
+              leftIcon={<IconPlus size={14} />}
+              onClick={() => setShowCreateModal(true)}
             >
-              <IconPlus size={14} />
-              Assign Task
-            </button>
+              Assign Tasks
+            </Button>
           )}
         </div>
       </div>
 
       {/* Task Cards List */}
       {filteredTasks.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card py-14 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-            <IconCheckSquare size={22} />
-          </div>
-          <h3 className="mt-3 text-sm font-semibold text-foreground">
-            No tasks found
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
-            {search || statusFilter !== "all"
+        <EmptyState
+          title="No tasks found"
+          description={
+            search || statusFilter !== "all"
               ? "Try clearing your search or status filter."
               : isPrivileged
               ? "Assign a new task to a registered staff member to notify them via Telegram."
-              : "You have no pending tasks right now."}
-          </p>
-        </div>
+              : "You have no pending tasks right now."
+          }
+          actionLabel={isPrivileged ? "Assign New Task" : undefined}
+          onAction={isPrivileged ? () => setShowCreateModal(true) : undefined}
+        />
       ) : (
         <div className="space-y-3">
-          {filteredTasks.map((task) => {
+          {paginatedTasks.map((task) => {
             const isOverdue =
               !!task.due_date &&
               task.status !== "completed" &&
@@ -799,6 +807,13 @@ export function TaskWorkspace({
               </div>
             );
           })}
+
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredTasks.length}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
         </div>
       )}
 

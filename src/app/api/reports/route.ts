@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { getReportingWindowStatus } from "@/lib/portalSettings";
 import { notifyAdminsReportSubmitted } from "@/lib/telegram";
+import { createNotification, recordActivity } from "@/lib/activity";
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
 
   try {
     const { report_type, period_start, period_end, status, data } = await request.json();
+    const safeStatus = status === "draft" ? "draft" : "submitted";
 
     if (!report_type || !period_start || !period_end || !data) {
       return NextResponse.json(
@@ -40,14 +42,18 @@ export async function POST(request: Request) {
         ${report_type},
         ${period_start},
         ${period_end},
-        ${status || "submitted"},
+        ${safeStatus},
         ${JSON.stringify(data)}
       )
       RETURNING id, user_id, report_type, period_start, period_end, status, created_at;
     `;
 
+    await recordActivity({ actorId: user.id, action: safeStatus === "draft" ? "saved draft" : "submitted", entityType: "report", entityId: rows[0].id, details: { reportType: report_type, periodStart: period_start, periodEnd: period_end } });
+
     // Notify admins via Telegram when a report is submitted (not draft)
-    if ((status || "submitted") === "submitted") {
+    if (safeStatus === "submitted") {
+      const admins = await sql`SELECT id FROM users WHERE role IN ('admin', 'super_admin') AND id <> ${user.id};`;
+      await Promise.all(admins.map((admin) => createNotification({ userId: admin.id, title: "Report submitted", message: `${user.full_name} submitted a ${report_type} report.`, href: `/reports/${rows[0].id}`, kind: "info" })));
       const origin = request.headers.get("origin") || request.headers.get("referer")?.split("/").slice(0, 3).join("/") || null;
       notifyAdminsReportSubmitted({
         reportId: rows[0].id,

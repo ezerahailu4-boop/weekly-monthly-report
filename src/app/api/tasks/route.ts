@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { notifyTaskAssigneeViaTelegram } from "@/lib/telegram";
+import { createNotification, recordActivity } from "@/lib/activity";
 
 export async function GET(request: Request) {
   const user = await getCurrentUser();
@@ -95,7 +96,7 @@ interface BulkTaskInput {
 
 async function handleBulkCreate(
   request: Request,
-  user: { id: string },
+  user: { id: string; full_name?: string | null },
   body: {
     tasks: BulkTaskInput[];
     assigned_to: string[];
@@ -183,6 +184,8 @@ async function handleBulkCreate(
         RETURNING id;
       `;
       createdTasks.push({ id: inserted[0].id as string, assignee: assigneeId });
+      await createNotification({ userId: assigneeId, title: "New task assigned", message: `${user.full_name || "Management"} assigned you: ${String(taskInput.title).trim()}`, href: "/tasks", kind: "info" });
+      await recordActivity({ actorId: user.id, action: "assigned task", entityType: "task", entityId: inserted[0].id as string, details: { title: String(taskInput.title).trim(), assigneeId } });
     }
   }
 
@@ -238,7 +241,7 @@ async function handleBulkCreate(
 
 async function handleSingleCreate(
   request: Request,
-  user: { id: string },
+  user: { id: string; full_name?: string | null },
   body: {
     title?: string;
     description?: string;
@@ -300,6 +303,8 @@ async function handleSingleCreate(
   `;
 
   const taskId = inserted[0].id as string;
+  await createNotification({ userId: assigned_to, title: "New task assigned", message: `${user.full_name || "Management"} assigned you: ${String(title).trim()}`, href: "/tasks", kind: "info" });
+  await recordActivity({ actorId: user.id, action: "assigned task", entityType: "task", entityId: taskId, details: { title: String(title).trim(), assigneeId: assigned_to } });
 
   let telegramResult: { sent: boolean; error?: string } = { sent: false };
   if (notify_telegram !== false) {

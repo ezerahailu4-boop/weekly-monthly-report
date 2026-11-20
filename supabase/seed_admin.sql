@@ -1,6 +1,6 @@
 -- Yetta Holding Reporting Portal — Seed Default Admin Account
 -- Email: admin@yetta-holding.com
--- Password: YettaAdmin2026!
+-- Provide password via session variable or replace placeholder below before execution
 
 create extension if not exists "pgcrypto";
 
@@ -8,7 +8,7 @@ do $$
 declare
   v_user_id uuid := 'a0000000-0000-0000-0000-000000000001';
   v_email text := 'admin@yetta-holding.com';
-  v_password text := 'YettaAdmin2026!';
+  v_password text := coalesce(nullif(current_setting('app.admin_seed_password', true), ''), encode(gen_random_bytes(16), 'hex'));
   v_encrypted_pw text;
 begin
   -- Generate bcrypt hash

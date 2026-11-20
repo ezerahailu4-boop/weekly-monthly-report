@@ -28,6 +28,11 @@ import {
   type ActionPlanStatus,
 } from "@/types/plan";
 import type { DataEntryMode, FileAttachmentMeta } from "@/types/directive";
+import {
+  Button,
+  EmptyState,
+  TablePagination,
+} from "./ui";
 
 const PLAN_STATUS_STYLE: Record<ActionPlanStatus, string> = {
   draft: "bg-muted text-muted-foreground border-border",
@@ -99,6 +104,14 @@ export function PlanWorkspace({
       );
     });
   }, [plans, statusFilter, search]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 8;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginatedPlans = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
 
   function resetModal() {
     setShowModal(false);
@@ -283,32 +296,27 @@ export function PlanWorkspace({
           </div>
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="brand"
+          size="sm"
+          leftIcon={<IconPlus size={14} />}
           onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:opacity-90 cursor-pointer"
         >
-          <IconPlus size={14} />
           Submit Action Plan
-        </button>
+        </Button>
       </div>
 
       {/* Plan Cards */}
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card py-14 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-            <IconTarget size={22} />
-          </div>
-          <h3 className="mt-3 text-sm font-semibold text-foreground">
-            No action plans submitted yet
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground max-w-md mx-auto">
-            Submit structured ERP-style action plans with milestones and KPIs or upload an official plan document directly.
-          </p>
-        </div>
+        <EmptyState
+          title="No action plans submitted yet"
+          description="Submit structured ERP-style action plans with milestones and KPIs or upload an official plan document directly."
+          actionLabel="Submit Action Plan"
+          onAction={() => setShowModal(true)}
+        />
       ) : (
         <div className="space-y-3">
-          {filtered.map((plan) => {
+          {paginatedPlans.map((plan) => {
             const objs = Array.isArray(plan.objectives) ? plan.objectives : [];
             const avgProgress =
               objs.length > 0
@@ -401,6 +409,13 @@ export function PlanWorkspace({
               </div>
             );
           })}
+
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
         </div>
       )}
 
