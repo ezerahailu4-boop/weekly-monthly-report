@@ -1,15 +1,11 @@
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
+import { getEnv } from "./env";
 
 let cachedClient: NeonQueryFunction<false, false> | null = null;
 
 function getClient(): NeonQueryFunction<false, false> {
   if (!cachedClient) {
-    const databaseUrl = process.env.DATABASE_URL;
-    if (!databaseUrl) {
-      throw new Error(
-        "DATABASE_URL environment variable is not set. Add it to .env.local or your deployment environment."
-      );
-    }
+    const { DATABASE_URL: databaseUrl } = getEnv();
     cachedClient = neon(databaseUrl);
   }
   return cachedClient;
