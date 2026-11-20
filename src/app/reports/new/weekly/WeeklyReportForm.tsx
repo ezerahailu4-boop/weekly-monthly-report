@@ -19,6 +19,7 @@ import {
   emptyWeeklyIncompleteRow,
   type WeeklyReportData,
 } from "@/types/report";
+import { FormProgress } from "@/components/FormBits";
 
 export default function NewWeeklyReportPage({ userName }: { userName: string }) {
   const router = useRouter();
@@ -206,6 +207,8 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
           )}
         </div>
       </div>
+
+      <FormProgress currentStep={1} totalSteps={7} />
 
       <form
         onSubmit={(e) => {
@@ -544,7 +547,7 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
             <button
               type="submit"
               disabled={savingStatus !== "idle"}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:opacity-90 transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-xs font-semibold text-brand-foreground shadow transition-all hover:bg-primary/90 disabled:opacity-50"
             >
               <IconCheck size={14} className="text-emerald-400" />
               {savingStatus === "submitted"

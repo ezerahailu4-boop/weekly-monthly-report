@@ -66,7 +66,7 @@ export function PlanDetailInteractive({
       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs">
         <div className="flex items-center justify-between border-b border-border px-5 py-3.5 bg-muted/30">
           <h2 className="font-display text-sm font-bold text-foreground">
-            Planned Milestones &amp; Progress ({objectives.length})
+            Planning Format &amp; Progress ({objectives.length})
           </h2>
           {canEdit && objectives.length > 0 && (
             <button
@@ -86,15 +86,20 @@ export function PlanDetailInteractive({
             This action plan was submitted via document upload attachment.
           </div>
         ) : (
+          <>
+          <div className="grid gap-3 border-b border-border bg-card px-5 py-4 sm:grid-cols-2">
+            <div><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Objective 1</p><p className="mt-1 text-sm font-semibold text-foreground">{objectives[0]?.objectiveName || "—"}</p></div>
+            <div><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Goal 1</p><p className="mt-1 text-sm font-semibold text-foreground">{objectives[0]?.goalName || "—"}</p></div>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/25 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
                 <tr>
                   <th className="px-4 py-2.5">#</th>
-                  <th className="px-4 py-2.5">Activity</th>
+                  <th className="px-4 py-2.5">Planned Activities</th>
+                  <th className="px-3 py-2.5">Base line</th>
                   <th className="px-3 py-2.5">KPI</th>
-                  <th className="px-3 py-2.5">Owner</th>
-                  <th className="px-3 py-2.5">Target Date</th>
+                  <th className="px-3 py-2.5">Target</th>
                   <th className="px-4 py-2.5">Progress</th>
                 </tr>
               </thead>
@@ -103,11 +108,9 @@ export function PlanDetailInteractive({
                   <tr key={idx}>
                     <td className="px-4 py-3 text-muted-foreground font-mono">{idx + 1}</td>
                     <td className="px-4 py-3 font-semibold text-foreground">{obj.activity}</td>
+                    <td className="px-3 py-3 text-muted-foreground">{obj.baseline || "—"}</td>
                     <td className="px-3 py-3 text-muted-foreground">{obj.kpi || "—"}</td>
-                    <td className="px-3 py-3 text-muted-foreground">{obj.owner || "—"}</td>
-                    <td className="px-3 py-3 text-muted-foreground font-mono">
-                      {obj.targetDate || "—"}
-                    </td>
+                    <td className="px-3 py-3 text-muted-foreground">{obj.target || obj.targetDate || "—"}</td>
                     <td className="px-4 py-3 min-w-[160px]">
                       {canEdit ? (
                         <div className="flex items-center gap-2">
@@ -151,6 +154,7 @@ export function PlanDetailInteractive({
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

@@ -9,7 +9,11 @@ export type ActionPlanStatus =
 
 export interface ActionPlanObjective {
   activity: string;
+  baseline?: string;
   kpi: string;
+  target?: string;
+  objectiveName?: string;
+  goalName?: string;
   owner: string;
   targetDate: string;
   resources: string;
@@ -19,7 +23,9 @@ export interface ActionPlanObjective {
 
 export const emptyActionPlanObjective = (): ActionPlanObjective => ({
   activity: "",
+  baseline: "",
   kpi: "",
+  target: "",
   owner: "",
   targetDate: "",
   resources: "",

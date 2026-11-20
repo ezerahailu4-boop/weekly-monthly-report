@@ -36,7 +36,7 @@ Designed to streamline subsidiary reporting across Yetta Holding, replacing disc
 
 * **Framework:** Next.js 16 (App Router, React 19)
 * **Language:** TypeScript 5
-* **Styling:** Tailwind CSS v4 (Executive Emerald & Slate palette)
+* **Styling:** Tailwind CSS v4 (Executive Emerald & Slate palette, light/dark/system theme, Playfair Display headings)
 * **Database & Auth:** Neon Serverless PostgreSQL (`@neondatabase/serverless`) + Bcrypt + HTTP-only secure session cookies
 * **Document Generation:** `docx` (Word OpenXML) + `@media print` & Playwright (PDF)
 * **Icons:** Lightweight zero-dependency SVG icon system

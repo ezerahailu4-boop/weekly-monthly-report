@@ -125,7 +125,7 @@ export async function GET(
           ]
         : []),
       new Paragraph({
-        text: `Planned Milestones & KPIs (${objectives.length})`,
+        text: `Planning Format (${objectives.length} activities)`,
         heading: HeadingLevel.HEADING_2,
         spacing: { before: 220, after: 80 },
       }),
@@ -134,14 +134,21 @@ export async function GET(
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               rows: [
+                new TableRow({ children: [cell("Objective 1", true), cell(objectives[0].objectiveName || "—")] }),
+                new TableRow({ children: [cell("Goal 1", true), cell(objectives[0].goalName || "—")] }),
+              ],
+            }),
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: [
                 new TableRow({
                   tableHeader: true,
                   children: [
                     cell("#", true),
-                    cell("Planned Activity", true),
-                    cell("KPI / Deliverable", true),
-                    cell("Owner", true),
-                    cell("Target Date", true),
+                    cell("Planned Activities", true),
+                    cell("Base line", true),
+                    cell("Key Performance Indicator (KPI)", true),
+                    cell("Target", true),
                     cell("Progress", true),
                   ],
                 }),
@@ -151,9 +158,9 @@ export async function GET(
                       children: [
                         cell(String(idx + 1)),
                         cell(o.activity),
+                        cell(o.baseline || "—"),
                         cell(o.kpi || "—"),
-                        cell(o.owner || "—"),
-                        cell(o.targetDate || "—"),
+                        cell(o.target || o.targetDate || "—"),
                         cell(`${o.progress ?? 0}% (${(o.status || "not_started").replace("_", " ")})`),
                       ],
                     })
@@ -205,16 +212,16 @@ export async function GET(
       referenceCode: refCode,
     })}
     ${p.summary ? `<h2>Plan Overview</h2><p>${esc(String(p.summary))}</p>` : ""}
-    <h2>Planned Milestones &amp; KPIs (${objectives.length})</h2>
+    <h2>Planning Format</h2>
     ${
       objectives.length === 0
         ? "<p>Action plan submitted via uploaded document attachment.</p>"
-        : `<table><thead><tr><th>#</th><th>Activity</th><th>KPI</th><th>Owner</th><th>Target Date</th><th>Progress</th></tr></thead><tbody>${objectives
+        : `<p><strong>Objective 1:</strong> ${esc(objectives[0].objectiveName || "—")}<br><strong>Goal 1:</strong> ${esc(objectives[0].goalName || "—")}</p><table><thead><tr><th>S.No.</th><th>Objectives / Goals / Planned Activities</th><th>Base line</th><th>Key performance indicators (KPI)</th><th>Target</th><th>Progress</th></tr></thead><tbody>${objectives
             .map(
               (o, i) =>
-                `<tr><td>${i + 1}</td><td>${esc(o.activity)}</td><td>${esc(
+                `<tr><td>${i + 1}</td><td>${esc(o.activity)}</td><td>${esc(o.baseline || "")}</td><td>${esc(
                   o.kpi
-                )}</td><td>${esc(o.owner)}</td><td>${esc(o.targetDate)}</td><td>${
+                )}</td><td>${esc(o.target || o.targetDate || "")}</td><td>${
                   o.progress ?? 0
                 }%</td></tr>`
             )

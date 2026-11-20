@@ -4,7 +4,13 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { IconAlertCircle, IconCrown, IconEye, IconShield, IconUser } from "@/components/Icons";
+import {
+  IconAlertCircle,
+  IconCrown,
+  IconEye,
+  IconShield,
+  IconUser,
+} from "@/components/Icons";
 import { ThemeToggle } from "@/components/ThemeProvider";
 
 export default function LoginPage() {
@@ -58,53 +64,61 @@ function LoginForm() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-background px-4 py-12">
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
+    <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden">
+      {/* Background glow accents */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand/20 blur-[120px] rounded-full -z-10" />
+      <div className="absolute bottom-0 right-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-accent/20 blur-[120px] rounded-full -z-10" />
 
-      <div className="w-full max-w-sm space-y-6">
+      <div className="relative z-10 w-full max-w-sm space-y-8">
         {/* Header */}
-        <div className="flex flex-col items-center gap-3 text-center">
-          <Link href="/" className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white ring-1 ring-border shadow-sm transition-transform hover:scale-105">
-            <Image src="/logo.jpg" alt="YETAF" width={96} height={96} className="h-full w-full object-contain" priority />
+        <div className="flex flex-col items-center gap-4 text-center">
+          <Link href="/" className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-card ring-1 ring-border shadow-sm transition-transform hover:scale-105">
+            <Image src="/logo.jpg" alt="YETAF" width={112} height={112} className="h-full w-full object-contain" priority />
           </Link>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Welcome back</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Sign in to your YETAF Holding workspace</p>
+            <h1 className="font-display text-3xl font-extrabold tracking-tight text-foreground">
+              YETAF Holding
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Directive Follow-up System — Executive Sign-In
+            </p>
           </div>
         </div>
 
         {/* No-signup notice */}
         {notice === "no-signup" && (
-          <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-            <IconAlertCircle size={16} className="mt-0.5 shrink-0" />
+          <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+            <IconAlertCircle size={18} className="mt-0.5 shrink-0" />
             <p>Public registration is disabled. Contact your administrator for access.</p>
           </div>
         )}
 
         {/* Card */}
-        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm shadow-lg/20">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Email</label>
+              <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Corporate Email
+              </label>
               <input
                 type="email"
                 required
                 placeholder="name@yetaf-holding.com"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); if (error) setError(null); }}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="flex h-10 w-full rounded-xl border border-input bg-transparent px-4 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-brand"
               />
             </div>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground">Password</label>
+                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Password
+                </label>
                 <button
                   type="button"
                   onClick={() => setShowPassword((p) => !p)}
-                  className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <IconEye size={12} />
                   {showPassword ? "Hide" : "Show"}
@@ -116,12 +130,12 @@ function LoginForm() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); if (error) setError(null); }}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="flex h-10 w-full rounded-xl border border-input bg-transparent px-4 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-brand"
               />
             </div>
 
             {error && (
-              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -129,30 +143,50 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+              className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground shadow transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
           {/* Role selector shortcut */}
-          <div className="mt-5 border-t border-border pt-5">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Select role email to test or sign in</p>
+          <div className="mt-8 border-t border-border pt-6">
+            <p className="mb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Quick Sign-In
+            </p>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { type: "direction" as const, label: "Direction", sub: "Super Admin", icon: IconCrown, color: "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20" },
-                { type: "admin" as const, label: "Admin", sub: "Manager", icon: IconShield, color: "border-border bg-muted/50 text-foreground hover:bg-muted" },
-                { type: "staff" as const, label: "Staff", sub: "Employee", icon: IconUser, color: "border-green-200 bg-green-50 text-green-900 hover:bg-green-100 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200 dark:hover:bg-green-500/20" },
+                {
+                  type: "direction",
+                  label: "Direction",
+                  sub: "Super Admin",
+                  icon: IconCrown,
+                  color: "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20",
+                },
+                {
+                  type: "admin",
+                  label: "Admin",
+                  sub: "Management",
+                  icon: IconShield,
+                  color: "border-brand bg-brand/10 text-brand hover:bg-brand/20 dark:border-brand/40 dark:bg-brand/20 dark:text-brand dark:hover:bg-brand/30",
+                },
+                {
+                  type: "staff",
+                  label: "Staff",
+                  sub: "Employee",
+                  icon: IconUser,
+                  color: "border-green-200 bg-green-50 text-green-900 hover:bg-green-100 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200 dark:hover:bg-green-500/20",
+                },
               ].map(({ type, label, sub, icon: Icon, color }) => (
                 <button
                   key={type}
                   type="button"
-                  onClick={() => fillCredentials(type)}
-                  className={`flex flex-col items-center gap-1 rounded-lg border p-2.5 text-xs transition-colors ${color}`}
+                  onClick={() => fillCredentials(type as "direction" | "admin" | "staff")}
+                  className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-xs transition-colors ${color}`}
                 >
-                  <Icon size={14} />
-                  <span className="font-semibold">{label}</span>
-                  <span className="text-[10px] opacity-70">{sub}</span>
+                  <Icon size={16} />
+                  <span className="font-semibold leading-none">{label}</span>
+                  <span className="text-[10px] opacity-70 leading-none">{sub}</span>
                 </button>
               ))}
             </div>

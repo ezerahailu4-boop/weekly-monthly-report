@@ -19,6 +19,8 @@ import {
   findBestReportInPeriod,
 } from "@/lib/compliancePeriods";
 import { AppShell } from "@/components/AppShell";
+import { StatCard } from "@/components/StatCard";
+import { DashboardCharts } from "@/components/DashboardCharts";
 import {
   Button,
   Badge,
@@ -38,7 +40,6 @@ import {
   IconPlus,
   IconShield,
   IconTarget,
-  IconTrendingUp,
   IconUser,
 } from "@/components/Icons";
 import type { ReportRow } from "@/types/report";
@@ -595,81 +596,56 @@ export default async function DashboardPage({
         </section>
 
         {/* ========================================================================= */}
-        {/* KPI STAT CARDS: Clean Linear/Vercel-level Metrics Grid                    */}
+        {/* KPI STAT CARDS: Clean Modern Metrics Grid */}
         {/* ========================================================================= */}
         <section aria-label="Key Performance Indicators" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {/* Directives KPI */}
-          <Card hoverable className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Active Directives
-              </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent">
+          <StatCard
+            title="Active Directives"
+            value={kpiCounts.active_directives}
+            caption={`${kpiCounts.total_directives} total strategic issued`}
+            icon={
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10 text-brand">
                 <IconCompass size={16} />
               </div>
-            </div>
-            <p className="font-display text-2xl sm:text-3xl font-extrabold text-foreground mt-3 tabular-nums">
-              {kpiCounts.active_directives}
-            </p>
-            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground tabular-nums">
-              <span>{kpiCounts.total_directives} total strategic issued</span>
-            </div>
-          </Card>
+            }
+          />
 
           {/* Action Plans KPI */}
-          <Card hoverable className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Action Plans
-              </span>
+          <StatCard
+            title="Action Plans"
+            value={kpiCounts.submitted_plans}
+            caption={`${kpiCounts.total_plans} total division commitments`}
+            icon={
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <IconTarget size={16} />
               </div>
-            </div>
-            <p className="font-display text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-3 tabular-nums">
-              {kpiCounts.submitted_plans}
-            </p>
-            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground tabular-nums">
-              <span>{kpiCounts.total_plans} total division commitments</span>
-            </div>
-          </Card>
+            }
+          />
 
           {/* Task Resolution Rate */}
-          <Card hoverable className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Task Resolution
-              </span>
+          <StatCard
+            title="Task Resolution"
+            value={taskResolutionRate + "%"}
+            caption={`${kpiCounts.completed_tasks} completed · ${kpiCounts.total_tasks - kpiCounts.completed_tasks} open`}
+            icon={
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
                 <IconCheckSquare size={16} />
               </div>
-            </div>
-            <p className="font-display text-2xl sm:text-3xl font-extrabold text-foreground mt-3 tabular-nums">
-              {taskResolutionRate}%
-            </p>
-            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground tabular-nums">
-              <span>{kpiCounts.completed_tasks} completed &middot; {kpiCounts.total_tasks - kpiCounts.completed_tasks} open</span>
-            </div>
-          </Card>
+            }
+          />
 
           {/* Submissions & Governance */}
-          <Card hoverable className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Governance Filings
-              </span>
+          <StatCard
+            title="Governance Filings"
+            value={totalCount}
+            caption={`${reviewedCount} approved · ${pendingReviewCount} in review`}
+            icon={
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
                 <IconLayers size={16} />
               </div>
-            </div>
-            <p className="font-display text-2xl sm:text-3xl font-extrabold text-foreground mt-3 tabular-nums">
-              {totalCount}
-            </p>
-            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground tabular-nums">
-              <IconTrendingUp size={12} className="text-accent" />
-              <span>{reviewedCount} approved &middot; {pendingReviewCount} in review</span>
-            </div>
-          </Card>
+            }
+          />
         </section>
 
         {/* Live Ethiopian Time Reporting Window Status */}
@@ -811,6 +787,9 @@ export default async function DashboardPage({
             windowLocked={windowLocked}
           />
         </div>
+
+        {/* Reporting Statistics & Charts */}
+        <DashboardCharts reports={allReportList} />
       </div>
     </AppShell>
   );

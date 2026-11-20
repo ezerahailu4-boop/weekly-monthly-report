@@ -19,6 +19,7 @@ import {
 import { TaskWorkspace, type AssignableUser } from "@/components/TaskWorkspace";
 import { AppShell } from "@/components/AppShell";
 import {
+  IconAlertCircle,
   IconBarChart,
   IconCheckSquare,
   IconCrown,
@@ -29,6 +30,8 @@ import {
 } from "@/components/Icons";
 import type { ReportRow } from "@/types/report";
 import type { TaskRow } from "@/types/task";
+import { StatCard } from "@/components/StatCard";
+import { StatusBadge } from "@/components/StatusBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -271,7 +274,7 @@ export default async function AdminPage({
           </a>
 
           {/* Segmented Tab Control */}
-          <div className="mt-4 flex flex-wrap items-center gap-1 rounded-lg bg-muted p-1 text-muted-foreground text-xs w-fit border border-border/60">
+          <div className="mt-6 flex flex-wrap items-center gap-1 rounded-xl bg-muted p-1 text-muted-foreground text-xs w-fit border border-border">
             <Link
               href="/admin?tab=team"
               className={`inline-flex items-center gap-2 rounded-md px-3.5 py-1.5 font-semibold transition-all ${
@@ -333,6 +336,50 @@ export default async function AdminPage({
             </Link>
           </div>
         </div>
+
+          {/* Admin Overview Stats */}
+          <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <StatCard
+              title="Team Members"
+              value={teamList.length}
+              caption={`${teamList.filter((m) => m.role === "employee").length} staff · ${teamList.filter((m) => m.role === "admin").length} admins`}
+              icon={
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand/10 text-brand">
+                  <IconUser size={16} />
+                </div>
+              }
+            />
+            <StatCard
+              title="Total Reports"
+              value={allReports.length}
+              caption={`${allReports.filter((r) => r.status === "submitted").length} pending review · ${allReports.filter((r) => r.status === "reviewed").length} reviewed`}
+              icon={
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                  <IconFileText size={16} />
+                </div>
+              }
+            />
+            <StatCard
+              title="Open Tasks"
+              value={allTasks.filter((t) => t.status !== "completed").length}
+              caption={`${allTasks.filter((t) => t.status === "completed").length} completed · ${overdueList.length} overdue staff`}
+              icon={
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <IconCheckSquare size={16} />
+                </div>
+              }
+            />
+            <StatCard
+              title="Active Warnings"
+              value={allWarnings.length}
+              caption="Disciplinary & compliance alerts"
+              icon={
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+                  <IconAlertCircle size={16} />
+                </div>
+              }
+            />
+          </div>
 
         {/* Tab Content */}
         {activeTab === "team" && (

@@ -12,7 +12,6 @@ import {
   IconCompass,
   IconDownload,
   IconFileText,
-  IconMinus,
   IconPaperclip,
   IconPlus,
   IconSearch,
@@ -84,9 +83,11 @@ export function PlanWorkspace({
   const [periodStart, setPeriodStart] = useState(todayYmd);
   const [periodEnd, setPeriodEnd] = useState(todayYmd);
   const [summary, setSummary] = useState("");
-  const [objectives, setObjectives] = useState<ActionPlanObjective[]>([
-    emptyActionPlanObjective(),
-  ]);
+  const [planningObjective, setPlanningObjective] = useState("");
+  const [planningGoal, setPlanningGoal] = useState("");
+  const [objectives, setObjectives] = useState<ActionPlanObjective[]>(
+    Array.from({ length: 7 }, () => emptyActionPlanObjective())
+  );
   const [attachments, setAttachments] = useState<FileAttachmentMeta[]>([]);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -121,7 +122,9 @@ export function PlanWorkspace({
     setPeriodStart(todayYmd);
     setPeriodEnd(todayYmd);
     setSummary("");
-    setObjectives([emptyActionPlanObjective()]);
+    setPlanningObjective("");
+    setPlanningGoal("");
+    setObjectives(Array.from({ length: 7 }, () => emptyActionPlanObjective()));
     setAttachments([]);
   }
 
@@ -161,6 +164,14 @@ export function PlanWorkspace({
       setBanner({ type: "err", text: "Action plan title is required." });
       return;
     }
+    if (entryMode === "form" && (!planningObjective.trim() || !planningGoal.trim())) {
+      setBanner({ type: "err", text: "Complete Objective 1 and Goal 1 in the planning format." });
+      return;
+    }
+    if (entryMode === "form" && !objectives.some((row) => row.activity.trim())) {
+      setBanner({ type: "err", text: "Enter at least one planned activity." });
+      return;
+    }
     setSaving(true);
     setBanner(null);
     try {
@@ -175,7 +186,9 @@ export function PlanWorkspace({
           period_end: periodEnd,
           entry_mode: entryMode,
           summary,
-          objectives: objectives.filter((o) => o.activity.trim()),
+          objectives: objectives
+            .filter((o) => o.activity.trim())
+            .map((o) => ({ ...o, objectiveName: planningObjective.trim(), goalName: planningGoal.trim() })),
           attachments,
           status,
         }),
@@ -430,10 +443,10 @@ export function PlanWorkspace({
                 </div>
                 <div>
                   <h3 className="font-display text-base font-bold text-foreground">
-                    Submit Action Plan
+                    Add Plan · Planning Format
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
-                    Dual entry: structured ERP milestone rows or direct official file upload.
+                    Complete the planning sheet fields below. Your plan is saved in the same structure as the approved format.
                   </p>
                 </div>
               </div>
@@ -561,85 +574,42 @@ export function PlanWorkspace({
                 />
               </div>
 
-              {/* Structured Objectives Builder */}
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-foreground">
-                    Planned Milestones &amp; Deliverables {entryMode === "form" ? "*" : "(Optional)"}
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setObjectives((prev) => [...prev, emptyActionPlanObjective()])
-                    }
-                    className="inline-flex items-center gap-1 rounded-md bg-muted px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-muted/80 cursor-pointer"
-                  >
-                    <IconPlus size={11} />
-                    Add Milestone
-                  </button>
+              {/* Planning Format 2 worksheet */}
+              <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm" aria-labelledby="planning-format-title">
+                <div className="flex flex-col gap-1 border-b border-border bg-gradient-to-r from-muted/70 to-card px-4 py-4 sm:px-5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h4 id="planning-format-title" className="font-display text-base font-bold tracking-tight text-foreground">Planning Format</h4>
+                    <span className="rounded-full border border-border bg-card px-2.5 py-1 text-[10px] font-semibold text-muted-foreground">7 activity rows</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Set one objective and goal, then describe planned activities, their baseline, KPI, and target.</p>
                 </div>
 
-                {objectives.map((obj, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-lg border border-border bg-muted/20 p-3 space-y-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                        Milestone #{idx + 1}
-                      </span>
-                      {objectives.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setObjectives((prev) => prev.filter((_, i) => i !== idx))
-                          }
-                          className="inline-flex items-center gap-0.5 text-[10px] text-rose-600 hover:underline cursor-pointer"
-                        >
-                          <IconMinus size={10} />
-                          Remove
-                        </button>
-                      )}
+                <div className="grid gap-3 border-b border-border p-4 sm:grid-cols-2 sm:p-5">
+                  <label className="block space-y-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Objective 1</span>
+                    <input type="text" value={planningObjective} onChange={(e) => setPlanningObjective(e.target.value)} placeholder="Enter the objective" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/15" />
+                  </label>
+                  <label className="block space-y-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Goal 1</span>
+                    <input type="text" value={planningGoal} onChange={(e) => setPlanningGoal(e.target.value)} placeholder="Enter the goal" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/15" />
+                  </label>
+                </div>
+
+                <div className="hidden gap-3 bg-muted/40 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground md:grid md:grid-cols-[3rem_minmax(0,2fr)_minmax(8rem,1fr)_minmax(8rem,1fr)_minmax(7rem,0.8fr)] md:px-5">
+                  <span>S.No.</span><span>Objectives / Goals / Planned Activities</span><span>Base line</span><span>Key performance indicators (KPI)</span><span>Target</span>
+                </div>
+                <div className="space-y-3 p-3 sm:p-4 md:space-y-0 md:p-0">
+                  {objectives.map((obj, idx) => (
+                    <div key={idx} className="grid gap-3 rounded-xl border border-border/80 bg-background p-3 md:rounded-none md:border-0 md:border-t md:border-border md:px-5 md:py-3 md:grid-cols-[3rem_minmax(0,2fr)_minmax(8rem,1fr)_minmax(8rem,1fr)_minmax(7rem,0.8fr)] md:items-center">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted font-mono text-xs font-bold text-muted-foreground md:h-auto md:w-auto md:justify-start md:bg-transparent">{idx + 1}</span>
+                      <label className="space-y-1 md:space-y-0"><span className="text-[10px] font-semibold text-muted-foreground md:sr-only">Planned Activities</span><input aria-label={`Planned activity ${idx + 1}`} type="text" placeholder="Planned activity" value={obj.activity} onChange={(e) => updateObjective(idx, "activity", e.target.value)} className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/15" /></label>
+                      <label className="space-y-1 md:space-y-0"><span className="text-[10px] font-semibold text-muted-foreground md:sr-only">Base line</span><input aria-label={`Baseline ${idx + 1}`} type="text" placeholder="Base line" value={obj.baseline || ""} onChange={(e) => updateObjective(idx, "baseline", e.target.value)} className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/15" /></label>
+                      <label className="space-y-1 md:space-y-0"><span className="text-[10px] font-semibold text-muted-foreground md:sr-only">Key performance indicator</span><input aria-label={`KPI ${idx + 1}`} type="text" placeholder="KPI" value={obj.kpi} onChange={(e) => updateObjective(idx, "kpi", e.target.value)} className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/15" /></label>
+                      <label className="space-y-1 md:space-y-0"><span className="text-[10px] font-semibold text-muted-foreground md:sr-only">Target</span><input aria-label={`Target ${idx + 1}`} type="text" placeholder="Target" value={obj.target || ""} onChange={(e) => updateObjective(idx, "target", e.target.value)} className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/15" /></label>
                     </div>
-                    <input
-                      type="text"
-                      placeholder="Planned activity / deliverable *"
-                      value={obj.activity}
-                      onChange={(e) => updateObjective(idx, "activity", e.target.value)}
-                      className="w-full rounded-md border border-border bg-card px-2.5 py-1.5 text-xs text-foreground"
-                    />
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      <input
-                        type="text"
-                        placeholder="KPI / Target metric"
-                        value={obj.kpi}
-                        onChange={(e) => updateObjective(idx, "kpi", e.target.value)}
-                        className="rounded-md border border-border bg-card px-2.5 py-1.5 text-[11px] text-foreground"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Responsible owner"
-                        value={obj.owner}
-                        onChange={(e) => updateObjective(idx, "owner", e.target.value)}
-                        className="rounded-md border border-border bg-card px-2.5 py-1.5 text-[11px] text-foreground"
-                      />
-                      <input
-                        type="date"
-                        value={obj.targetDate}
-                        onChange={(e) => updateObjective(idx, "targetDate", e.target.value)}
-                        className="rounded-md border border-border bg-card px-2 py-1.5 text-[11px] text-foreground"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Budget / Resources"
-                        value={obj.resources}
-                        onChange={(e) => updateObjective(idx, "resources", e.target.value)}
-                        className="rounded-md border border-border bg-card px-2.5 py-1.5 text-[11px] text-foreground"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </section>
 
               {/* File Upload Area */}
               <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 space-y-2">
