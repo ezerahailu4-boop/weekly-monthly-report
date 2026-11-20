@@ -306,9 +306,10 @@ export default async function DashboardPage({
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
         {/* Executive Header Banner */}
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-border pb-6">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+        <div className={`relative isolate overflow-hidden flex flex-col gap-5 ${isSuperAdmin ? "rounded-3xl border border-accent/20 bg-gradient-to-br from-card via-card to-accent/10 p-5 shadow-sm sm:gap-7 sm:p-8 lg:p-10" : "border-b border-border pb-6 lg:flex-row lg:items-center lg:justify-between"}`}>
+          {isSuperAdmin && <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-32 -z-10 h-80 w-80 rounded-full bg-accent/10 blur-3xl sm:h-[28rem] sm:w-[28rem]" />}
+          <div className={isSuperAdmin ? "relative z-10 max-w-4xl" : ""}>
+            <div className={`flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground ${isSuperAdmin ? "mb-4" : "mb-1.5"}`}>
               {isSuperAdmin ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-950 px-2.5 py-0.5 text-[11px] font-bold text-amber-300 ring-1 ring-amber-500/30">
                   <IconCrown size={12} className="text-amber-400" />
@@ -329,14 +330,14 @@ export default async function DashboardPage({
               <span>DIRECTIVE FOLLOW-UP SYSTEM</span>
             </div>
 
-            <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+            <h1 className={`font-display font-extrabold tracking-tight text-foreground ${isSuperAdmin ? "max-w-4xl text-4xl leading-[1.04] sm:text-5xl lg:text-6xl" : "text-2xl sm:text-3xl"}`}>
               {isSuperAdmin
                 ? "Direction Follow-up Command Center"
                 : isAdmin
                 ? `Report Follow-up Center · ${displayName}`
                 : `Welcome back, ${displayName}`}
             </h1>
-            <p className="mt-1 text-xs sm:text-sm text-muted-foreground max-w-3xl">
+            <p className={`mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base ${isSuperAdmin ? "max-w-3xl" : "max-w-3xl"}`}>
               {isSuperAdmin
                 ? "Panoramic group-wide oversight: Directives follow-up, action plans review, SLA accountability, and subsidiary reporting."
                 : isAdmin
@@ -345,7 +346,7 @@ export default async function DashboardPage({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className={`relative z-10 flex flex-wrap items-center gap-2 ${isSuperAdmin ? "border-t border-border/70 pt-4" : ""}`}>
             {isPrivileged && (
               <>
                 <ExecutiveSummaryTrigger
