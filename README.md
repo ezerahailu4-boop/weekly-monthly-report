@@ -68,15 +68,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🔐 Default Administrator Credentials
+## 🔐 Administrator Access
 
-Public sign-up is disabled. To access the portal and admin console, use the seeded admin credentials:
+Public sign-up is disabled. To access the portal and admin console, an administrator account must be provisioned. If you are deploying this project yourself:
 
-* **Email:** `admin@yetta-holding.com`
-* **Password:** `YettaAdmin2026!`
-* **Role:** `admin` (Full access to all reports, governance filters, and staff account provisioning)
-
-*(A handy **"Auto-fill Admin"** button is provided directly on the `/login` screen for fast local testing).*
+1. Run the migration script to seed the database schema.
+2. Change the seeded administrator password immediately after first login.
+3. Store credentials in a password manager; never commit them to the repository.
 
 ---
 
@@ -90,11 +88,11 @@ report-app/
 ├── src/
 │   ├── app/
 │   │   ├── admin/          # Admin Governance Console & Team Management
-│   │   ├── api/            # Local backend endpoints
-│   │   │   ├── admin/      # Admin user creation and deletion
-│   │   │   ├── auth/       # Login endpoint
-│   │   │   ├── profile/    # Profile & password updates
-│   │   │   └── reports/    # Report CRUD & export endpoints (DOCX, PDF)
+│   │   │   ├── api/            # Local backend endpoints
+│   │   │   │   ├── admin/      # Admin user creation and deletion
+│   │   │   │   ├── auth/       # Login endpoint
+│   │   │   │   ├── profile/    # Profile & password updates
+│   │   │   │   └── reports/    # Report CRUD & export endpoints (DOCX, PDF)
 │   │   ├── dashboard/      # Employee workspace & personal submission records
 │   │   ├── login/          # Executive sign-in with diagnostic error handling
 │   │   ├── profile/        # Staff personal settings & password management
