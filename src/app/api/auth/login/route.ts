@@ -1,9 +1,30 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { verifyPassword, createSession } from "@/lib/auth";
+import { rateLimit } from "@/lib/rateLimit";
+
+const MAX_ATTEMPTS_PER_WINDOW = 5;
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+function getClientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
+  return request.headers.get("x-real-ip") ?? "unknown";
+}
 
 export async function POST(request: Request) {
   try {
+    const clientIp = getClientIp(request);
+    const limited = rateLimit(`login:${clientIp}`, MAX_ATTEMPTS_PER_WINDOW, WINDOW_MS);
+    if (limited) {
+      return NextResponse.json(
+        { error: "Too many login attempts. Please try again in 15 minutes." },
+        { status: 429 }
+      );
+    }
+
     const { email, password } = await request.json();
 
     if (!email || !password) {
@@ -68,4 +89,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-
