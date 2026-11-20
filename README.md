@@ -1,5 +1,12 @@
 # Yetta Holding — Executive Reporting Portal
 
+![Next.js 16](https://img.shields.io/badge/Next.js%2016-000000?style=flat-square&logo=nextdotjs&logoColor=white)
+![React 19](https://img.shields.io/badge/React%2019-61DAFB?style=flat-square&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript%205-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Tailwind CSS v4](https://img.shields.io/badge/Tailwind%20CSS%20v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![PostgreSQL / Neon](https://img.shields.io/badge/Neon%20PostgreSQL-00E599?style=flat-square&logo=neon&logoColor=black)
+![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)
+
 A modern, high-performance executive reporting portal built with **Next.js 16 (App Router)**, **TypeScript**, **Tailwind CSS v4**, and **Neon Serverless PostgreSQL**.
 
 Designed to streamline subsidiary reporting across Yetta Holding, replacing disconnected email Word documents with structured, centralized digital submissions and dual-format exports (Word `.docx` and instant PDF).
@@ -68,15 +75,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🔐 Default Administrator Credentials
+## 🔐 Administrator Access
 
-Public sign-up is disabled. To access the portal and admin console, use the seeded admin credentials:
+Public sign-up is disabled. To access the portal and admin console, an administrator account must be provisioned. If you are deploying this project yourself:
 
-* **Email:** `admin@yetta-holding.com`
-* **Password:** `YettaAdmin2026!`
-* **Role:** `admin` (Full access to all reports, governance filters, and staff account provisioning)
-
-*(A handy **"Auto-fill Admin"** button is provided directly on the `/login` screen for fast local testing).*
+1. Run the migration script to seed the database schema.
+2. Change the seeded administrator password immediately after first login.
+3. Store credentials in a password manager; never commit them to the repository.
 
 ---
 
@@ -92,7 +97,7 @@ report-app/
 │   │   ├── admin/          # Admin Governance Console & Team Management
 │   │   ├── api/            # Local backend endpoints
 │   │   │   ├── admin/      # Admin user creation and deletion
-│   │   │   ├── auth/       # Login endpoint
+│   │   │   ├── auth/       # Login endpoint (with rate limiting)
 │   │   │   ├── profile/    # Profile & password updates
 │   │   │   └── reports/    # Report CRUD & export endpoints (DOCX, PDF)
 │   │   ├── dashboard/      # Employee workspace & personal submission records
@@ -102,13 +107,18 @@ report-app/
 │   │   │   ├── [id]/       # Formatted executive report view & exports
 │   │   │   ├── [id]/edit/  # Report editing & draft update interface
 │   │   │   └── new/        # Weekly & Monthly report creation forms
+│   │   ├── error.tsx       # Global error boundary with retry
+│   │   ├── loading.tsx     # Route-level loading state
+│   │   ├── not-found.tsx   # Branded 404 page
 │   │   ├── layout.tsx      # Root layout & executive typography configuration
 │   │   └── page.tsx        # Executive landing page & live snapshot preview
 │   ├── components/         # Reusable UI (Icons, Tables, FormBits, Badges)
 │   ├── lib/
 │   │   ├── auth.ts         # Session authentication, verification & hashing
 │   │   ├── constants.ts    # Shared cookie and application constants
-│   │   ├── db.ts           # Neon serverless client connection
+│   │   ├── db.ts           # Neon serverless client connection (env-validated)
+│   │   ├── env.ts          # Startup environment variable validation
+│   │   ├── rateLimit.ts    # In-memory rate limiter (login brute-force protection)
 │   │   ├── getReportForExport.ts # Secure report export loader
 │   │   └── reportHtml.ts   # Document HTML & print template generator
 │   └── types/              # TypeScript interfaces for reports, profiles, KPIs
@@ -119,4 +129,4 @@ report-app/
 ---
 
 ## 📄 License
-Confidential & Proprietary — Yetta Holding Limited.
+Confidential & Proprietary — Yetta Holding Limited. See [LICENSE](LICENSE).
