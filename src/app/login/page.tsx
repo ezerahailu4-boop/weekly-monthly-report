@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { IconAlertCircle, IconEye } from "@/components/Icons";
+import { IconAlertCircle, IconEnvelope, IconEye } from "@/components/Icons";
 import { BrandLogo } from "@/components/BrandLogo";
 import { ThemeToggle } from "@/components/ThemeProvider";
 
@@ -148,6 +148,16 @@ function LoginForm() {
                 {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />}
                 {loading ? "Signing in…" : "Sign in securely"}
               </button>
+
+              <div className="mt-5 flex items-center gap-3 justify-center">
+                <Link
+                  href="/forgot-password"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+                >
+                  <IconEnvelope size={13} className="text-muted-foreground" />
+                  Forgot Access
+                </Link>
+              </div>
             </form>
 
             <div className="mt-7 flex items-center gap-3 text-[11px] text-muted-foreground">

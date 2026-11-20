@@ -7,6 +7,7 @@ import { getWarningsList } from "@/lib/warnings";
 import { ETHIOPIA_TIMEZONE } from "@/lib/windowSchedule";
 import { getWeekBounds, getMonthBounds } from "@/lib/compliancePeriods";
 import { AdminUserManagement, type TeamMember } from "@/components/AdminUserManagement";
+import { AdminPasswordResets } from "@/components/AdminPasswordResets";
 import { OverdueAlertsPanel, type OverdueEntry } from "@/components/OverdueAlertsPanel";
 import { AdminWindowSettings } from "@/components/AdminWindowSettings";
 import { AdminGovernanceControls } from "@/components/AdminGovernanceControls";
@@ -24,6 +25,7 @@ import {
   IconCheckSquare,
   IconCrown,
   IconFileText,
+  IconKey,
   IconShield,
   IconSliders,
   IconUser,
@@ -60,7 +62,8 @@ export default async function AdminPage({
     params.tab === "reports" ||
     params.tab === "tasks" ||
     params.tab === "settings" ||
-    params.tab === "analytics"
+    params.tab === "analytics" ||
+    params.tab === "password-resets"
       ? params.tab
       : "team";
 
@@ -334,6 +337,18 @@ export default async function AdminPage({
               <IconBarChart size={14} />
               <span>Analytics</span>
             </Link>
+
+            <Link
+              href="/admin?tab=password-resets"
+              className={`inline-flex items-center gap-2 rounded-md px-3.5 py-1.5 font-semibold transition-all ${
+                activeTab === "password-resets"
+                  ? "bg-card text-foreground shadow-2xs"
+                  : "hover:text-foreground"
+              }`}
+            >
+              <IconKey size={14} />
+              <span>Password Resets</span>
+            </Link>
           </div>
         </div>
 
@@ -436,6 +451,10 @@ export default async function AdminPage({
               role: m.role,
             }))}
           />
+        )}
+
+        {activeTab === "password-resets" && (
+          <AdminPasswordResets />
         )}
 
         {activeTab === "reports" && (
