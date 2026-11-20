@@ -651,6 +651,16 @@ export default async function DashboardPage({
         {/* Live Ethiopian Time Reporting Window Status */}
         <ReportingWindowBanner status={windowStatus} isPrivileged={isPrivileged} />
 
+        {isPrivileged && (
+          <DashboardCharts
+            reports={allReportList}
+            employees={staffList.filter((member) => member.role === "employee")}
+            asOfDate={todayEthYmd}
+            weekPeriod={activeWeekOption ?? { start: todayEthYmd, end: todayEthYmd }}
+            monthPeriod={activeMonthOption ?? { start: todayEthYmd, end: todayEthYmd }}
+          />
+        )}
+
         {/* Staff Assigned Tasks Quick Bar */}
         {(myOpenTasks.length > 0 || !user.telegram_chat_id) && (
           <Card className="p-4 sm:p-5">
@@ -787,9 +797,6 @@ export default async function DashboardPage({
             windowLocked={windowLocked}
           />
         </div>
-
-        {/* Reporting Statistics & Charts */}
-        <DashboardCharts reports={allReportList} />
       </div>
     </AppShell>
   );
