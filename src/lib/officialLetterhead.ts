@@ -75,8 +75,8 @@ export const OFFICIAL_LETTERHEAD_CSS = `
     gap: 14px;
   }
   .official-lh-logo {
-    width: 58px;
-    height: 58px;
+    width: 118px;
+    height: 54px;
     object-fit: contain;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
@@ -242,7 +242,7 @@ export function buildOfficialDocxLetterhead(opts: {
               new ImageRun({
                 data: logoBuf,
                 type: "jpg",
-                transformation: { width: 58, height: 58 },
+                transformation: { width: 108, height: 50 },
               }),
             ],
           }),

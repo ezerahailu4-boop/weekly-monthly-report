@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { IconCrown, IconFileText, IconPlus, IconShield, IconUser } from "./Icons";
 import { ThemeToggle } from "./ThemeProvider";
+import { BrandLogo } from "./BrandLogo";
 
 interface NavUser {
   email: string;
@@ -43,10 +43,8 @@ export default function NavBar({ user }: { user: NavUser | null }) {
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Brand */}
         <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2.5 group">
-          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg ring-1 ring-border transition-transform group-hover:scale-105">
-            <Image src="/logo.jpg" alt="YETAF" width={64} height={64} className="h-full w-full object-contain" priority />
-          </div>
-          <div>
+          <BrandLogo size="nav" priority className="transition-transform group-hover:scale-[1.03]" />
+          <div className="hidden sm:block">
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-semibold tracking-tight text-foreground">Directive Follow-up System</span>
               {isSuperAdmin && (

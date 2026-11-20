@@ -3,19 +3,13 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
-import {
-  IconAlertCircle,
-  IconCrown,
-  IconEye,
-  IconShield,
-  IconUser,
-} from "@/components/Icons";
+import { IconAlertCircle, IconEye } from "@/components/Icons";
+import { BrandLogo } from "@/components/BrandLogo";
 import { ThemeToggle } from "@/components/ThemeProvider";
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <LoginForm />
     </Suspense>
   );
@@ -42,161 +36,127 @@ function LoginForm() {
         body: JSON.stringify({ email: email.trim(), password }),
       });
       const data = await res.json();
-      setLoading(false);
-      if (!res.ok) { setError(data.error || "Invalid email or password."); return; }
+      if (!res.ok) {
+        setError(data.error || "Invalid email or password.");
+        return;
+      }
       router.push(params.get("next") || "/dashboard");
       router.refresh();
     } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Connection failed. Please try again.");
+    } finally {
       setLoading(false);
-      setError(err instanceof Error ? err.message : "Connection failed");
     }
   }
 
-  function fillCredentials(type: "direction" | "admin" | "staff") {
-    const creds = {
-      direction: { email: "ceo@yetaf-holding.com" },
-      admin: { email: "admin@yetaf-holding.com" },
-      staff: { email: "operations@yetaf-holding.com" },
-    };
-    setEmail(creds[type].email);
-    setPassword("");
-    setError(null);
-  }
-
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden">
-      {/* Background glow accents */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand/20 blur-[120px] rounded-full -z-10" />
-      <div className="absolute bottom-0 right-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-accent/20 blur-[120px] rounded-full -z-10" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f5f4f0] px-4 py-8 text-foreground dark:bg-[#101317] sm:px-6 sm:py-12">
+      <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-amber-400/15 blur-[100px]" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 -right-20 h-[30rem] w-[30rem] rounded-full bg-orange-500/10 blur-[110px]" />
+      <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6"><ThemeToggle /></div>
 
-      <div className="relative z-10 w-full max-w-sm space-y-8">
-        {/* Header */}
-        <div className="flex flex-col items-center gap-4 text-center">
-          <Link href="/" className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-card ring-1 ring-border shadow-sm transition-transform hover:scale-105">
-            <Image src="/logo.jpg" alt="YETAF" width={112} height={112} className="h-full w-full object-contain" priority />
-          </Link>
+      <div className="relative z-10 grid w-full max-w-6xl overflow-hidden rounded-[2rem] border border-border/80 bg-card shadow-2xl shadow-black/10 lg:grid-cols-[1.04fr_0.96fr]">
+        <section className="relative isolate flex min-h-[300px] flex-col justify-between overflow-hidden bg-gradient-to-br from-[#191712] via-[#242016] to-[#48371b] px-6 py-8 text-white sm:px-10 sm:py-10 lg:min-h-[640px] lg:px-12 lg:py-12">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-24 -z-10 h-80 w-80 rounded-full bg-amber-400/20 blur-3xl" />
           <div>
-            <h1 className="font-display text-3xl font-extrabold tracking-tight text-foreground">
-              YETAF Holding
+            <Link href="/" aria-label="YETAF Holding home" className="inline-flex rounded-2xl transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">
+              <BrandLogo size="hero" priority />
+            </Link>
+            <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-amber-100/20 bg-white/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100/85">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
+              YETAF Holding · Secure Workspace
+            </div>
+            <h1 className="mt-5 max-w-xl font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-[2.75rem]">
+              Clear direction.<br />Connected execution.
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Directive Follow-up System — Executive Sign-In
+            <p className="mt-4 max-w-lg text-sm leading-6 text-stone-200/75 sm:text-base sm:leading-7">
+              One trusted place for corporate directives, action plans, and subsidiary performance reporting.
             </p>
           </div>
-        </div>
 
-        {/* No-signup notice */}
-        {notice === "no-signup" && (
-          <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-            <IconAlertCircle size={18} className="mt-0.5 shrink-0" />
-            <p>Public registration is disabled. Contact your administrator for access.</p>
-          </div>
-        )}
-
-        {/* Card */}
-        <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm shadow-lg/20">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Corporate Email
-              </label>
-              <input
-                type="email"
-                required
-                placeholder="name@yetaf-holding.com"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); if (error) setError(null); }}
-                className="flex h-10 w-full rounded-xl border border-input bg-transparent px-4 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-brand"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Password
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((p) => !p)}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <IconEye size={12} />
-                  {showPassword ? "Hide" : "Show"}
-                </button>
+          <div className="mt-9 grid grid-cols-3 gap-2 sm:gap-3">
+            {[["01", "Direction"], ["02", "Management"], ["03", "Teams"]].map(([number, label]) => (
+              <div key={number} className="rounded-xl border border-white/10 bg-white/[0.055] px-3 py-3 sm:px-4">
+                <p className="font-mono text-[10px] text-amber-200/70">{number}</p>
+                <p className="mt-1 text-xs font-semibold text-white sm:text-sm">{label}</p>
               </div>
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); if (error) setError(null); }}
-                className="flex h-10 w-full rounded-xl border border-input bg-transparent px-4 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-brand"
-              />
+            ))}
+          </div>
+          <p className="mt-8 text-[10px] font-medium uppercase tracking-[0.16em] text-white/40">Directive Follow-up System</p>
+        </section>
+
+        <section className="flex items-center justify-center px-6 py-9 sm:px-10 sm:py-12 lg:px-12">
+          <div className="w-full max-w-md">
+            <div className="mb-8">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand">Welcome back</p>
+              <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-foreground">Sign in to your account</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">Use your corporate credentials to continue to the holding workspace.</p>
             </div>
 
-            {error && (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {error}
+            {notice === "no-signup" && (
+              <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3.5 text-sm text-amber-800 dark:text-amber-200" role="status">
+                <IconAlertCircle size={17} className="mt-0.5 shrink-0" />
+                <p>Public registration is disabled. Contact your administrator for access.</p>
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground shadow transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-            >
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
-          </form>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <label htmlFor="login-email" className="text-xs font-semibold text-foreground">Corporate email</label>
+                <input
+                  id="login-email"
+                  type="email"
+                  name="email"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  required
+                  placeholder="name@yetaf-holding.com"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); if (error) setError(null); }}
+                  className="h-12 w-full rounded-xl border border-input bg-background px-4 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground/65 focus:border-brand focus:ring-4 focus:ring-brand/10"
+                />
+              </div>
 
-          {/* Role selector shortcut */}
-          <div className="mt-8 border-t border-border pt-6">
-            <p className="mb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Quick Sign-In
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                {
-                  type: "direction",
-                  label: "Direction",
-                  sub: "Super Admin",
-                  icon: IconCrown,
-                  color: "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20",
-                },
-                {
-                  type: "admin",
-                  label: "Admin",
-                  sub: "Management",
-                  icon: IconShield,
-                  color: "border-brand bg-brand/10 text-brand hover:bg-brand/20 dark:border-brand/40 dark:bg-brand/20 dark:text-brand dark:hover:bg-brand/30",
-                },
-                {
-                  type: "staff",
-                  label: "Staff",
-                  sub: "Employee",
-                  icon: IconUser,
-                  color: "border-green-200 bg-green-50 text-green-900 hover:bg-green-100 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200 dark:hover:bg-green-500/20",
-                },
-              ].map(({ type, label, sub, icon: Icon, color }) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => fillCredentials(type as "direction" | "admin" | "staff")}
-                  className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-xs transition-colors ${color}`}
-                >
-                  <Icon size={16} />
-                  <span className="font-semibold leading-none">{label}</span>
-                  <span className="text-[10px] opacity-70 leading-none">{sub}</span>
-                </button>
-              ))}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="login-password" className="text-xs font-semibold text-foreground">Password</label>
+                  <button type="button" onClick={() => setShowPassword((p) => !p)} aria-pressed={showPassword} className="inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <IconEye size={13} />{showPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+                <input
+                  id="login-password"
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  autoComplete="current-password"
+                  required
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); if (error) setError(null); }}
+                  className="h-12 w-full rounded-xl border border-input bg-background px-4 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground/65 focus:border-brand focus:ring-4 focus:ring-brand/10"
+                />
+              </div>
+
+              {error && (
+                <div className="flex items-start gap-2.5 rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-3 text-sm text-destructive" role="alert">
+                  <IconAlertCircle size={16} className="mt-0.5 shrink-0" /><span>{error}</span>
+                </div>
+              )}
+
+              <button type="submit" disabled={loading} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand px-5 text-sm font-bold text-brand-foreground shadow-lg shadow-brand/15 transition hover:-translate-y-0.5 hover:opacity-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/20 disabled:pointer-events-none disabled:opacity-60">
+                {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />}
+                {loading ? "Signing in…" : "Sign in securely"}
+              </button>
+            </form>
+
+            <div className="mt-7 flex items-center gap-3 text-[11px] text-muted-foreground">
+              <span className="h-px flex-1 bg-border" /><span>Authorized personnel only</span><span className="h-px flex-1 bg-border" />
             </div>
+            <p className="mt-5 text-center text-[11px] text-muted-foreground">Confidential internal system · YETAF Holding Limited</p>
           </div>
-        </div>
-
-        <p className="text-center text-xs text-muted-foreground">
-          Confidential internal system · YETAF HOLDING LIMITED
-        </p>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

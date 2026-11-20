@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { BrandLogo } from "@/components/BrandLogo";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
@@ -85,15 +85,7 @@ export default async function WarningLetterPage({
           {/* Executive Letterhead */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b-2 border-amber-500/60 pb-6">
             <div className="flex items-center gap-3.5">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-border bg-white p-1.5 shadow-2xs">
-                <Image
-                  src="/logo.jpg"
-                  alt="YETAF Holding Limited"
-                  width={96}
-                  height={96}
-                  className="h-full w-full object-contain"
-                />
-              </div>
+              <BrandLogo size="letterhead" />
               <div>
                 <h1 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-foreground">
                   YETAF HOLDING LIMITED

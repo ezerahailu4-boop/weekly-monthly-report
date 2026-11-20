@@ -65,7 +65,7 @@ async function main() {
   await sql`CREATE INDEX IF NOT EXISTS reports_status_idx ON reports (status);`;
 
   // 6. Seed default administrator
-  const adminEmail = "admin@yetta-holding.com";
+  const adminEmail = "admin@yetaf-holding.com";
   const existing = await sql`SELECT id FROM users WHERE email = ${adminEmail};`;
 
   if (existing.length === 0) {

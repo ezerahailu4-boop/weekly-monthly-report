@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   IconCalendar,
@@ -25,6 +24,7 @@ import { ThemeToggle } from "./ThemeProvider";
 import { CommandPalette } from "./CommandPalette";
 import { Button } from "./ui/Button";
 import { NotificationCenter } from "./NotificationCenter";
+import { BrandLogo } from "./BrandLogo";
 
 export interface ShellUser {
   id?: string;
@@ -101,16 +101,7 @@ function SidebarContent({
           className="flex items-center gap-3 min-w-0 group"
           title="YETAF Holding Follow-up System"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white ring-1 ring-border shadow-2xs transition-transform duration-150 group-hover:scale-105">
-            <Image
-              src="/logo.jpg"
-              alt="YETAF"
-              width={80}
-              height={80}
-              className="h-full w-full object-contain"
-              priority
-            />
-          </div>
+          <BrandLogo size={collapsed && !mobile ? "compact" : "sidebar"} priority className="transition-transform duration-150 group-hover:scale-[1.03]" />
           {(!collapsed || mobile) && (
             <div className="min-w-0">
               <p className="text-sm font-bold tracking-tight text-sidebar-foreground truncate leading-tight">

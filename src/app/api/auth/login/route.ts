@@ -1,12 +1,48 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { verifyPassword, createSession } from "@/lib/auth";
+import { rateLimit } from "@/lib/rateLimit";
+import { auditLog } from "@/lib/audit";
+
+function clientMeta(request: Request) {
+  const forwarded = request.headers.get("x-forwarded-for");
+  const ip = forwarded ? forwarded.split(",")[0].trim() : "unknown";
+  const userAgent = request.headers.get("user-agent") ?? null;
+  return { ip, userAgent };
+}
 
 export async function POST(request: Request) {
+  const { ip, userAgent } = clientMeta(request);
+
   try {
     const { email, password } = await request.json();
 
+    // Rate limit: 5 attempts per IP per 60 seconds
+    const limit = rateLimit(request, { max: 5, windowMs: 60_000 });
+    if (!limit.success) {
+      await auditLog({
+        actorEmail: (email || "unknown").toLowerCase(),
+        actorRole: "unknown",
+        action: "login.rate_limited",
+        description: `Rate limit exceeded for login attempt`,
+        ipAddress: ip,
+        userAgent: userAgent,
+      });
+      return NextResponse.json(
+        { error: "Too many login attempts. Please try again later." },
+        { status: 429, headers: { "Retry-After": "60" } }
+      );
+    }
+
     if (!email || !password) {
+      await auditLog({
+        actorEmail: (email || "unknown").toLowerCase(),
+        actorRole: "unknown",
+        action: "login.failure",
+        description: "Login attempt with missing email or password",
+        ipAddress: ip,
+        userAgent: userAgent,
+      });
       return NextResponse.json(
         { error: "Email and password are required." },
         { status: 400 }
@@ -14,7 +50,6 @@ export async function POST(request: Request) {
     }
 
     const trimmedEmail = (email || "").trim().toLowerCase();
-    // Sanitize for logging: strip newlines/control chars to prevent log injection
     const safeEmail = trimmedEmail.replace(/[\r\n\t]/g, "");
     console.log(`[AUTH] Login attempt for: "${safeEmail}"`);
 
@@ -26,6 +61,14 @@ export async function POST(request: Request) {
     `;
 
     if (rows.length === 0) {
+      await auditLog({
+        actorEmail: safeEmail,
+        actorRole: "unknown",
+        action: "login.failure",
+        description: `Failed login: user not found`,
+        ipAddress: ip,
+        userAgent: userAgent,
+      });
       console.warn(`[AUTH] User not found for email: "${safeEmail}"`);
       return NextResponse.json(
         { error: "Invalid email or password." },
@@ -40,6 +83,15 @@ export async function POST(request: Request) {
     }
 
     if (!passwordMatch) {
+      await auditLog({
+        actorId: user.id,
+        actorEmail: user.email,
+        actorRole: user.role,
+        action: "login.failure",
+        description: `Failed login: incorrect password`,
+        ipAddress: ip,
+        userAgent: userAgent,
+      });
       console.warn(`[AUTH] Password mismatch for user: "${safeEmail}"`);
       return NextResponse.json(
         { error: "Invalid email or password." },
@@ -47,10 +99,19 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(`[AUTH] Login successful for: "${safeEmail}" (${user.role})`);
-
-    // Create session in Neon
     await createSession(user.id);
+
+    await auditLog({
+      actorId: user.id,
+      actorEmail: user.email,
+      actorRole: user.role,
+      action: "login.success",
+      description: `Successful sign-in`,
+      ipAddress: ip,
+      userAgent: userAgent,
+    });
+
+    console.log(`[AUTH] Login successful for: "${safeEmail}" (${user.role})`);
 
     return NextResponse.json({
       success: true,
@@ -68,4 +129,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-
