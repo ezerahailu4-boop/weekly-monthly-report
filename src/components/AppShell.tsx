@@ -93,11 +93,7 @@ function SidebarContent({
       <div
         className={`flex h-16 items-center border-b border-sidebar-border px-3.5 transition-colors ${
           collapsed && !mobile ? "justify-center" : "gap-3"
-        }`}
-        style={{
-          backgroundColor: "var(--sidebar-light-bg)",
-          borderColor: "var(--sidebar-light-divider)",
-        }}
+        } bg-sidebar-light-bg border-sidebar-light-divider`}
       >
         <Link
           href="/dashboard"
@@ -109,14 +105,12 @@ function SidebarContent({
           {(!collapsed || mobile) && (
             <div className="min-w-0">
               <p
-                className="text-sm font-bold tracking-tight truncate leading-tight"
-                style={{ color: "var(--sidebar-light-profile-name)" }}
+                className="text-sm font-bold tracking-tight truncate leading-tight text-sidebar-profile-name"
               >
                 Directive Follow-up
               </p>
               <p
-                className="text-[11px] font-medium truncate"
-                style={{ color: "var(--sidebar-light-profile-desc)" }}
+                className="text-[11px] font-medium truncate text-sidebar-profile-desc"
               >
                 Report Follow-up Center
               </p>
@@ -130,10 +124,7 @@ function SidebarContent({
         {navGroups.map((group) => (
           <div key={group.label}>
             {(!collapsed || mobile) && (
-              <p
-                className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-wider"
-                style={{ color: "var(--sidebar-light-section)" }}
-              >
+              <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-sidebar-section">
                 {group.label}
               </p>
             )}
@@ -150,31 +141,18 @@ function SidebarContent({
                       collapsed && !mobile ? "justify-center" : ""
                     } ${
                       link.active
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-2xs"
-                        : "hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                        ? "bg-sidebar-light-active-bg text-sidebar-light-active-text font-semibold shadow-2xs"
+                        : "text-sidebar-light-text hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
                     }`}
-                    style={{
-                      backgroundColor: link.active ? "var(--sidebar-light-active-bg)" : undefined,
-                      color: "var(--sidebar-light-text)",
-                    }}
                   >
-                    <span
-                      style={{
-                        color: link.active
-                          ? "var(--sidebar-light-active-icon)"
-                          : "var(--sidebar-light-icon)",
-                      }}
-                    >
-                      <Icon size={16} className="shrink-0 transition-colors" />
+                    <span className={`shrink-0 text-sidebar-light-icon ${link.active ? "text-sidebar-active-icon" : ""}`}>
+                      <Icon size={16} className="shrink-0" />
                     </span>
                     {(!collapsed || mobile) && (
                       <span className="truncate">{link.label}</span>
                     )}
                     {(!collapsed || mobile) && link.active && (
-                      <span
-                        className="ml-auto h-1.5 w-1.5 rounded-full"
-                        style={{ backgroundColor: "var(--sidebar-light-active-icon)" }}
-                      />
+                      <span className="ml-auto h-1.5 w-1.5 rounded-full text-sidebar-active-icon" />
                     )}
                   </Link>
                 );
@@ -240,10 +218,10 @@ function SidebarContent({
           </div>
           {(!collapsed || mobile) && (
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-semibold text-sidebar-foreground leading-tight" style={{ color: "var(--sidebar-light-profile-name)" }}>
+              <p className="truncate text-xs font-semibold text-sidebar-profile-name leading-tight">
                 {fullName}
               </p>
-              <p className="truncate text-[10px] text-muted-foreground" style={{ color: "var(--sidebar-light-profile-desc)" }}>
+              <p className="truncate text-[10px] text-sidebar-profile-desc">
                 {isSuperAdmin
                   ? "Direction · Super Admin"
                   : role === "admin"
@@ -258,8 +236,7 @@ function SidebarContent({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="hidden lg:flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
-            style={{ color: "var(--sidebar-light-text)" }}
+            className="hidden lg:flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-sidebar-light-text transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
           >
             <IconChevronLeft size={14} />
             <span>Collapse</span>
@@ -271,8 +248,7 @@ function SidebarContent({
             type="button"
             onClick={onToggleCollapse}
             title="Expand sidebar"
-            className="hidden lg:flex w-full items-center justify-center rounded-lg py-1.5 text-xs transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
-            style={{ color: "var(--sidebar-light-text)" }}
+            className="hidden lg:flex w-full items-center justify-center rounded-lg py-1.5 text-sidebar-light-text transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
           >
             <IconChevronRight size={14} />
           </button>
@@ -489,13 +465,12 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
             className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-150"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="fixed inset-y-0 left-0 flex w-[260px] flex-col border-r border-sidebar-border bg-sidebar shadow-2xl animate-in slide-in-from-left duration-200" style={{ backgroundColor: "var(--sidebar-light-bg)", borderColor: "var(--sidebar-light-divider)" }}>
+          <div className="fixed inset-y-0 left-0 flex w-[260px] flex-col border-r border-sidebar-border bg-sidebar-light-bg border-sidebar-light-divider shadow-2xl animate-in slide-in-from-left duration-200">
             <div className="absolute right-3 top-3">
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
-                className="rounded-lg p-1.5 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
-                style={{ color: "var(--sidebar-light-text)" }}
+                className="rounded-lg p-1.5 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer text-sidebar-light-text"
                 aria-label="Close navigation"
               >
                 <IconX size={16} />

@@ -43,34 +43,23 @@ function getWeekKey(dateStr: string): string {
 }
 
 const tooltipStyle = {
-  backgroundColor: "#FFF7E6",
-  border: "1px solid #D9CBA9",
+  backgroundColor: "var(--card)",
+  border: "1px solid var(--border)",
   borderRadius: "10px",
   fontSize: "12px",
-  color: "#153D30",
+  color: "var(--muted-foreground)",
   padding: "10px 14px",
   boxShadow: "0 8px 24px -4px rgba(0,0,0,0.08)",
 } as React.CSSProperties;
 
-const GOLD = "#D6A64B";
-const GOLD_LIGHT = "rgba(214, 166, 75, 0.15)";
-const EMERALD = "#006B45";
-const EMERALD_LIGHT = "rgba(0, 107, 69, 0.1)";
-const CREAM = "#FFF7E6";
-const BORDER = "#D9CBA9";
-const BODY = "#52645A";
-
-function statPill(label: string, value: string | number, color = GOLD) {
+function statPill(label: string, value: string | number, color = "text-gold") {
   return (
     <div className="flex items-center gap-2">
-      <span
-        className="flex h-2.5 w-2.5 shrink-0 rounded-full"
-        style={{ backgroundColor: color }}
-      />
+      <span className={`flex h-2.5 w-2.5 shrink-0 rounded-full ${color}`} />
       <span className="text-[11px] font-medium text-body tabular-nums">
         {label}
       </span>
-      <span className="ml-1 text-xs font-bold tabular-nums" style={{ color: "#153D30" }}>
+      <span className="ml-1 text-xs font-bold tabular-nums text-heading">
         {value}
       </span>
     </div>
@@ -153,10 +142,10 @@ export function StatusBoard({ reports }: StatusBoardProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: "#153D30" }}>
+          <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-heading">
             Executive Status Board
           </h2>
-          <p className="text-xs sm:text-sm text-body mt-0.5" style={{ color: "#52645A" }}>
+          <p className="text-xs sm:text-sm text-body mt-0.5">
             Weekly & monthly filings — separated performance tracking.
           </p>
         </div>
@@ -169,25 +158,29 @@ export function StatusBoard({ reports }: StatusBoardProps) {
           <div className="absolute right-4 top-4 opacity-30 group-hover:opacity-100 transition-opacity">
             <IconBarChart size={24} className="text-gold" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">Weekly Submitted</p>
-          <p className="font-display text-3xl sm:text-4xl font-extrabold" style={{ color: "#153D30", fontVariantNumeric: "tabular-nums" }}>
+          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">
+            Weekly Submitted
+          </p>
+          <p className="font-display text-3xl sm:text-4xl font-extrabold text-heading tabular-nums">
             {submittedWeekly}
           </p>
-          <div className="mt-2 flex items-center gap-1 text-[11px] text-emerald-600 dark:text-[#36A879] font-medium">
-            <span className="flex h-1 w-1 rounded-full bg-emerald-500" />
+          <div className="mt-2 flex items-center gap-1 text-[11px] text-deep-emerald dark:text-[#36A879] font-medium">
+            <span className="flex h-1 w-1 rounded-full bg-deep-emerald dark:bg-[#36A879]" />
             {reviewedWeekly} reviewed
           </div>
         </div>
         <div className="glass-card rounded-xl border border-gold p-5 shadow-sm relative overflow-hidden group">
           <div className="absolute right-4 top-4 opacity-30 group-hover:opacity-100 transition-opacity">
-            <IconFileText size={24} className="text-emerald-600 dark:text-[#36A879]" />
+            <IconFileText size={24} className="text-deep-emerald dark:text-[#36A879]" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">Monthly Submitted</p>
-          <p className="font-display text-3xl sm:text-4xl font-extrabold" style={{ color: "#153D30", fontVariantNumeric: "tabular-nums" }}>
+          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">
+            Monthly Submitted
+          </p>
+          <p className="font-display text-3xl sm:text-4xl font-extrabold text-heading tabular-nums">
             {submittedMonthly}
           </p>
-          <div className="mt-2 flex items-center gap-1 text-[11px] text-emerald-600 dark:text-[#36A879] font-medium">
-            <span className="flex h-1 w-1 rounded-full bg-emerald-500" />
+          <div className="mt-2 flex items-center gap-1 text-[11px] text-deep-emerald dark:text-[#36A879] font-medium">
+            <span className="flex h-1 w-1 rounded-full bg-deep-emerald dark:bg-[#36A879]" />
             {reviewedMonthly} reviewed
           </div>
         </div>
@@ -195,8 +188,10 @@ export function StatusBoard({ reports }: StatusBoardProps) {
           <div className="absolute right-4 top-4 opacity-30 group-hover:opacity-100 transition-opacity">
             <IconCompass size={24} className="text-body" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">Drafts Open</p>
-          <p className="font-display text-3xl sm:text-4xl font-extrabold" style={{ color: "#DC5550", fontVariantNumeric: "tabular-nums" }}>
+          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">
+            Drafts Open
+          </p>
+          <p className="font-display text-3xl sm:text-4xl font-extrabold text-destructive tabular-nums">
             {totalDraft}
           </p>
           <div className="mt-2 flex items-center gap-1 text-[11px] text-body font-medium">
@@ -207,8 +202,10 @@ export function StatusBoard({ reports }: StatusBoardProps) {
           <div className="absolute right-4 top-4 opacity-30 group-hover:opacity-100 transition-opacity">
             <IconLayers size={24} className="text-gold" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">Resolution Rate</p>
-          <p className="font-display text-3xl sm:text-4xl font-extrabold" style={{ color: "#153D30", fontVariantNumeric: "tabular-nums" }}>
+          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">
+            Resolution Rate
+          </p>
+          <p className="font-display text-3xl sm:text-4xl font-extrabold text-heading tabular-nums">
             {resolutionRate}%
           </p>
           <div className="mt-2 flex items-center gap-1 text-[11px] text-body font-medium">
@@ -242,10 +239,10 @@ export function StatusBoard({ reports }: StatusBoardProps) {
                     <stop offset="100%" stopColor="#D6A64B" stopOpacity={0.4} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#D9CBA9" vertical={false} />
-                <XAxis dataKey="week" tick={{ fontSize: 10, fill: "#52645A" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: "#52645A" }} axisLine={false} tickLine={false} allowDecimals={false} hide />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "#52645A", opacity: 0.2 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="week" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} allowDecimals={false} hide />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted-foreground)", opacity: 0.2 }} />
                 <Legend wrapperStyle={{ fontSize: 10 }} verticalAlign="top" align="left" />
                 <Bar dataKey="weekly" name="Weekly" fill="url(#weekly-gradient)" radius={[6, 6, 0, 0]} />
               </BarChart>
@@ -257,7 +254,7 @@ export function StatusBoard({ reports }: StatusBoardProps) {
         <div className="chart-card p-5 flex flex-col">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-deep-emerald/10 text-deep-emerald">
                 <IconTarget size={16} />
               </span>
               <div>
@@ -276,10 +273,10 @@ export function StatusBoard({ reports }: StatusBoardProps) {
                     <stop offset="100%" stopColor="#006B45" stopOpacity={0.4} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#D9CBA9" vertical={false} />
-                <XAxis dataKey="week" tick={{ fontSize: 10, fill: "#52645A" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: "#52645A" }} axisLine={false} tickLine={false} allowDecimals={false} hide />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "#52645A", opacity: 0.2 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="week" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} allowDecimals={false} hide />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted-foreground)", opacity: 0.2 }} />
                 <Legend wrapperStyle={{ fontSize: 10 }} verticalAlign="top" align="left" />
                 <Bar dataKey="monthly" name="Monthly" fill="url(#monthly-gradient)" radius={[6, 6, 0, 0]} />
               </BarChart>
@@ -305,11 +302,11 @@ export function StatusBoard({ reports }: StatusBoardProps) {
                     <stop offset="100%" stopColor="#D6A64B" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#D9CBA9" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#52645A" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: "#52645A" }} axisLine={false} tickLine={false} allowDecimals={false} hide />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "#52645A", opacity: 0.2 }} />
-                <Area type="monotone" dataKey="count" stroke="#D6A64B" strokeWidth={3} fillOpacity={1} fill="url(#area-gold)" dot={{ fill: "#D6A64B", stroke: "#FFF7E6", strokeWidth: 2 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} allowDecimals={false} hide />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted-foreground)", opacity: 0.2 }} />
+                <Area type="monotone" dataKey="count" stroke="#D6A64B" strokeWidth={3} fillOpacity={1} fill="url(#area-gold)" dot={{ fill: "#D6A64B", stroke: "var(--card)", strokeWidth: 2 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -341,12 +338,14 @@ export function StatusBoard({ reports }: StatusBoardProps) {
           </div>
           <div className="mt-4 flex items-center justify-between gap-4 px-2">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-600" />
-              <span className="text-xs font-medium" style={{ color: "#153D30" }}>{totalSubmitted - totalDraft} Active Filings</span>
+              <span className="w-2 h-2 rounded-full bg-deep-emerald" />
+              <span className="text-xs font-medium text-heading">
+                {totalSubmitted - totalDraft} Active Filings
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-champagne" />
-              <span className="text-xs font-medium" style={{ color: "#52645A" }}>{totalDraft} Drafts</span>
+              <span className="text-xs font-medium text-body">{totalDraft} Drafts</span>
             </div>
           </div>
         </div>
@@ -365,13 +364,15 @@ export function StatusBoard({ reports }: StatusBoardProps) {
         </div>
         <div className="flex-1 min-h-0">
           {deptData.length === 0 ? (
-            <div className="flex h-[200px] items-center justify-center text-xs text-body">No departments yet</div>
+            <div className="flex h-[200px] items-center justify-center text-xs text-body">
+              No departments yet
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={deptData} layout="vertical" margin={{ top: 10, right: 20, bottom: 20, left: 120 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#D9CBA9" horizontal={false} />
-                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: "#52645A" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
-                <YAxis type="category" dataKey="dept" tick={{ fontSize: 11, fill: "#153D30" }} axisLine={false} tickLine={false} width={130} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                <YAxis type="category" dataKey="dept" tick={{ fontSize: 11, fill: "var(--foreground)" }} axisLine={false} tickLine={false} width={130} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v) => [`${v}%`, "Compliance"]} />
                 <Bar dataKey="rate" name="Compliance %" fill="#D6A64B" radius={[0, 8, 8, 0]} />
               </BarChart>
@@ -382,10 +383,11 @@ export function StatusBoard({ reports }: StatusBoardProps) {
 
       {/* ── Quick Stats Pills ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
-        {statPill("Weekly Drafts", draftWeekly, "#D9CBA9")}
-        {statPill("Monthly Drafts", draftMonthly, "#D9CBA9")}
-        {statPill("Weekly Reviewed", reviewedWeekly, "#006B45")}
-        {statPill("Monthly Reviewed", reviewedMonthly, "#006B45")}
+        {statPill("Weekly Drafts", draftWeekly, "text-border")}
+
+        {statPill("Monthly Drafts", draftMonthly, "text-border")}
+        {statPill("Weekly Reviewed", reviewedWeekly, "text-deep-emerald")}
+        {statPill("Monthly Reviewed", reviewedMonthly, "text-deep-emerald")}
       </div>
     </section>
   );

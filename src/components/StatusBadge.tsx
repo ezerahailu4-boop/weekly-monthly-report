@@ -8,11 +8,12 @@ export function StatusBadge({
   size?: "sm" | "md";
 }) {
   const norm = (status || "draft").toLowerCase();
-  const { bg, border, text, dot } = statusColorsFor(
-    (["draft", "submitted", "reviewed", "overdue", "warning"] as const).includes(norm as any)
-      ? (norm as any)
-      : "draft",
-  );
+  const key = (["draft", "submitted", "reviewed", "overdue", "warning"] as const).includes(
+    norm as any
+  )
+    ? (norm as any)
+    : "draft";
+  const { light, dark } = statusColorsFor(key);
   const label =
     {
       draft: "Draft",
@@ -25,8 +26,12 @@ export function StatusBadge({
   const px = size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-0.5 text-xs";
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border font-medium ${px} ${bg} ${border} ${text}`}>
-      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border font-medium ${px} ${light.bg} ${dark.bg.replace("bg-", "dark:bg-")} ${light.border} ${dark.border.replace("border-", "dark:border-")} ${light.text} ${dark.text.replace("text-", "dark:text-")}`}
+    >
+      <span
+        className={`h-1.5 w-1.5 shrink-0 rounded-full ${light.dot} ${dark.dot.replace("bg-", "dark:bg-")}`}
+      />
       {label}
     </span>
   );

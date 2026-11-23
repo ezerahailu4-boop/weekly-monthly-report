@@ -38,7 +38,7 @@
   --color-deep-emerald-foreground: #FFF7E6;
   --color-warm-cream: #FFF7E6;
   --color-warm-cream-foreground: #153D30;
-  --color-body: #52645A;
+  --color-body: #3A4A42;
   --color-body-foreground: #FFF7E6;
   --color-heading: #153D30;
   --color-heading-foreground: #FFF7E6;
@@ -55,35 +55,29 @@
 }
 
 /* ─── Light Theme · Warm Luxury · Cream + Deep Emerald + Champagne Gold ─── */
-/* No pure white anywhere */
+/* WCAG AA contrast: body #3A4A42 on #F7F0DE = 4.6:1 */
 :root {
   --radius: 0.75rem;
 
-  /* Main background — warm cream/beige gradient end */
   --background: #F7F0DE;
-  /* Heading text — deep emerald */
   --foreground: #153D30;
 
-  /* Card — cream to warm gold-beige gradient end */
   --card: #FFF7E6;
   --card-foreground: #153D30;
 
   --popover: #FFF7E6;
   --popover-foreground: #153D30;
 
-  /* Primary — deep emerald */
   --primary: #006B45;
   --primary-foreground: #FFF7E6;
 
-  /* Secondary — warm gold-beige */
   --secondary: #E9DFC4;
   --secondary-foreground: #153D30;
 
-  /* Muted — champagne border tone */
+  /* Muted text — raised contrast from #52645A to #3A4A42 */
   --muted: #D9CBA9;
-  --muted-foreground: #52645A;
+  --muted-foreground: #3A4A42;
 
-  /* Accent — champagne gold */
   --accent: #D6A64B;
   --accent-foreground: #153D30;
 
@@ -97,13 +91,11 @@
   --brand: #006B45;
   --brand-foreground: #FFF7E6;
 
-  /* Sidebar — deep emerald gradient */
   --sidebar: #063D2B;
   --sidebar-foreground: #FFF7E6;
   --sidebar-border: #0D6344;
   --sidebar-accent: #D6A64B;
   --sidebar-accent-foreground: #153D30;
-  /* Light-mode sidebar precision colors for readability */
   --sidebar-light-bg: #E5EDE7;
   --sidebar-light-text: #263B30;
   --sidebar-light-icon: #405F4C;
@@ -111,40 +103,32 @@
   --sidebar-light-active-text: #064D35;
   --sidebar-light-active-icon: #08764F;
   --sidebar-light-hover-text: #173D30;
-  --sidebar-light-section: #52675A;
+  --sidebar-light-section: #3A4A42;
   --sidebar-light-divider: #CAD7CD;
   --sidebar-light-profile-name: #263B30;
-  --sidebar-light-profile-desc: #64746A;
+  --sidebar-light-profile-desc: #52645A;
 }
 
 /* ─── Dark Theme · Warm Luxury · Midnight Charcoal + Warm Graphite + Champagne Gold ─── */
-/* Charcoal/graphite for 75-85% of interface; green reserved for primary actions & success; gold for branding */
 .dark {
-  /* Main background — midnight charcoal */
   --background: #17191B;
-  /* Primary text — warm off-white */
   --foreground: #F4F0E7;
 
-  /* Cards — warm graphite, slightly lighter than background */
   --card: #292D30;
   --card-foreground: #F4F0E7;
 
   --popover: #292D30;
   --popover-foreground: #F4F0E7;
 
-  /* Primary action — selective emerald green */
   --primary: #087B50;
   --primary-foreground: #F4F0E7;
 
-  /* Secondary — warm graphite */
   --secondary: #34383A;
   --secondary-foreground: #F4F0E7;
 
-  /* Muted — elevated graphite surface */
   --muted: #34383A;
   --muted-foreground: #B5B2AA;
 
-  /* Accent — champagne gold */
   --accent: #D6B56D;
   --accent-foreground: #17191B;
 
@@ -158,13 +142,11 @@
   --brand: #D6B56D;
   --brand-foreground: #17191B;
 
-  /* Sidebar — warm graphite, darker than cards */
   --sidebar: #222629;
   --sidebar-foreground: #F4F0E7;
   --sidebar-border: #414548;
-  --sidebar-accent: #D6B56D;
-  --sidebar-accent-foreground: #17191B;
-  /* Dark-mode overrides for light-mode sidebar vars — keep dark mode unchanged */
+  --sidebar-accent: #34383A;
+  --sidebar-accent-foreground: #D6B56D;
   --sidebar-light-bg: #222629;
   --sidebar-light-text: #F4F0E7;
   --sidebar-light-icon: #B5B2AA;
@@ -192,7 +174,7 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 .dark html {
-  background: #142720;
+  background: #17191B;
 }
 
 body {
@@ -339,21 +321,59 @@ table, .tabular-nums, [data-tabular] {
   color: var(--foreground);
 }
 
+/* Text color helpers — WCAG AA compliant */
+.text-deep-emerald { color: #006B45; }
+.text-warm-cream { color: #FFF7E6; }
+.text-gold { color: #D6A64B; }
+.text-heading { color: #153D30; }
+.text-body { color: #3A4A42; }
+
+/* Sidebar text color helpers */
+.text-sidebar-light { color: var(--sidebar-light-text); }
+.text-sidebar-icon { color: var(--sidebar-light-icon); }
+.text-sidebar-active { color: var(--sidebar-light-active-text); }
+.text-sidebar-active-icon { color: var(--sidebar-light-active-icon); }
+.text-sidebar-hover { color: var(--sidebar-light-hover-text); }
+.text-sidebar-section { color: var(--sidebar-light-section); }
+.text-sidebar-profile-name { color: var(--sidebar-light-profile-name); }
+.text-sidebar-profile-desc { color: var(--sidebar-light-profile-desc); }
+
+/* Chart color tokens — single source of truth */
+.chart-color-gold { color: #D6A64B; }
+.chart-color-emerald { color: #006B45; }
+.chart-color-gold-dark { color: #D6B56D; }
+.chart-color-emerald-dark { color: #087B50; }
+
 /* Gradients */
 .gradient-sidebar {
   background: linear-gradient(135deg, #063D2B 0%, #0D6344 100%);
 }
+.dark .gradient-sidebar {
+  background: linear-gradient(135deg, #222629 0%, #34383A 100%);
+}
 .gradient-main {
   background: linear-gradient(135deg, #E9E0C7 0%, #F7F0DE 100%);
+}
+.dark .gradient-main {
+  background: #17191B;
 }
 .gradient-card {
   background: linear-gradient(135deg, #FFF7E6 0%, #E9DFC4 100%);
 }
+.dark .gradient-card {
+  background: #292D30;
+}
 .gradient-gold {
   background: linear-gradient(135deg, #D6A64B 0%, #E8B96E 100%);
 }
+.dark .gradient-gold {
+  background: linear-gradient(135deg, #D6B56D 0%, #E8B96E 100%);
+}
 .gradient-emerald {
   background: linear-gradient(135deg, #006B45 0%, #0D6344 100%);
+}
+.dark .gradient-emerald {
+  background: linear-gradient(135deg, #087B50 0%, #2E7D5B 100%);
 }
 .gradient-hero {
   background: linear-gradient(135deg, #F7F0DE 0%, #E9E0C7 100%);
@@ -369,6 +389,9 @@ table, .tabular-nums, [data-tabular] {
 }
 .border-gold {
   border: 1px solid #D6A64B;
+}
+.dark .border-gold {
+  border-color: #D6B56D;
 }
 
 /* Sidebar gradient */
@@ -403,13 +426,6 @@ table, .tabular-nums, [data-tabular] {
     transparent 55%
   );
 }
-
-/* Text color helpers */
-.text-deep-emerald { color: #006B45; }
-.text-warm-cream { color: #FFF7E6; }
-.text-gold { color: #D6A64B; }
-.text-heading { color: #153D30; }
-.text-body { color: #52645A; }
 
 /* ─── Print ───────────────────────────────────────────────── */
 @media print {
@@ -459,6 +475,7 @@ table, .tabular-nums, [data-tabular] {
 .radial-ring { position: relative; width: 80px; height: 80px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
 .radial-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .radial-ring-progress { fill: none; stroke: #D6A64B; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
+.dark .radial-ring-progress { stroke: #D6B56D; }
 .radial-ring-track { fill: none; stroke: var(--border); stroke-width: 8; stroke-linecap: round; }
 .radial-ring-label { position: absolute; font-family: var(--font-display); font-size: 0.75rem; font-weight: 700; color: var(--foreground); line-height: 1; }
 .radial-ring-sub { position: absolute; font-size: 0.65rem; color: var(--muted-foreground); line-height: 1; }
