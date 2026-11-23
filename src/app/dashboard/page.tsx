@@ -19,6 +19,7 @@ import {
   findBestReportInPeriod,
 } from "@/lib/compliancePeriods";
 import { AppShell } from "@/components/AppShell";
+import { ExecutiveHeader } from "@/components/ExecutiveHeader";
 import { StatCard } from "@/components/StatCard";
 import { DashboardCharts } from "@/components/DashboardCharts";
 import {
@@ -305,11 +306,11 @@ export default async function DashboardPage({
       title={isSuperAdmin ? "Direction Command Center" : "Report Follow-up Center"}
       subtitle={isSuperAdmin ? "Directive Follow-up System · Yetaf Holding" : "Directive Follow-up System"}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
-        {/* Executive Header Banner */}
-        <div className={`relative isolate overflow-hidden flex flex-col gap-5 ${isSuperAdmin ? "rounded-3xl border border-accent/20 bg-gradient-to-br from-card via-card to-accent/10 p-5 shadow-sm sm:gap-7 sm:p-8 lg:p-10" : "border-b border-border pb-6 lg:flex-row lg:items-center lg:justify-between"}`}>
-          {isSuperAdmin && <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-32 -z-10 h-80 w-80 rounded-full bg-accent/10 blur-3xl sm:h-[28rem] sm:w-[28rem]" />}
-          <div className={isSuperAdmin ? "relative z-10 max-w-4xl" : ""}>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Executive Header */}
+        <div className="relative isolate overflow-hidden">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-32 -z-10 h-96 w-96 rounded-full bg-brand/20 blur-[100px]" />
+          <div className={`relative isolate flex flex-col gap-5 border border-border bg-card shadow-sm ${isSuperAdmin ? "rounded-3xl p-5 sm:gap-7 sm:p-8 lg:p-10" : "rounded-3xl p-4 sm:p-6 lg:p-8"}`}>
             <div className={`flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground ${isSuperAdmin ? "mb-4" : "mb-1.5"}`}>
               {isSuperAdmin ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-950 px-2.5 py-0.5 text-[11px] font-bold text-amber-300 ring-1 ring-amber-500/30">
@@ -416,9 +417,10 @@ export default async function DashboardPage({
               </Button>
             </Link>
           </div>
-        </div>
-
-        {/* ========================================================================= */}
+        {/* End header inner */}
+      </div>
+      {/* End header outer */}
+      {/* Container continues below */}
         {/* PRIORITY ZONE: High-contrast Alert Cards at the Very Top                   */}
         {/* ========================================================================= */}
         <section aria-label="Priority Attention Zone" className="space-y-3">
