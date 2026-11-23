@@ -21,7 +21,7 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { ExecutiveHeader } from "@/components/ExecutiveHeader";
 import { StatCard } from "@/components/StatCard";
-import { DashboardCharts } from "@/components/DashboardCharts";
+import { StatusBoard } from "@/components/StatusBoard";
 import {
   Button,
   Badge,
@@ -654,13 +654,7 @@ export default async function DashboardPage({
         <ReportingWindowBanner status={windowStatus} isPrivileged={isPrivileged} />
 
         {isPrivileged && (
-          <DashboardCharts
-            reports={allReportList}
-            employees={staffList.filter((member) => member.role === "employee")}
-            asOfDate={todayEthYmd}
-            weekPeriod={activeWeekOption ?? { start: todayEthYmd, end: todayEthYmd }}
-            monthPeriod={activeMonthOption ?? { start: todayEthYmd, end: todayEthYmd }}
-          />
+          <StatusBoard reports={allReportList} />
         )}
 
         {/* Staff Assigned Tasks Quick Bar */}
