@@ -3,12 +3,10 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import {
   IconAlertCircle,
   IconEnvelope,
   IconEye,
-  IconLock,
 } from "@/components/Icons";
 import { BrandLogo } from "@/components/BrandLogo";
 import { ThemeToggle } from "@/components/ThemeProvider";
@@ -56,15 +54,15 @@ function LoginForm() {
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-main px-4 py-8 sm:px-6 sm:py-12 text-foreground">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden gradient-main px-4 py-8 text-foreground sm:px-6 sm:py-12">
       {/* Decorative gold orbs */}
       <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-gold/15 blur-[100px]" />
       <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 -right-20 h-[30rem] w-[30rem] rounded-full bg-emerald-600/10 blur-[110px]" />
       <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6"><ThemeToggle /></div>
 
-      <div className="relative z-10 grid w-full max-w-6xl overflow-hidden rounded-[2.5rem] border border-champagne bg-gradient-card shadow-2xl shadow-black/20 lg:grid-cols-[1.04fr_0.96fr]">
+      <div className="relative z-10 grid w-full max-w-6xl overflow-hidden rounded-[2rem] border border-champagne gradient-card shadow-2xl shadow-black/20 lg:grid-cols-[1.04fr_0.96fr]">
         {/* Left · brand panel */}
-        <section className="relative isolate flex min-h-[400px] flex-col justify-between overflow-hidden bg-gradient-emerald px-8 py-10 text-warm-cream sm:px-12 sm:py-14 lg:min-h-[700px] lg:px-16 lg:py-18">
+        <section className="relative isolate flex min-h-[400px] flex-col justify-between overflow-hidden gradient-emerald px-8 py-10 text-warm-cream sm:px-12 sm:py-14 lg:min-h-[700px] lg:px-16 lg:py-18">
           <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-32 -z-10 h-80 w-80 rounded-full bg-gold/20 blur-3xl" />
           <div>
             <Link href="/" aria-label="YETAF Holding home" className="inline-flex rounded-2xl transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold">
@@ -169,7 +167,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-emerald px-5 text-sm font-bold warm-cream shadow-lg shadow-emerald-600/20 transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/30 disabled:pointer-events-none disabled:opacity-60"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl gradient-emerald px-5 text-sm font-bold text-warm-cream shadow-lg shadow-emerald-600/20 transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/30 disabled:pointer-events-none disabled:opacity-60"
               >
                 {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-warm-cream/50" />}
                 {loading ? "Signing in…" : "Sign in securely"}
