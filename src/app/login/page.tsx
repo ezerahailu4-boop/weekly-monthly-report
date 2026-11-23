@@ -3,7 +3,13 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { IconAlertCircle, IconEnvelope, IconEye } from "@/components/Icons";
+import Image from "next/image";
+import {
+  IconAlertCircle,
+  IconEnvelope,
+  IconEye,
+  IconLock,
+} from "@/components/Icons";
 import { BrandLogo } from "@/components/BrandLogo";
 import { ThemeToggle } from "@/components/ThemeProvider";
 
@@ -50,59 +56,69 @@ function LoginForm() {
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f5f4f0] px-4 py-8 text-foreground dark:bg-[#101317] sm:px-6 sm:py-12">
-      <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-amber-400/15 blur-[100px]" />
-      <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 -right-20 h-[30rem] w-[30rem] rounded-full bg-orange-500/10 blur-[110px]" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-main px-4 py-8 sm:px-6 sm:py-12 text-foreground">
+      {/* Decorative gold orbs */}
+      <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-gold/15 blur-[100px]" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 -right-20 h-[30rem] w-[30rem] rounded-full bg-emerald-600/10 blur-[110px]" />
       <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6"><ThemeToggle /></div>
 
-      <div className="relative z-10 grid w-full max-w-6xl overflow-hidden rounded-[2rem] border border-border/80 bg-card shadow-2xl shadow-black/10 lg:grid-cols-[1.04fr_0.96fr]">
-        <section className="relative isolate flex min-h-[300px] flex-col justify-between overflow-hidden bg-gradient-to-br from-[#191712] via-[#242016] to-[#48371b] px-6 py-8 text-white sm:px-10 sm:py-10 lg:min-h-[640px] lg:px-12 lg:py-12">
-          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-24 -z-10 h-80 w-80 rounded-full bg-amber-400/20 blur-3xl" />
+      <div className="relative z-10 grid w-full max-w-6xl overflow-hidden rounded-[2.5rem] border border-champagne bg-gradient-card shadow-2xl shadow-black/20 lg:grid-cols-[1.04fr_0.96fr]">
+        {/* Left · brand panel */}
+        <section className="relative isolate flex min-h-[400px] flex-col justify-between overflow-hidden bg-gradient-emerald px-8 py-10 text-warm-cream sm:px-12 sm:py-14 lg:min-h-[700px] lg:px-16 lg:py-18">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-32 -z-10 h-80 w-80 rounded-full bg-gold/20 blur-3xl" />
           <div>
-            <Link href="/" aria-label="YETAF Holding home" className="inline-flex rounded-2xl transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">
+            <Link href="/" aria-label="YETAF Holding home" className="inline-flex rounded-2xl transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold">
               <BrandLogo size="hero" priority />
             </Link>
-            <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-amber-100/20 bg-white/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100/85">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
+            <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-gold/20 bg-warm-cream/10 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-gold">
+              <span className="h-1.5 w-1.5 rounded-full bg-gold" />
               YETAF Holding · Secure Workspace
             </div>
             <h1 className="mt-5 max-w-xl font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-[2.75rem]">
-              Clear direction.<br />Connected execution.
+              Clear direction.<br />
+              Connected execution.
             </h1>
-            <p className="mt-4 max-w-lg text-sm leading-6 text-stone-200/75 sm:text-base sm:leading-7">
+            <p className="mt-4 max-w-lg text-sm leading-6 text-warm-cream/90 sm:text-base sm:leading-7">
               One trusted place for corporate directives, action plans, and subsidiary performance reporting.
             </p>
           </div>
 
-          <div className="mt-9 grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="mt-10 grid grid-cols-3 gap-2 sm:gap-3">
             {[["01", "Direction"], ["02", "Management"], ["03", "Teams"]].map(([number, label]) => (
-              <div key={number} className="rounded-xl border border-white/10 bg-white/[0.055] px-3 py-3 sm:px-4">
-                <p className="font-mono text-[10px] text-amber-200/70">{number}</p>
-                <p className="mt-1 text-xs font-semibold text-white sm:text-sm">{label}</p>
+              <div key={number} className="rounded-xl border border-gold/20 bg-warm-cream/10 px-4 py-4">
+                <p className="font-mono text-[10px] text-gold/70">{number}</p>
+                <p className="mt-1 text-xs font-semibold text-warm-cream sm:text-sm">{label}</p>
               </div>
             ))}
           </div>
-          <p className="mt-8 text-[10px] font-medium uppercase tracking-[0.16em] text-white/40">Directive Follow-up System</p>
+          <p className="mt-10 text-[10px] font-medium uppercase tracking-[0.16em] text-warm-cream/50">
+            Directive Follow-up System
+          </p>
         </section>
 
-        <section className="flex items-center justify-center px-6 py-9 sm:px-10 sm:py-12 lg:px-12">
+        {/* Right · sign-in card */}
+        <section className="flex items-center justify-center px-6 py-10 sm:px-10 sm:py-14 lg:px-12 lg:py-16">
           <div className="w-full max-w-md">
             <div className="mb-8">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand">Welcome back</p>
-              <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-foreground">Sign in to your account</h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">Use your corporate credentials to continue to the holding workspace.</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-heading">Welcome back</p>
+              <h2 className="mt-2 font-display text-3xl font-bold tracking-tight" style={{ color: "#153D30" }}>
+                Sign in to your account
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-body">
+                Use your corporate credentials to continue to the holding workspace.
+              </p>
             </div>
 
             {notice === "no-signup" && (
-              <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3.5 text-sm text-amber-800 dark:text-amber-200" role="status">
-                <IconAlertCircle size={17} className="mt-0.5 shrink-0" />
+              <div className="mb-6 flex items-start gap-3 rounded-xl border border-gold/30 bg-gold/10 p-3.5 text-sm text-heading" role="status">
+                <IconAlertCircle size={17} className="mt-0.5 shrink-0 text-gold" />
                 <p>Public registration is disabled. Contact your administrator for access.</p>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <label htmlFor="login-email" className="text-xs font-semibold text-foreground">Corporate email</label>
+                <label htmlFor="login-email" className="text-xs font-semibold text-heading">Corporate email</label>
                 <input
                   id="login-email"
                   type="email"
@@ -114,14 +130,19 @@ function LoginForm() {
                   placeholder="name@yetaf-holding.com"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); if (error) setError(null); }}
-                  className="h-12 w-full rounded-xl border border-input bg-background px-4 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground/65 focus:border-brand focus:ring-4 focus:ring-brand/10"
+                  className="h-12 w-full rounded-xl border border-input bg-warm-cream px-4 text-sm text-heading shadow-sm outline-none transition placeholder:text-body/60 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/20"
                 />
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="login-password" className="text-xs font-semibold text-foreground">Password</label>
-                  <button type="button" onClick={() => setShowPassword((p) => !p)} aria-pressed={showPassword} className="inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <label htmlFor="login-password" className="text-xs font-semibold text-heading">Password</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((p) => !p)}
+                    aria-pressed={showPassword}
+                    className="inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-body transition hover:text-heading focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-champagne"
+                  >
                     <IconEye size={13} />{showPassword ? "Hide" : "Show"}
                   </button>
                 </div>
@@ -134,36 +155,43 @@ function LoginForm() {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); if (error) setError(null); }}
-                  className="h-12 w-full rounded-xl border border-input bg-background px-4 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground/65 focus:border-brand focus:ring-4 focus:ring-brand/10"
+                  className="h-12 w-full rounded-xl border border-input bg-warm-cream px-4 text-sm text-heading shadow-sm outline-none transition placeholder:text-body/60 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/20"
                 />
               </div>
 
               {error && (
-                <div className="flex items-start gap-2.5 rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-3 text-sm text-destructive" role="alert">
-                  <IconAlertCircle size={16} className="mt-0.5 shrink-0" /><span>{error}</span>
+                <div className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 px-3.5 py-3 text-sm text-destructive" role="alert">
+                  <IconAlertCircle size={16} className="mt-0.5 shrink-0" />
+                  <span>{error}</span>
                 </div>
               )}
 
-              <button type="submit" disabled={loading} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand px-5 text-sm font-bold text-brand-foreground shadow-lg shadow-brand/15 transition hover:-translate-y-0.5 hover:opacity-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/20 disabled:pointer-events-none disabled:opacity-60">
-                {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />}
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-emerald px-5 text-sm font-bold warm-cream shadow-lg shadow-emerald-600/20 transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/30 disabled:pointer-events-none disabled:opacity-60"
+              >
+                {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-warm-cream/50" />}
                 {loading ? "Signing in…" : "Sign in securely"}
               </button>
 
               <div className="mt-5 flex items-center gap-3 justify-center">
                 <Link
                   href="/forgot-password"
-                  className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-body hover:text-heading transition-colors underline-offset-4 hover:underline"
                 >
-                  <IconEnvelope size={13} className="text-muted-foreground" />
+                  <IconEnvelope size={13} className="text-body" />
                   Forgot Access
                 </Link>
               </div>
             </form>
 
-            <div className="mt-7 flex items-center gap-3 text-[11px] text-muted-foreground">
-              <span className="h-px flex-1 bg-border" /><span>Authorized personnel only</span><span className="h-px flex-1 bg-border" />
+            <div className="mt-7 flex items-center gap-3 text-[11px] text-body">
+              <span className="h-px flex-1 bg-champagne" />
+              <span>Authorized personnel only</span>
+              <span className="h-px flex-1 bg-champagne" />
             </div>
-            <p className="mt-5 text-center text-[11px] text-muted-foreground">Confidential internal system · YETAF Holding Limited</p>
+            <p className="mt-5 text-center text-[11px] text-body">Confidential internal system · YETAF Holding Limited</p>
           </div>
         </section>
       </div>
