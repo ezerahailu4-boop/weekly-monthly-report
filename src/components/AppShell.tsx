@@ -94,6 +94,10 @@ function SidebarContent({
         className={`flex h-16 items-center border-b border-sidebar-border px-3.5 transition-colors ${
           collapsed && !mobile ? "justify-center" : "gap-3"
         }`}
+        style={{
+          backgroundColor: "var(--sidebar-light-bg)",
+          borderColor: "var(--sidebar-light-divider)",
+        }}
       >
         <Link
           href="/dashboard"
@@ -104,10 +108,16 @@ function SidebarContent({
           <BrandLogo size={collapsed && !mobile ? "compact" : "sidebar"} priority className="transition-transform duration-150 group-hover:scale-[1.03]" />
           {(!collapsed || mobile) && (
             <div className="min-w-0">
-              <p className="text-sm font-bold tracking-tight text-sidebar-foreground truncate leading-tight">
+              <p
+                className="text-sm font-bold tracking-tight truncate leading-tight"
+                style={{ color: "var(--sidebar-light-profile-name)" }}
+              >
                 Directive Follow-up
               </p>
-              <p className="text-[11px] font-medium text-muted-foreground truncate">
+              <p
+                className="text-[11px] font-medium truncate"
+                style={{ color: "var(--sidebar-light-profile-desc)" }}
+              >
                 Report Follow-up Center
               </p>
             </div>
@@ -120,7 +130,10 @@ function SidebarContent({
         {navGroups.map((group) => (
           <div key={group.label}>
             {(!collapsed || mobile) && (
-              <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+              <p
+                className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-wider"
+                style={{ color: "var(--sidebar-light-section)" }}
+              >
                 {group.label}
               </p>
             )}
@@ -138,22 +151,30 @@ function SidebarContent({
                     } ${
                       link.active
                         ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-2xs"
-                        : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                        : "hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
                     }`}
+                    style={{
+                      backgroundColor: link.active ? "var(--sidebar-light-active-bg)" : undefined,
+                      color: "var(--sidebar-light-text)",
+                    }}
                   >
-                    <Icon
-                      size={16}
-                      className={`shrink-0 transition-colors ${
-                        link.active
-                          ? "text-accent"
-                          : "text-muted-foreground group-hover:text-foreground"
-                      }`}
-                    />
+                    <span
+                      style={{
+                        color: link.active
+                          ? "var(--sidebar-light-active-icon)"
+                          : "var(--sidebar-light-icon)",
+                      }}
+                    >
+                      <Icon size={16} className="shrink-0 transition-colors" />
+                    </span>
                     {(!collapsed || mobile) && (
                       <span className="truncate">{link.label}</span>
                     )}
                     {(!collapsed || mobile) && link.active && (
-                      <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />
+                      <span
+                        className="ml-auto h-1.5 w-1.5 rounded-full"
+                        style={{ backgroundColor: "var(--sidebar-light-active-icon)" }}
+                      />
                     )}
                   </Link>
                 );
@@ -164,7 +185,7 @@ function SidebarContent({
 
         {/* Quick filing action card */}
         {(!collapsed || mobile) && (
-          <div className="mx-0.5 mt-3 rounded-xl border border-dashed border-border bg-card/60 p-3 shadow-2xs">
+          <div className="mx-0.5 mt-3 rounded-xl border border-dashed border-sidebar-border bg-card/60 p-3 shadow-2xs">
             <p className="text-xs font-semibold text-foreground">File a report</p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">
               Official governance submission
@@ -219,10 +240,10 @@ function SidebarContent({
           </div>
           {(!collapsed || mobile) && (
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-semibold text-sidebar-foreground leading-tight">
+              <p className="truncate text-xs font-semibold text-sidebar-foreground leading-tight" style={{ color: "var(--sidebar-light-profile-name)" }}>
                 {fullName}
               </p>
-              <p className="truncate text-[10px] text-muted-foreground">
+              <p className="truncate text-[10px] text-muted-foreground" style={{ color: "var(--sidebar-light-profile-desc)" }}>
                 {isSuperAdmin
                   ? "Direction · Super Admin"
                   : role === "admin"
@@ -237,7 +258,8 @@ function SidebarContent({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="hidden lg:flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
+            className="hidden lg:flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
+            style={{ color: "var(--sidebar-light-text)" }}
           >
             <IconChevronLeft size={14} />
             <span>Collapse</span>
@@ -249,7 +271,8 @@ function SidebarContent({
             type="button"
             onClick={onToggleCollapse}
             title="Expand sidebar"
-            className="hidden lg:flex w-full items-center justify-center rounded-lg py-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
+            className="hidden lg:flex w-full items-center justify-center rounded-lg py-1.5 text-xs transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
+            style={{ color: "var(--sidebar-light-text)" }}
           >
             <IconChevronRight size={14} />
           </button>
@@ -440,9 +463,13 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
     <div className="flex min-h-screen bg-background text-foreground">
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden lg:flex flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 ease-in-out z-30 shrink-0 sticky top-0 h-screen ${
+        className={`hidden lg:flex flex-col border-r border-sidebar-border transition-[width] duration-200 ease-in-out z-30 shrink-0 sticky top-0 h-screen ${
           collapsed ? "w-[64px]" : "w-[240px]"
         }`}
+        style={{
+          backgroundColor: "var(--sidebar-light-bg)",
+          borderColor: "var(--sidebar-light-divider)",
+        }}
       >
         <SidebarContent
           collapsed={collapsed}
@@ -462,12 +489,13 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
             className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-150"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="fixed inset-y-0 left-0 flex w-[260px] flex-col border-r border-sidebar-border bg-sidebar shadow-2xl animate-in slide-in-from-left duration-200">
+          <div className="fixed inset-y-0 left-0 flex w-[260px] flex-col border-r border-sidebar-border bg-sidebar shadow-2xl animate-in slide-in-from-left duration-200" style={{ backgroundColor: "var(--sidebar-light-bg)", borderColor: "var(--sidebar-light-divider)" }}>
             <div className="absolute right-3 top-3">
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
-                className="rounded-lg p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
+                className="rounded-lg p-1.5 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
+                style={{ color: "var(--sidebar-light-text)" }}
                 aria-label="Close navigation"
               >
                 <IconX size={16} />

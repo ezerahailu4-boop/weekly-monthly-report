@@ -103,6 +103,18 @@
   --sidebar-border: #0D6344;
   --sidebar-accent: #D6A64B;
   --sidebar-accent-foreground: #153D30;
+  /* Light-mode sidebar precision colors for readability */
+  --sidebar-light-bg: #E5EDE7;
+  --sidebar-light-text: #263B30;
+  --sidebar-light-icon: #405F4C;
+  --sidebar-light-active-bg: #D0E0D5;
+  --sidebar-light-active-text: #064D35;
+  --sidebar-light-active-icon: #08764F;
+  --sidebar-light-hover-text: #173D30;
+  --sidebar-light-section: #52675A;
+  --sidebar-light-divider: #CAD7CD;
+  --sidebar-light-profile-name: #263B30;
+  --sidebar-light-profile-desc: #64746A;
 }
 
 /* ─── Dark Theme · Warm Luxury · Midnight Charcoal + Warm Graphite + Champagne Gold ─── */
@@ -152,6 +164,18 @@
   --sidebar-border: #414548;
   --sidebar-accent: #D6B56D;
   --sidebar-accent-foreground: #17191B;
+  /* Dark-mode overrides for light-mode sidebar vars — keep dark mode unchanged */
+  --sidebar-light-bg: #222629;
+  --sidebar-light-text: #F4F0E7;
+  --sidebar-light-icon: #B5B2AA;
+  --sidebar-light-active-bg: #34383A;
+  --sidebar-light-active-text: #D6B56D;
+  --sidebar-light-active-icon: #D6B56D;
+  --sidebar-light-hover-text: #F4F0E7;
+  --sidebar-light-section: #B5B2AA;
+  --sidebar-light-divider: #414548;
+  --sidebar-light-profile-name: #F4F0E7;
+  --sidebar-light-profile-desc: #B5B2AA;
 }
 
 /* ─── Base ────────────────────────────────────────────────── */
