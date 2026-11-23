@@ -378,7 +378,7 @@ export default async function DashboardPage({
             {windowLocked ? (
               <span
                 title={`Reporting closed. ${windowStatus.countdownLabel}`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-800 dark:text-amber-300 cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-800 dark:text-[#D6B56D] cursor-not-allowed"
               >
                 <IconLock size={14} />
                 Submissions Locked
@@ -445,7 +445,7 @@ export default async function DashboardPage({
           {totalPriorityIssues === 0 ? (
             <Card className="border-emerald-500/30 bg-emerald-500/5 p-4 sm:p-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-[#36A879]">
                   <IconCheckCircle size={20} />
                 </div>
                 <div className="flex-1">
@@ -535,7 +535,7 @@ export default async function DashboardPage({
                           <p className="font-semibold text-foreground truncate">{d.title}</p>
                           <p className="text-[10px] text-muted-foreground">{d.department}</p>
                         </div>
-                        <span className="text-[10px] font-mono text-amber-800 dark:text-amber-300 shrink-0">
+                        <span className="text-[10px] font-mono text-amber-800 dark:text-[#D6B56D] shrink-0">
                           Breached {d.sla_due_str}
                         </span>
                       </Link>
@@ -619,7 +619,7 @@ export default async function DashboardPage({
             value={kpiCounts.submitted_plans}
             caption={`${kpiCounts.total_plans} total division commitments`}
             icon={
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-[#36A879]">
                 <IconTarget size={16} />
               </div>
             }

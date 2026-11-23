@@ -173,20 +173,20 @@ export function StatusBoard({ reports }: StatusBoardProps) {
           <p className="font-display text-3xl sm:text-4xl font-extrabold" style={{ color: "#153D30", fontVariantNumeric: "tabular-nums" }}>
             {submittedWeekly}
           </p>
-          <div className="mt-2 flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+          <div className="mt-2 flex items-center gap-1 text-[11px] text-emerald-600 dark:text-[#36A879] font-medium">
             <span className="flex h-1 w-1 rounded-full bg-emerald-500" />
             {reviewedWeekly} reviewed
           </div>
         </div>
         <div className="glass-card rounded-xl border border-gold p-5 shadow-sm relative overflow-hidden group">
           <div className="absolute right-4 top-4 opacity-30 group-hover:opacity-100 transition-opacity">
-            <IconFileText size={24} className="text-emerald-600 dark:text-emerald-400" />
+            <IconFileText size={24} className="text-emerald-600 dark:text-[#36A879]" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">Monthly Submitted</p>
           <p className="font-display text-3xl sm:text-4xl font-extrabold" style={{ color: "#153D30", fontVariantNumeric: "tabular-nums" }}>
             {submittedMonthly}
           </p>
-          <div className="mt-2 flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+          <div className="mt-2 flex items-center gap-1 text-[11px] text-emerald-600 dark:text-[#36A879] font-medium">
             <span className="flex h-1 w-1 rounded-full bg-emerald-500" />
             {reviewedMonthly} reviewed
           </div>

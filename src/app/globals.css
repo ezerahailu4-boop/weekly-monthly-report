@@ -105,44 +105,53 @@
   --sidebar-accent-foreground: #153D30;
 }
 
-/* ─── Dark Theme · Deep Emerald Charcoal + Gold ─── */
+/* ─── Dark Theme · Warm Luxury · Midnight Charcoal + Warm Graphite + Champagne Gold ─── */
+/* Charcoal/graphite for 75-85% of interface; green reserved for primary actions & success; gold for branding */
 .dark {
-  --background: #142720;
-  --foreground: #F7F0DE;
+  /* Main background — midnight charcoal */
+  --background: #17191B;
+  /* Primary text — warm off-white */
+  --foreground: #F4F0E7;
 
-  --card: #1B392D;
-  --card-foreground: #F7F0DE;
+  /* Cards — warm graphite, slightly lighter than background */
+  --card: #292D30;
+  --card-foreground: #F4F0E7;
 
-  --popover: #1B392D;
-  --popover-foreground: #F7F0DE;
+  --popover: #292D30;
+  --popover-foreground: #F4F0E7;
 
-  --primary: #168653;
-  --primary-foreground: #FFF7E6;
+  /* Primary action — selective emerald green */
+  --primary: #087B50;
+  --primary-foreground: #F4F0E7;
 
-  --secondary: #2A4036;
-  --secondary-foreground: #F7F0DE;
+  /* Secondary — warm graphite */
+  --secondary: #34383A;
+  --secondary-foreground: #F4F0E7;
 
-  --muted: #3A564B;
-  --muted-foreground: #B9C4BB;
+  /* Muted — elevated graphite surface */
+  --muted: #34383A;
+  --muted-foreground: #B5B2AA;
 
-  --accent: #D6A64B;
-  --accent-foreground: #153D30;
+  /* Accent — champagne gold */
+  --accent: #D6B56D;
+  --accent-foreground: #17191B;
 
-  --destructive: #DC5550;
-  --destructive-foreground: #FFF7E6;
+  --destructive: #E47777;
+  --destructive-foreground: #F4F0E7;
 
-  --border: #3A564B;
-  --input: #3A564B;
-  --ring: #168653;
+  --border: #414548;
+  --input: #414548;
+  --ring: #087B50;
 
-  --brand: #168653;
-  --brand-foreground: #FFF7E6;
+  --brand: #D6B56D;
+  --brand-foreground: #17191B;
 
-  --sidebar: #063D2B;
-  --sidebar-foreground: #F7F0DE;
-  --sidebar-border: #0D6344;
-  --sidebar-accent: #D6A64B;
-  --sidebar-accent-foreground: #FFF7E6;
+  /* Sidebar — warm graphite, darker than cards */
+  --sidebar: #222629;
+  --sidebar-foreground: #F4F0E7;
+  --sidebar-border: #414548;
+  --sidebar-accent: #D6B56D;
+  --sidebar-accent-foreground: #17191B;
 }
 
 /* ─── Base ────────────────────────────────────────────────── */
@@ -268,7 +277,7 @@ table, .tabular-nums, [data-tabular] {
   box-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.05), 0 0 0 1px oklch(0 0 0 / 0.03);
 }
 .dark .glass-card {
-  background: linear-gradient(135deg, #1B392D 0%, #142720 100%);
+  background: #292D30;
 }
 
 .glass-card-hover {
@@ -326,7 +335,7 @@ table, .tabular-nums, [data-tabular] {
   background: linear-gradient(135deg, #F7F0DE 0%, #E9E0C7 100%);
 }
 .dark .gradient-hero {
-  background: #142720;
+  background: #17191B;
 }
 
 /* Borders */
@@ -366,7 +375,7 @@ table, .tabular-nums, [data-tabular] {
 .dark .bg-glow::before {
   background: radial-gradient(
     circle at 40% 0%,
-    #168653 / 0.15,
+    #087B50 / 0.10,
     transparent 55%
   );
 }
@@ -401,7 +410,7 @@ table, .tabular-nums, [data-tabular] {
   box-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.04);
 }
 .dark .chart-card {
-  background: linear-gradient(135deg, #1B392D 0%, #142720 100%);
+  background: #292D30;
 }
 
 .chart-title {
