@@ -19,12 +19,14 @@ export function AdminGovernanceControls({
   initialLetterhead,
   initialErpConfigured,
   initialErpMaskedKey,
+  companyId,
 }: {
   initialSlaDays: number;
   initialSystemName: string;
   initialLetterhead: LetterheadConfig;
   initialErpConfigured: boolean;
   initialErpMaskedKey: string | null;
+  companyId?: string | null;
 }) {
   const [slaDays, setSlaDays] = useState(initialSlaDays);
   const [systemName, setSystemName] = useState(initialSystemName);
@@ -50,6 +52,7 @@ export function AdminGovernanceControls({
           sla_response_days: slaDays,
           system_name: systemName,
           letterhead_config: letterhead,
+          ...(companyId ? { company_id: companyId } : {}),
         }),
       });
       const data = await res.json();
@@ -73,9 +76,10 @@ export function AdminGovernanceControls({
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          revoke ? { revoke_erp_api_key: true } : { generate_erp_api_key: true }
-        ),
+        body: JSON.stringify({
+          ...(revoke ? { revoke_erp_api_key: true } : { generate_erp_api_key: true }),
+          ...(companyId ? { company_id: companyId } : {}),
+        }),
       });
       const data = await res.json();
       if (res.ok && data.success) {

@@ -86,7 +86,7 @@ export default async function ReportDetailPage({
     },
   };
 
-  const html = renderReportHtml(report, settings.letterhead_config);
+  const html = await renderReportHtml(report, settings.letterhead_config);
   const bodyMatch = html.match(/<body>([\s\S]*)<\/body>/);
   const bodyHtml = bodyMatch ? bodyMatch[1] : html;
 

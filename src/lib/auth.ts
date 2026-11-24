@@ -14,6 +14,9 @@ export interface AuthUser {
   full_name: string;
   department: string;
   role: UserRole;
+  company_id: string | null;
+  company_name: string | null;
+  company_slug: string | null;
   telegram_chat_id?: string | null;
   telegram_username?: string | null;
 }
@@ -33,10 +36,12 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     if (!token) return null;
 
     const rows = await sql`
-      SELECT u.id, u.email, u.full_name, u.department, u.role,
+      SELECT u.id, u.email, u.full_name, u.department, u.role, u.company_id,
+             c.name as company_name, c.slug as company_slug,
              u.telegram_chat_id, u.telegram_username
       FROM sessions s
       JOIN users u ON s.user_id = u.id
+      LEFT JOIN companies c ON u.company_id = c.id
       WHERE s.id = ${token} AND s.expires_at > now()
       LIMIT 1;
     `;
@@ -50,6 +55,9 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       full_name: u.full_name,
       department: u.department,
       role: u.role as UserRole,
+      company_id: u.company_id ?? null,
+      company_name: u.company_name ?? null,
+      company_slug: u.company_slug ?? null,
       telegram_chat_id: u.telegram_chat_id ?? null,
       telegram_username: u.telegram_username ?? null,
     };

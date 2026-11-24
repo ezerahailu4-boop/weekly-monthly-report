@@ -2,11 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { getPortalSettings } from "@/lib/portalSettings";
+import { getPortalSettings, getCompanySettings } from "@/lib/portalSettings";
 import { getWarningsList } from "@/lib/warnings";
 import { ETHIOPIA_TIMEZONE } from "@/lib/windowSchedule";
 import { getWeekBounds, getMonthBounds } from "@/lib/compliancePeriods";
 import { AdminUserManagement, type TeamMember } from "@/components/AdminUserManagement";
+import { AdminCompanies } from "@/components/AdminCompanies";
 import { AdminPasswordResets } from "@/components/AdminPasswordResets";
 import { OverdueAlertsPanel, type OverdueEntry } from "@/components/OverdueAlertsPanel";
 import { AdminWindowSettings } from "@/components/AdminWindowSettings";
@@ -22,6 +23,7 @@ import { AppShell } from "@/components/AppShell";
 import {
   IconAlertCircle,
   IconBarChart,
+  IconBuilding,
   IconCheckSquare,
   IconCrown,
   IconFileText,
@@ -33,7 +35,6 @@ import {
 import type { ReportRow } from "@/types/report";
 import type { TaskRow } from "@/types/task";
 import { StatCard } from "@/components/StatCard";
-import { StatusBadge } from "@/components/StatusBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,7 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{
     tab?: string;
+    company_id?: string;
   }>;
 }) {
   const user = await getCurrentUser();
@@ -63,20 +65,39 @@ export default async function AdminPage({
     params.tab === "tasks" ||
     params.tab === "settings" ||
     params.tab === "analytics" ||
-    params.tab === "password-resets"
+    params.tab === "password-resets" ||
+    params.tab === "companies"
       ? params.tab
       : "team";
 
+  // Super admin selects which company to manage; others see their own.
+  const selectedCompanyId =
+    isSuperAdmin && typeof params.company_id === "string"
+      ? params.company_id
+      : user.company_id ?? null;
+
+  // Load companies list for the company selector (super admin only).
+  const companyRows =
+    isSuperAdmin
+      ? await sql`
+          SELECT id, name, slug, is_active FROM companies ORDER BY name;
+        `
+      : [];
+
   // Query team members, reports, tasks, settings, and warnings in parallel from Neon
-  const [teamRows, reportRows, taskRows, settings, allWarnings] = await Promise.all([
+const reportsWhere = isSuperAdmin
+  ? sql``
+  : sql`WHERE r.company_id = ${user.company_id}`;
+  const [teamRows, reportRows, taskRows, planRows, settings, allWarnings] = await Promise.all([
     sql`
       SELECT id, email, full_name, department, role,
-             telegram_chat_id, telegram_username, created_at
+             telegram_chat_id, telegram_username, created_at, company_id
       FROM users
+      ${!isSuperAdmin ? sql`WHERE company_id = ${user.company_id}` : sql``}
       ORDER BY created_at DESC;
     `,
     sql`
-      SELECT r.id, r.user_id, r.report_type,
+      SELECT r.id, r.user_id, r.company_id, r.report_type,
              to_char(r.period_start, 'YYYY-MM-DD') as period_start,
              to_char(r.period_end, 'YYYY-MM-DD') as period_end,
              r.status, r.data, r.review_notes, r.reviewed_by, r.reviewed_at,
@@ -86,6 +107,7 @@ export default async function AdminPage({
       FROM reports r
       LEFT JOIN users u ON r.user_id = u.id
       LEFT JOIN users rev ON r.reviewed_by = rev.id
+      ${reportsWhere}
       ORDER BY r.created_at DESC;
     `,
     sql`
@@ -104,7 +126,11 @@ export default async function AdminPage({
         t.due_date ASC NULLS LAST,
         t.created_at DESC;
     `,
-    getPortalSettings(),
+    sql`
+      SELECT id, reference_code, title, department, status, period_start, period_end, summary, objectives
+      FROM action_plans ORDER BY created_at DESC;
+    `,
+    selectedCompanyId ? getCompanySettings(selectedCompanyId) : getPortalSettings(),
     getWarningsList(),
   ]);
 
@@ -276,6 +302,32 @@ export default async function AdminPage({
             <IconFileText size={14} /> Download data backup
           </a>
 
+          {isSuperAdmin && (
+            <div className="mt-6 flex items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-2.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Manage company
+              </label>
+              <select
+                defaultValue={selectedCompanyId || ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const url = new URL(window.location.href);
+                  if (val) url.searchParams.set("company_id", val);
+                  else url.searchParams.delete("company_id");
+                  window.location.href = url.toString();
+                }}
+                className="rounded-lg border border-border bg-muted/30 px-3 py-1.5 text-xs font-medium text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+              >
+                <option value="">All companies ({companyRows.length})</option>
+                {companyRows.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.slug}) {c.is_active ? "" : " · inactive"}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Segmented Tab Control */}
           <div className="mt-6 flex flex-wrap items-center gap-1 rounded-xl bg-muted p-1 text-muted-foreground text-xs w-fit border border-border">
             <Link
@@ -325,6 +377,20 @@ export default async function AdminPage({
               <IconFileText size={14} />
               <span>Reports ({allReports.length})</span>
             </Link>
+
+            {isSuperAdmin && (
+              <Link
+                href={`/admin?tab=companies${selectedCompanyId ? `&company_id=${selectedCompanyId}` : ""}`}
+                className={`inline-flex items-center gap-2 rounded-md px-3.5 py-1.5 font-semibold transition-all ${
+                  activeTab === "companies"
+                    ? "bg-card text-foreground shadow-2xs"
+                    : "hover:text-foreground"
+                }`}
+              >
+                <IconBuilding size={14} />
+                <span>Companies</span>
+              </Link>
+            )}
 
             <Link
               href="/admin?tab=analytics"
@@ -430,6 +496,7 @@ export default async function AdminPage({
                 maskedToken: maskToken(settings.telegram_bot_token),
                 envOverride: !!process.env.TELEGRAM_BOT_TOKEN,
               }}
+              companyId={selectedCompanyId}
             />
             <AdminGovernanceControls
               initialSlaDays={settings.sla_response_days}
@@ -437,6 +504,7 @@ export default async function AdminPage({
               initialLetterhead={settings.letterhead_config}
               initialErpConfigured={!!settings.erp_api_key}
               initialErpMaskedKey={maskToken(settings.erp_api_key)}
+              companyId={selectedCompanyId}
             />
           </div>
         )}
@@ -444,6 +512,18 @@ export default async function AdminPage({
         {activeTab === "analytics" && (
           <AdminAnalytics
             reports={allReports}
+            tasks={allTasks}
+            plans={planRows.map((p) => ({
+              id: String(p.id),
+              reference_code: String(p.reference_code ?? ""),
+              title: String(p.title ?? ""),
+              department: String(p.department ?? ""),
+              status: String(p.status ?? "draft"),
+              period_start: String(p.period_start ?? ""),
+              period_end: String(p.period_end ?? ""),
+              summary: p.summary ? String(p.summary) : null,
+              objectives: Array.isArray(p.objectives) ? (p.objectives as { activity?: string; status?: string; progress?: number }[]) : [],
+            }))}
             staffList={teamList.map((m) => ({
               id: m.id,
               full_name: m.full_name ?? "",
@@ -455,6 +535,10 @@ export default async function AdminPage({
 
         {activeTab === "password-resets" && (
           <AdminPasswordResets />
+        )}
+
+        {activeTab === "companies" && (
+          <AdminCompanies />
         )}
 
         {activeTab === "reports" && (

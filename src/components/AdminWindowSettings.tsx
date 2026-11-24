@@ -15,6 +15,7 @@ export function AdminWindowSettings({
   initialConfig,
   initialTelegram,
   initialAutoWarnEnabled = true,
+  companyId,
 }: {
   initialConfig: ReportingWindowConfig;
   initialTelegram: {
@@ -24,6 +25,7 @@ export function AdminWindowSettings({
     envOverride: boolean;
   };
   initialAutoWarnEnabled?: boolean;
+  companyId?: string | null;
 }) {
   const router = useRouter();
   const [config, setConfig] = useState<ReportingWindowConfig>(initialConfig);
@@ -56,6 +58,7 @@ export function AdminWindowSettings({
         body: JSON.stringify({
           ...config,
           auto_warn_enabled: autoWarnEnabled,
+          ...(companyId ? { company_id: companyId } : {}),
         }),
       });
       const data = await res.json();
@@ -98,6 +101,7 @@ export function AdminWindowSettings({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           telegram_bot_token: botTokenInput.trim(),
+          ...(companyId ? { company_id: companyId } : {}),
         }),
       });
       const data = await res.json();
@@ -134,7 +138,10 @@ export function AdminWindowSettings({
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clear_telegram_token: true }),
+        body: JSON.stringify({
+          clear_telegram_token: true,
+          ...(companyId ? { company_id: companyId } : {}),
+        }),
       });
       const data = await res.json();
       if (res.ok && data.success) {

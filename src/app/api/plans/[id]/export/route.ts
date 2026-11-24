@@ -205,7 +205,7 @@ export async function GET(
     th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; vertical-align: top; }
     th { background: #f1f5f9; font-weight: 700; }
   </style></head><body>
-    ${renderOfficialLetterheadHtml({
+    ${await renderOfficialLetterheadHtml({
       config: settings.letterhead_config,
       documentTitle: "Official Action Plan Submission",
       documentSubtitle: `${String(p.title)} · ${String(p.department)} (${String(p.period_start)} to ${String(p.period_end)})`,

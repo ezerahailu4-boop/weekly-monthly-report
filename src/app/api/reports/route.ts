@@ -36,16 +36,17 @@ export async function POST(request: Request) {
     }
 
     const rows = await sql`
-      INSERT INTO reports (user_id, report_type, period_start, period_end, status, data)
+      INSERT INTO reports (user_id, company_id, report_type, period_start, period_end, status, data)
       VALUES (
         ${user.id},
+        ${user.company_id ?? null},
         ${report_type},
         ${period_start},
         ${period_end},
         ${safeStatus},
         ${JSON.stringify(data)}
       )
-      RETURNING id, user_id, report_type, period_start, period_end, status, created_at;
+      RETURNING id, user_id, company_id, report_type, period_start, period_end, status, created_at;
     `;
 
     await recordActivity({ actorId: user.id, action: safeStatus === "draft" ? "saved draft" : "submitted", entityType: "report", entityId: rows[0].id, details: { reportType: report_type, periodStart: period_start, periodEnd: period_end } });

@@ -18,6 +18,7 @@ import {
 
 let cachedLogoBuffer: Buffer | null | undefined;
 
+/** Read the default logo from the local filesystem (sync). */
 export function getCompanyLogoBuffer(): Buffer | null {
   if (cachedLogoBuffer !== undefined) return cachedLogoBuffer;
   try {
@@ -33,7 +34,24 @@ export function getCompanyLogoBuffer(): Buffer | null {
   return null;
 }
 
-export function getCompanyLogoDataUri(): string | null {
+/** Fetch a logo from an external URL and return its Buffer (server-side only). */
+export async function fetchCompanyLogoBuffer(logoUrl: string): Promise<Buffer | null> {
+  try {
+    const response = await fetch(logoUrl);
+    if (!response.ok || !response.body) return null;
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  } catch {
+    return null;
+  }
+}
+
+/** Resolve a logo data URI: company URL first, then local file. */
+export async function getCompanyLogoDataUri(logoUrl?: string): Promise<string | null> {
+  if (logoUrl) {
+    const buf = await fetchCompanyLogoBuffer(logoUrl);
+    if (buf) return `data:image/jpeg;base64,${buf.toString("base64")}`;
+  }
   const buf = getCompanyLogoBuffer();
   if (!buf) return null;
   return `data:image/jpeg;base64,${buf.toString("base64")}`;
@@ -142,15 +160,17 @@ export const OFFICIAL_LETTERHEAD_CSS = `
   }
 `;
 
-export function renderOfficialLetterheadHtml(opts: {
+export async function renderOfficialLetterheadHtml(opts: {
   config?: LetterheadConfig;
   documentTitle: string;
   documentSubtitle?: string;
   referenceCode?: string;
   dateLabel?: string;
-}): string {
+}): Promise<string> {
   const cfg = opts.config || DEFAULT_LETTERHEAD_CONFIG;
-  const logoUri = getCompanyLogoDataUri();
+  const logoUri = cfg.logo_url
+    ? await getCompanyLogoDataUri(cfg.logo_url)
+    : await getCompanyLogoDataUri();
   const dateStr =
     opts.dateLabel ||
     new Intl.DateTimeFormat("en-US", {

@@ -43,11 +43,11 @@ function renderExecutiveReviewBlock(report: ReportRow): string {
   `;
 }
 
-export function renderWeeklyHtml(report: ReportRow, letterhead?: LetterheadConfig): string {
+export async function renderWeeklyHtml(report: ReportRow, letterhead?: LetterheadConfig): Promise<string> {
   const d = report.data as WeeklyReportData;
   const refCode = `${letterhead?.referencePrefix || "YH-DFC"}-WK-${report.period_start.replace(/-/g, "")}`;
   return `<!doctype html><html><head><meta charset="utf-8"/><style>${baseStyles}</style></head><body>
-  ${renderOfficialLetterheadHtml({
+  ${await renderOfficialLetterheadHtml({
     config: letterhead,
     documentTitle: "Weekly Performance Report",
     documentSubtitle: `${d.reportingWeekFrom || report.period_start} to ${d.reportingWeekTo || report.period_end} · ${report.author_department || "Division"}`,
@@ -100,11 +100,11 @@ export function renderWeeklyHtml(report: ReportRow, letterhead?: LetterheadConfi
   </body></html>`;
 }
 
-export function renderMonthlyHtml(report: ReportRow, letterhead?: LetterheadConfig): string {
+export async function renderMonthlyHtml(report: ReportRow, letterhead?: LetterheadConfig): Promise<string> {
   const d = report.data as MonthlyReportData;
   const refCode = `${letterhead?.referencePrefix || "YH-DFC"}-MO-${report.period_start.replace(/-/g, "")}`;
   return `<!doctype html><html><head><meta charset="utf-8"/><style>${baseStyles}</style></head><body>
-  ${renderOfficialLetterheadHtml({
+  ${await renderOfficialLetterheadHtml({
     config: letterhead,
     documentTitle: "Monthly Progress Report",
     documentSubtitle: `${report.period_start} to ${report.period_end} · ${report.author_department || "Division"}`,
@@ -158,7 +158,7 @@ export function renderMonthlyHtml(report: ReportRow, letterhead?: LetterheadConf
   </body></html>`;
 }
 
-export function renderReportHtml(report: ReportRow, letterhead?: LetterheadConfig): string {
+export async function renderReportHtml(report: ReportRow, letterhead?: LetterheadConfig): Promise<string> {
   return report.report_type === "weekly"
     ? renderWeeklyHtml(report, letterhead)
     : renderMonthlyHtml(report, letterhead);

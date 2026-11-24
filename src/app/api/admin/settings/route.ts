@@ -1,9 +1,10 @@
 import crypto from "crypto";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import {
   getPortalSettings,
+  getCompanySettings,
   normalizeLetterheadConfig,
 } from "@/lib/portalSettings";
 import { evaluateReportingWindow, type WindowMode } from "@/lib/windowSchedule";
@@ -17,18 +18,26 @@ function maskToken(token: string | null): string | null {
   return `${token.slice(0, 6)}••••••${token.slice(-4)}`;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const settings = await getPortalSettings();
-  const windowStatus = evaluateReportingWindow(settings);
   const isPrivileged = user.role === "admin" || user.role === "super_admin";
+
+  // Super admin may target a different company via ?company_id query param.
+  const searchParams = (request as NextRequest).nextUrl.searchParams;
+  const targetCompanyId = isPrivileged ? searchParams.get("company_id") : null;
+  const companyId = targetCompanyId ?? user.company_id ?? null;
+
+  const settings = companyId ? await getCompanySettings(companyId) : await getPortalSettings();
+  const windowStatus = evaluateReportingWindow(settings);
 
   return NextResponse.json({
     success: true,
+    companyId: settings.company_id,
+    companyName: settings.company_name,
     windowStatus,
     autoWarnEnabled: settings.auto_warn_enabled,
     penaltyPolicyVerified: settings.penalty_policy_verified,
@@ -61,84 +70,102 @@ export async function PUT(request: Request) {
     );
   }
 
+  const isSuperAdmin = user.role === "super_admin";
+
   try {
-    const body = await request.json();
-    const current = await getPortalSettings();
+    // Determine target company: explicit company_id for super_admin, else user's company.
+    const bodyPreview = await request.json();
+  const targetCompanyId = isSuperAdmin
+    ? (bodyPreview.company_id || user.company_id || null)
+    : (user.company_id || null);
 
-    const windowMode: WindowMode = body.window_mode ?? current.window_mode;
-    if (!["scheduled", "force_open", "force_closed"].includes(windowMode)) {
-      return NextResponse.json({ error: "Invalid window_mode." }, { status: 400 });
-    }
+  if (!targetCompanyId) {
+    return NextResponse.json(
+      { error: "No company context available." },
+      { status: 400 }
+    );
+  }
 
-    const openDay = Number(body.open_day ?? current.open_day);
-    const closeDay = Number(body.close_day ?? current.close_day);
-    if (
-      !Number.isInteger(openDay) ||
-      openDay < 0 ||
-      openDay > 6 ||
-      !Number.isInteger(closeDay) ||
-      closeDay < 0 ||
-      closeDay > 6
-    ) {
-      return NextResponse.json(
-        { error: "open_day and close_day must be integers between 0 and 6." },
-        { status: 400 }
-      );
-    }
+  const current = await getCompanySettings(targetCompanyId);
 
-    const openTime = String(body.open_time ?? current.open_time).trim();
-    const closeTime = String(body.close_time ?? current.close_time).trim();
-    if (!TIME_RE.test(openTime) || !TIME_RE.test(closeTime)) {
-      return NextResponse.json(
-        { error: "Times must be valid 24-hour HH:MM strings." },
-        { status: 400 }
-      );
-    }
+  const windowMode: WindowMode =
+    bodyPreview.window_mode ?? current.window_mode;
+  if (!["scheduled", "force_open", "force_closed"].includes(windowMode)) {
+    return NextResponse.json({ error: "Invalid window_mode." }, { status: 400 });
+  }
 
-    const slaResponseDays =
-      body.sla_response_days !== undefined
-        ? Number(body.sla_response_days)
-        : current.sla_response_days;
-    if (!Number.isInteger(slaResponseDays) || slaResponseDays < 1 || slaResponseDays > 60) {
-      return NextResponse.json(
-        { error: "SLA response countdown must be an integer between 1 and 60 days." },
-        { status: 400 }
-      );
-    }
+  const openDay = Number(bodyPreview.open_day ?? current.open_day);
+  const closeDay = Number(bodyPreview.close_day ?? current.close_day);
+  if (
+    !Number.isInteger(openDay) ||
+    openDay < 0 ||
+    openDay > 6 ||
+    !Number.isInteger(closeDay) ||
+    closeDay < 0 ||
+    closeDay > 6
+  ) {
+    return NextResponse.json(
+      { error: "open_day and close_day must be integers between 0 and 6." },
+      { status: 400 }
+    );
+  }
 
-    const systemName =
-      typeof body.system_name === "string" && body.system_name.trim()
-        ? body.system_name.trim().slice(0, 80)
-        : current.system_name;
+  const openTime = String(bodyPreview.open_time ?? current.open_time).trim();
+  const closeTime = String(bodyPreview.close_time ?? current.close_time).trim();
+  if (!TIME_RE.test(openTime) || !TIME_RE.test(closeTime)) {
+    return NextResponse.json(
+      { error: "Times must be valid 24-hour HH:MM strings." },
+      { status: 400 }
+    );
+  }
 
-    const letterheadConfig = body.letterhead_config
+  const slaResponseDays =
+    bodyPreview.sla_response_days !== undefined
+      ? Number(bodyPreview.sla_response_days)
+      : current.sla_response_days;
+  if (!Number.isInteger(slaResponseDays) || slaResponseDays < 1 || slaResponseDays > 60) {
+    return NextResponse.json(
+      { error: "SLA response countdown must be an integer between 1 and 60 days." },
+      { status: 400 }
+    );
+  }
+
+  const systemName =
+    typeof bodyPreview.system_name === "string" && bodyPreview.system_name.trim()
+      ? bodyPreview.system_name.trim().slice(0, 80)
+      : current.system_name;
+
+    const letterheadConfig = bodyPreview.letterhead_config
       ? normalizeLetterheadConfig({
           ...current.letterhead_config,
-          ...body.letterhead_config,
+          ...bodyPreview.letterhead_config,
         })
       : current.letterhead_config;
 
     const dbRows = await sql`
       SELECT telegram_bot_token, telegram_bot_username, erp_api_key
-      FROM portal_settings WHERE id = 'default' LIMIT 1;
+      FROM company_settings WHERE company_id = ${targetCompanyId} LIMIT 1;
     `;
     let nextBotToken: string | null = dbRows[0]?.telegram_bot_token ?? null;
     let nextBotUsername: string | null = dbRows[0]?.telegram_bot_username ?? null;
     let nextErpKey: string | null = dbRows[0]?.erp_api_key ?? null;
     let newlyGeneratedErpKey: string | null = null;
 
-    if (body.generate_erp_api_key === true) {
+    if (bodyPreview.generate_erp_api_key === true) {
       newlyGeneratedErpKey = `yh_erp_${crypto.randomBytes(20).toString("hex")}`;
       nextErpKey = newlyGeneratedErpKey;
-    } else if (body.revoke_erp_api_key === true) {
+    } else if (bodyPreview.revoke_erp_api_key === true) {
       nextErpKey = null;
     }
 
-    if (body.clear_telegram_token === true) {
+    if (bodyPreview.clear_telegram_token === true) {
       nextBotToken = null;
       nextBotUsername = null;
-    } else if (typeof body.telegram_bot_token === "string" && body.telegram_bot_token.trim()) {
-      const candidate = body.telegram_bot_token.trim();
+    } else if (
+      typeof bodyPreview.telegram_bot_token === "string" &&
+      bodyPreview.telegram_bot_token.trim()
+    ) {
+      const candidate = bodyPreview.telegram_bot_token.trim();
       const info = await fetchTelegramBotInfo(candidate);
       if (!info.ok) {
         return NextResponse.json(
@@ -149,35 +176,36 @@ export async function PUT(request: Request) {
       nextBotToken = candidate;
       nextBotUsername = info.username || null;
     } else if (
-      typeof body.telegram_bot_username === "string" &&
-      body.telegram_bot_username.trim()
+      typeof bodyPreview.telegram_bot_username === "string" &&
+      bodyPreview.telegram_bot_username.trim()
     ) {
-      nextBotUsername = body.telegram_bot_username.trim().replace(/^@/, "");
+      nextBotUsername = bodyPreview.telegram_bot_username.trim().replace(/^@/, "");
     }
 
     const autoWarnEnabled =
-      typeof body.auto_warn_enabled === "boolean"
-        ? body.auto_warn_enabled
+      typeof bodyPreview.auto_warn_enabled === "boolean"
+        ? bodyPreview.auto_warn_enabled
         : current.auto_warn_enabled;
 
     await sql`
-      INSERT INTO portal_settings (
-        id, window_mode, open_day, open_time, close_day, close_time,
+      INSERT INTO company_settings (
+        company_id, window_mode, open_day, open_time, close_day, close_time,
         timezone, telegram_bot_token, telegram_bot_username, auto_warn_enabled,
-        sla_response_days, system_name, letterhead_config, erp_api_key,
-        updated_by, updated_at
+        penalty_policy_verified, sla_response_days, system_name, letterhead_config,
+        erp_api_key, updated_by, updated_at
       )
       VALUES (
-        'default',
+        ${targetCompanyId},
         ${windowMode},
         ${openDay},
         ${openTime},
         ${closeDay},
         ${closeTime},
         'Africa/Addis_Ababa',
-        ${body.clear_telegram_token ? null : nextBotToken},
+        ${bodyPreview.clear_telegram_token ? null : nextBotToken},
         ${nextBotUsername},
         ${autoWarnEnabled},
+        ${typeof bodyPreview.penalty_policy_verified === "boolean" ? bodyPreview.penalty_policy_verified : current.penalty_policy_verified},
         ${slaResponseDays},
         ${systemName},
         ${JSON.stringify(letterheadConfig)}::jsonb,
@@ -185,7 +213,7 @@ export async function PUT(request: Request) {
         ${user.id},
         now()
       )
-      ON CONFLICT (id) DO UPDATE SET
+      ON CONFLICT (company_id) DO UPDATE SET
         window_mode = EXCLUDED.window_mode,
         open_day = EXCLUDED.open_day,
         open_time = EXCLUDED.open_time,
@@ -195,6 +223,7 @@ export async function PUT(request: Request) {
         telegram_bot_token = EXCLUDED.telegram_bot_token,
         telegram_bot_username = EXCLUDED.telegram_bot_username,
         auto_warn_enabled = EXCLUDED.auto_warn_enabled,
+        penalty_policy_verified = EXCLUDED.penalty_policy_verified,
         sla_response_days = EXCLUDED.sla_response_days,
         system_name = EXCLUDED.system_name,
         letterhead_config = EXCLUDED.letterhead_config,
@@ -203,11 +232,13 @@ export async function PUT(request: Request) {
         updated_at = now();
     `;
 
-    const updated = await getPortalSettings();
+    const updated = await getCompanySettings(targetCompanyId);
     const windowStatus = evaluateReportingWindow(updated);
 
     return NextResponse.json({
       success: true,
+      companyId: updated.company_id,
+      companyName: updated.company_name,
       windowStatus,
       autoWarnEnabled: updated.auto_warn_enabled,
       penaltyPolicyVerified: updated.penalty_policy_verified,

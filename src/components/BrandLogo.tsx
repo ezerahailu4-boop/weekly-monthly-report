@@ -14,18 +14,20 @@ export function BrandLogo({
   size = "nav",
   priority = false,
   className = "",
+  src,
 }: {
   size?: BrandLogoSize;
   priority?: boolean;
   className?: string;
+  src?: string;
 }) {
   return (
     <span
       className={`relative inline-flex shrink-0 overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm ring-1 ring-black/[0.035] ${sizes[size]} ${className}`}
     >
       <Image
-        src="/logo.jpg"
-        alt="YETAF Holding Limited"
+        src={src || "/logo.jpg"}
+        alt={src ? "Company logo" : "YETAF Holding Limited"}
         fill
         priority={priority}
         sizes={size === "hero" ? "260px" : size === "letterhead" ? "136px" : "104px"}

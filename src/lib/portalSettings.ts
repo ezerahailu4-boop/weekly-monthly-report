@@ -1,4 +1,5 @@
 import { sql } from "./db";
+import { getCurrentUser } from "./auth";
 import {
   DEFAULT_WINDOW_CONFIG,
   evaluateReportingWindow,
@@ -15,6 +16,7 @@ export interface LetterheadConfig {
   referencePrefix: string;
   footerNotice: string;
   signatoryTitle: string;
+  logo_url: string | null;
 }
 
 export const DEFAULT_LETTERHEAD_CONFIG: LetterheadConfig = {
@@ -25,9 +27,12 @@ export const DEFAULT_LETTERHEAD_CONFIG: LetterheadConfig = {
   referencePrefix: "YH-DFC",
   footerNotice: "Confidential · Official Corporate Record · Yetaf Holding Limited",
   signatoryTitle: "Office of Direction & Executive Administration",
+  logo_url: null,
 };
 
 export interface PortalSettingsRow extends ReportingWindowConfig {
+  company_id: string | null;
+  company_name: string | null;
   telegram_bot_token: string | null;
   telegram_bot_username: string | null;
   auto_warn_enabled: boolean;
@@ -54,24 +59,41 @@ export function normalizeLetterheadConfig(raw: unknown): LetterheadConfig {
     footerNotice: obj.footerNotice?.trim() || DEFAULT_LETTERHEAD_CONFIG.footerNotice,
     signatoryTitle:
       obj.signatoryTitle?.trim() || DEFAULT_LETTERHEAD_CONFIG.signatoryTitle,
+    logo_url:
+      typeof obj.logo_url === "string" && obj.logo_url.trim()
+        ? obj.logo_url.trim()
+        : DEFAULT_LETTERHEAD_CONFIG.logo_url,
   };
 }
 
-export async function getPortalSettings(): Promise<PortalSettingsRow> {
+/** Load settings scoped to a specific company from company_settings. */
+export async function getCompanySettings(
+  companyId: string
+): Promise<PortalSettingsRow> {
   try {
+    const companyRows = await sql`
+      SELECT name FROM companies WHERE id = ${companyId} LIMIT 1;
+    `;
+    const companyName = companyRows.length > 0
+      ? (companyRows[0].name as string)
+      : null;
+
     const rows = await sql`
       SELECT window_mode, open_day, open_time, close_day, close_time, timezone,
              telegram_bot_token, telegram_bot_username, auto_warn_enabled,
              penalty_policy_verified, sla_response_days, system_name,
              letterhead_config, erp_api_key, updated_at
-      FROM portal_settings
-      WHERE id = 'default'
+      FROM company_settings
+      WHERE company_id = ${companyId}
       LIMIT 1;
     `;
 
-    if (rows.length === 0) {
+    const r = rows.length > 0 ? rows[0] : null;
+    if (!r) {
       return {
         ...DEFAULT_WINDOW_CONFIG,
+        company_id: companyId,
+        company_name: companyName,
         telegram_bot_token: process.env.TELEGRAM_BOT_TOKEN || null,
         telegram_bot_username: process.env.TELEGRAM_BOT_USERNAME || null,
         auto_warn_enabled: false,
@@ -84,7 +106,6 @@ export async function getPortalSettings(): Promise<PortalSettingsRow> {
       };
     }
 
-    const r = rows[0];
     return {
       window_mode: (r.window_mode as WindowMode) || DEFAULT_WINDOW_CONFIG.window_mode,
       open_day:
@@ -94,6 +115,8 @@ export async function getPortalSettings(): Promise<PortalSettingsRow> {
         typeof r.close_day === "number" ? r.close_day : DEFAULT_WINDOW_CONFIG.close_day,
       close_time: r.close_time || DEFAULT_WINDOW_CONFIG.close_time,
       timezone: r.timezone || DEFAULT_WINDOW_CONFIG.timezone,
+      company_id: companyId,
+      company_name: companyName,
       telegram_bot_token:
         r.telegram_bot_token || process.env.TELEGRAM_BOT_TOKEN || null,
       telegram_bot_username:
@@ -121,9 +144,11 @@ export async function getPortalSettings(): Promise<PortalSettingsRow> {
         : null,
     };
   } catch (err) {
-    console.error("Failed to load portal_settings, using defaults:", err);
+    console.error("Failed to load company_settings, using defaults:", err);
     return {
       ...DEFAULT_WINDOW_CONFIG,
+      company_id: companyId,
+      company_name: null,
       telegram_bot_token: process.env.TELEGRAM_BOT_TOKEN || null,
       telegram_bot_username: process.env.TELEGRAM_BOT_USERNAME || null,
       auto_warn_enabled: false,
@@ -135,6 +160,28 @@ export async function getPortalSettings(): Promise<PortalSettingsRow> {
       updated_at: null,
     };
   }
+}
+
+/** Load settings for the currently authenticated user's company. */
+export async function getPortalSettings(): Promise<PortalSettingsRow> {
+  const user = await getCurrentUser();
+  if (!user || !user.company_id) {
+    return {
+      ...DEFAULT_WINDOW_CONFIG,
+      company_id: null,
+      company_name: null,
+      telegram_bot_token: process.env.TELEGRAM_BOT_TOKEN || null,
+      telegram_bot_username: process.env.TELEGRAM_BOT_USERNAME || null,
+      auto_warn_enabled: false,
+      penalty_policy_verified: false,
+      sla_response_days: 3,
+      system_name: "Directive Follow-up System",
+      letterhead_config: { ...DEFAULT_LETTERHEAD_CONFIG },
+      erp_api_key: process.env.ERP_API_KEY || null,
+      updated_at: null,
+    };
+  }
+  return getCompanySettings(user.company_id);
 }
 
 export async function getReportingWindowStatus(

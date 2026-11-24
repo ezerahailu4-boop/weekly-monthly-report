@@ -17,7 +17,7 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const html = renderReportHtml(report, settings.letterhead_config);
+  const html = await renderReportHtml(report, settings.letterhead_config);
 
   try {
     const browser = await chromium.launch();
