@@ -61,6 +61,7 @@ export default async function AdminPage({
 
   const params = await searchParams;
   const activeTab =
+    params.tab === "team" ||
     params.tab === "reports" ||
     params.tab === "tasks" ||
     params.tab === "settings" ||
@@ -68,7 +69,7 @@ export default async function AdminPage({
     params.tab === "password-resets" ||
     params.tab === "companies"
       ? params.tab
-      : "team";
+      : "analytics";
 
   // Super admin selects which company to manage; others see their own.
   const selectedCompanyId =
@@ -401,7 +402,7 @@ const reportsWhere = isSuperAdmin
               }`}
             >
               <IconBarChart size={14} />
-              <span>Analytics</span>
+              <span>Overview</span>
             </Link>
 
             <Link
