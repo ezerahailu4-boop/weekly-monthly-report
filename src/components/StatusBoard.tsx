@@ -147,7 +147,7 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
   return (
     <section aria-label="Executive Status Board" className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-card px-5 py-5 shadow-sm sm:px-7">
         <div>
           <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-heading">Executive Status Board</h2>
           <p className="text-xs sm:text-sm text-body mt-0.5">Group performance across tasks, action plans, and weekly &amp; monthly filings.</p>
@@ -176,13 +176,9 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
 
       {/* ── Top Metric Cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="glass-card rounded-xl border border-gold p-5 shadow-sm relative overflow-hidden group">
-          <div className="absolute right-4 top-4 opacity-30 group-hover:opacity-100 transition-opacity">
-            <IconBarChart size={24} className="text-gold" />
-          </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">
-            Weekly Submitted
-          </p>
+        <div className="glass-card rounded-2xl border border-border p-5 shadow-sm relative overflow-hidden group transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-300"><IconBarChart size={20} /></div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">Weekly Submitted</p>
           <p className="font-display text-3xl sm:text-4xl font-extrabold text-heading tabular-nums">
             {submittedWeekly}
           </p>
@@ -191,13 +187,9 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
             {reviewedWeekly} reviewed
           </div>
         </div>
-        <div className="glass-card rounded-xl border border-gold p-5 shadow-sm relative overflow-hidden group">
-          <div className="absolute right-4 top-4 opacity-30 group-hover:opacity-100 transition-opacity">
-            <IconFileText size={24} className="text-deep-emerald dark:text-[#36A879]" />
-          </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">
-            Monthly Submitted
-          </p>
+        <div className="glass-card rounded-2xl border border-border p-5 shadow-sm relative overflow-hidden group transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-700 dark:text-violet-300"><IconFileText size={20} /></div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">Monthly Submitted</p>
           <p className="font-display text-3xl sm:text-4xl font-extrabold text-heading tabular-nums">
             {submittedMonthly}
           </p>
@@ -206,13 +198,9 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
             {reviewedMonthly} reviewed
           </div>
         </div>
-        <div className="glass-card rounded-xl border border-gold p-5 shadow-sm relative overflow-hidden group">
-          <div className="absolute right-4 top-4 opacity-30 group-hover:opacity-100 transition-opacity">
-            <IconCompass size={24} className="text-body" />
-          </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">
-            Drafts Open
-          </p>
+        <div className="glass-card rounded-2xl border border-border p-5 shadow-sm relative overflow-hidden group transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300"><IconCompass size={20} /></div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">Drafts Open</p>
           <p className="font-display text-3xl sm:text-4xl font-extrabold text-destructive tabular-nums">
             {totalDraft}
           </p>
@@ -220,13 +208,9 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
             {draftWeekly} weekly · {draftMonthly} monthly
           </div>
         </div>
-        <div className="glass-card rounded-xl border border-gold p-5 shadow-sm relative overflow-hidden group">
-          <div className="absolute right-4 top-4 opacity-30 group-hover:opacity-100 transition-opacity">
-            <IconLayers size={24} className="text-gold" />
-          </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">
-            Resolution Rate
-          </p>
+        <div className="glass-card rounded-2xl border border-border p-5 shadow-sm relative overflow-hidden group transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"><IconLayers size={20} /></div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">Resolution Rate</p>
           <p className="font-display text-3xl sm:text-4xl font-extrabold text-heading tabular-nums">
             {resolutionRate}%
           </p>
