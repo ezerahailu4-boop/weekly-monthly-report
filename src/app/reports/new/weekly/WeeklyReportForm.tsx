@@ -20,6 +20,7 @@ import {
   type WeeklyReportData,
 } from "@/types/report";
 import { FormProgress } from "@/components/FormBits";
+import type { ActionPlanRow } from "@/types/plan";
 
 export default function NewWeeklyReportPage({ userName }: { userName: string }) {
   const router = useRouter();
@@ -39,6 +40,39 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
   const [error, setError] = useState<string | null>(null);
   const [savingStatus, setSavingStatus] = useState<"idle" | "draft" | "submitted">("idle");
   const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [plans, setPlans] = useState<ActionPlanRow[]>([]);
+  const [planMessage, setPlanMessage] = useState("");
+
+  async function importSubmittedPlans() {
+    setPlanMessage("Loading submitted plans…");
+    try {
+      const response = await fetch("/api/plans");
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || "Could not load plans.");
+      const submitted = (result.plans as ActionPlanRow[]).filter((plan) => plan.status === "submitted");
+      setPlans(submitted);
+      if (!submitted.length) setPlanMessage("No submitted action plans are available.");
+      else setPlanMessage(`${submitted.length} submitted plan${submitted.length === 1 ? "" : "s"} ready to import.`);
+    } catch (err) {
+      setPlanMessage(err instanceof Error ? err.message : "Could not load submitted plans.");
+    }
+  }
+
+  function applyPlan(plan: ActionPlanRow) {
+    const rows = plan.objectives.filter((objective) => objective.activity.trim()).map((objective) => ({
+      kpi: objective.activity,
+      target: objective.target || objective.kpi || "",
+      performance: "",
+      percentAchievement: "",
+      remark: `From ${plan.reference_code} · ${plan.title} · ${objective.progress}% complete (${objective.status.replaceAll("_", " ")})`,
+    }));
+    if (!rows.length) {
+      setPlanMessage("This plan has no structured activities to import.");
+      return;
+    }
+    update("kpiRows", [...data.kpiRows.filter((row) => row.kpi.trim()), ...rows]);
+    setPlanMessage(`Imported ${rows.length} editable row${rows.length === 1 ? "" : "s"} from ${plan.reference_code}.`);
+  }
 
   function update<K extends keyof WeeklyReportData>(key: K, value: WeeklyReportData[K]) {
     setData((d) => {
@@ -275,6 +309,20 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
           title="Weekly KPI and Activity Performance"
           description="The most important planned activities and KPIs only. Use consistent units and definitions from week to week. Explain material variances in the remark's column."
         >
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-muted/30 p-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-foreground">Import a submitted action plan</p>
+              <p className="mt-1 text-xs text-muted-foreground">Activities are copied into editable rows with plan reference and progress in the remarks.</p>
+              {planMessage && <p className="mt-2 text-xs text-muted-foreground" role="status">{planMessage}</p>}
+            </div>
+            <button type="button" onClick={importSubmittedPlans} className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted">Find plans</button>
+            {plans.length > 0 && (
+              <select aria-label="Submitted action plans" defaultValue="" onChange={(event) => { const plan = plans.find((item) => item.id === event.target.value); if (plan) applyPlan(plan); }} className={inputClass}>
+                <option value="" disabled>Select a plan to import</option>
+                {plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.reference_code} · {plan.title}</option>)}
+              </select>
+            )}
+          </div>
           <div className="overflow-x-auto rounded-xl border border-border bg-card">
             <table className="w-full text-left text-xs tabular-nums">
               <thead className="border-b border-border bg-muted/60 text-muted-foreground font-semibold uppercase tracking-wider text-[11px]">
