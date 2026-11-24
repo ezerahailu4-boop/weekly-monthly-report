@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Section, Field, inputClass, textareaClass } from "@/components/FormBits";
@@ -24,6 +24,11 @@ import type { ActionPlanRow } from "@/types/plan";
 
 export default function NewWeeklyReportPage({ userName }: { userName: string }) {
   const router = useRouter();
+  const [hasSavedDraft] = useState(() => {
+    try { return typeof window !== "undefined" && Boolean(localStorage.getItem("yetta_weekly_draft")); }
+    catch { return false; }
+  });
+  const userEdited = useRef(hasSavedDraft);
   const [data, setData] = useState<WeeklyReportData>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -42,6 +47,41 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [plans, setPlans] = useState<ActionPlanRow[]>([]);
   const [planMessage, setPlanMessage] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/plans")
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error || "Could not load submitted plans.");
+        return (result.plans as ActionPlanRow[]).filter((plan) => plan.status === "submitted");
+      })
+      .then((submitted) => {
+        if (cancelled) return;
+        setPlans(submitted);
+        const latest = submitted[0];
+        if (!latest || hasSavedDraft || userEdited.current) return;
+        const importedRows = latest.objectives
+          .filter((objective) => objective.activity?.trim())
+          .map((objective) => ({
+            kpi: objective.activity,
+            target: objective.target || objective.kpi || "",
+            performance: "",
+            percentAchievement: "",
+            remark: `From ${latest.reference_code} · ${latest.title} · ${objective.progress}% complete (${objective.status.replaceAll("_", " ")})`,
+          }));
+        if (!importedRows.length) return;
+        userEdited.current = true;
+        setData((current) => {
+          const next = { ...current, kpiRows: [...current.kpiRows.filter((row) => row.kpi.trim()), ...importedRows] };
+          try { localStorage.setItem("yetta_weekly_draft", JSON.stringify(next)); } catch { /* ignore */ }
+          return next;
+        });
+        setPlanMessage(`Prefilled ${importedRows.length} activities from ${latest.reference_code}. Review and update them before submitting.`);
+      })
+      .catch(() => { if (!cancelled) setPlanMessage("Submitted plans could not be loaded. Use Find plans to retry."); });
+    return () => { cancelled = true; };
+  }, [hasSavedDraft]);
 
   async function importSubmittedPlans() {
     setPlanMessage("Loading submitted plans…");
@@ -75,6 +115,7 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
   }
 
   function update<K extends keyof WeeklyReportData>(key: K, value: WeeklyReportData[K]) {
+    userEdited.current = true;
     setData((d) => {
       const next = { ...d, [key]: value };
       try {
