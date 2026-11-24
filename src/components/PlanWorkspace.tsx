@@ -135,6 +135,8 @@ export function PlanWorkspace({
     setPeriodStart(todayYmd);
     setPeriodEnd(todayYmd);
     setSummary("Improve service reliability through preventive maintenance, faster incident response, and weekly performance reviews.");
+    setPlanningObjective("Improve operational service reliability and fleet availability.");
+    setPlanningGoal("Achieve at least 95% on-schedule maintenance and resolve 90% of service incidents within SLA.");
     setObjectives([
       { ...emptyActionPlanObjective(), activity: "Complete preventive maintenance checks", kpi: "Vehicles maintained on schedule", target: "95%", owner: "Operations team", targetDate: todayYmd, progress: 35, status: "in_progress" },
       { ...emptyActionPlanObjective(), activity: "Reduce unresolved service incidents", kpi: "Incidents resolved within SLA", target: "90%", owner: "Service desk", targetDate: todayYmd, progress: 0, status: "not_started" },
@@ -222,6 +224,11 @@ export function PlanWorkspace({
         });
         router.refresh();
       }
+    } catch (error) {
+      setBanner({
+        type: "err",
+        text: error instanceof Error ? error.message : "Could not submit action plan. Please try again.",
+      });
     } finally {
       setSaving(false);
     }
