@@ -25,11 +25,12 @@ export default async function EditReportPage({
   }
 
   const rows = await sql`
-    SELECT r.id, r.user_id, r.report_type,
+    SELECT r.id, r.user_id, r.company_id, c.name as company_name, r.report_type,
            to_char(r.period_start, 'YYYY-MM-DD') as period_start,
            to_char(r.period_end, 'YYYY-MM-DD') as period_end,
            r.status, r.data, r.created_at, r.updated_at
     FROM reports r
+    LEFT JOIN companies c ON r.company_id = c.id
     WHERE r.id = ${id}
     LIMIT 1;
   `;
@@ -47,6 +48,8 @@ export default async function EditReportPage({
   const report: ReportRow = {
     id: row.id,
     user_id: row.user_id,
+    company_id: row.company_id,
+    company_name: row.company_name,
     report_type: row.report_type,
     period_start: row.period_start,
     period_end: row.period_end,

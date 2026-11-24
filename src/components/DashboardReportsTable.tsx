@@ -27,16 +27,18 @@ import {
   IconMessageSquare,
   IconSearch,
   IconTrash,
+  IconBuilding,
 } from "@/components/Icons";
 import type { ReportRow } from "@/types/report";
 import { formatDate } from "@/lib/dateUtils";
 import { HoldingDepartmentScorecard } from "@/components/HoldingDepartmentScorecard";
 
-type SortField = "type" | "author" | "period" | "status" | "date";
+type SortField = "type" | "author" | "company" | "period" | "status" | "date";
 
 export function DashboardReportsTable({
   initialReports,
   showAuthor = false,
+  isPrivileged = false,
   windowLocked = false,
 }: {
   initialReports: ReportRow[];
@@ -94,7 +96,8 @@ export function DashboardReportsTable({
         r.period_end.includes(search) ||
         r.report_type.toLowerCase().includes(search.toLowerCase()) ||
         author.toLowerCase().includes(search.toLowerCase()) ||
-        dept.toLowerCase().includes(search.toLowerCase());
+        dept.toLowerCase().includes(search.toLowerCase()) ||
+        (r.company_name || "").toLowerCase().includes(search.toLowerCase());
 
       return matchesType && matchesStatus && matchesDept && matchesSearch;
     });
@@ -111,6 +114,12 @@ export function DashboardReportsTable({
           const aAuth = a.author_name || a.profiles?.full_name || "";
           const bAuth = b.author_name || b.profiles?.full_name || "";
           comp = aAuth.localeCompare(bAuth);
+          break;
+        }
+        case "company": {
+          const aComp = a.company_name || a.author_department || "";
+          const bComp = b.company_name || b.author_department || "";
+          comp = aComp.localeCompare(bComp);
           break;
         }
         case "period":
@@ -305,6 +314,17 @@ export function DashboardReportsTable({
                     />
                   </TableHead>
                 )}
+                {showAuthor && isPrivileged && (
+                  <TableHead>
+                    <TableSortHeader
+                      columnKey="company"
+                      label="Company"
+                      currentSort={sortField}
+                      currentOrder={sortOrder}
+                      onSort={handleSort}
+                    />
+                  </TableHead>
+                )}
                 <TableHead>
                   <TableSortHeader
                     columnKey="period"
@@ -394,6 +414,16 @@ export function DashboardReportsTable({
                             </p>
                             <p className="text-[10px] text-muted-foreground">{dept}</p>
                           </div>
+                        </div>
+                      </TableCell>
+                    )}
+
+                    {/* Company */}
+                    {showAuthor && isPrivileged && (
+                      <TableCell>
+                        <div className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/60 px-2 py-1 text-xs text-foreground">
+                          <IconBuilding size={11} className="text-muted-foreground" />
+                          <span>{r.company_name || "YETAF HOLDING"}</span>
                         </div>
                       </TableCell>
                     )}

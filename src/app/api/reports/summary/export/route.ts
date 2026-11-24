@@ -15,6 +15,8 @@ import type { ReportRow } from "@/types/report";
 
 interface DbReportExportRow {
   id: string;
+  company_id: string | null;
+  company_name: string | null;
   user_id: string;
   report_type: ReportRow["report_type"];
   period_start: string;
@@ -80,7 +82,7 @@ export async function GET(request: Request) {
 
   const [rawReports, rawStaff] = await Promise.all([
     sql`
-      SELECT r.id, r.user_id, r.report_type,
+      SELECT r.id, r.user_id, r.company_id, c.name as company_name, r.report_type,
              to_char(r.period_start, 'YYYY-MM-DD') as period_start,
              to_char(r.period_end, 'YYYY-MM-DD') as period_end,
              r.status, r.data, r.review_notes, r.reviewed_by, r.reviewed_at,
@@ -88,6 +90,7 @@ export async function GET(request: Request) {
              u.full_name as author_name, u.department as author_department, u.email as author_email,
              rev.full_name as reviewer_name
       FROM reports r
+      LEFT JOIN companies c ON r.company_id = c.id
       LEFT JOIN users u ON r.user_id = u.id
       LEFT JOIN users rev ON r.reviewed_by = rev.id
       ORDER BY r.created_at DESC;
@@ -102,6 +105,8 @@ export async function GET(request: Request) {
   const reports: ReportRow[] = (rawReports as DbReportExportRow[]).map((r) => ({
     id: r.id,
     user_id: r.user_id,
+    company_id: r.company_id,
+    company_name: r.company_name,
     report_type: r.report_type,
     period_start: r.period_start,
     period_end: r.period_end,

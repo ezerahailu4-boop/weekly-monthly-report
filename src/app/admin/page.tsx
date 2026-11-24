@@ -138,6 +138,8 @@ const reportsWhere = isSuperAdmin
   const allReports: ReportRow[] = reportRows.map((r) => ({
     id: r.id,
     user_id: r.user_id,
+    company_id: r.company_id,
+    company_name: r.company_name,
     report_type: r.report_type,
     period_start: r.period_start,
     period_end: r.period_end,

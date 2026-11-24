@@ -13,13 +13,7 @@ import {
   type StaffTaskCounts,
   type TrackedStaffMember,
 } from "@/components/StaffSubmissionTracker";
-import {
-  buildMonthOptions,
-  buildWeekOptions,
-  findBestReportInPeriod,
-} from "@/lib/compliancePeriods";
 import { AppShell } from "@/components/AppShell";
-import { ExecutiveHeader } from "@/components/ExecutiveHeader";
 import { StatCard } from "@/components/StatCard";
 import { StatusBoard } from "@/components/StatusBoard";
 import {
@@ -29,7 +23,7 @@ import {
 } from "@/components/ui";
 import {
   IconAlertCircle,
-  IconBell,
+  IconBuilding,
   IconCheckCircle,
   IconCheckSquare,
   IconClock,
@@ -60,12 +54,18 @@ export default async function DashboardPage({
   const isAdmin = user.role === "admin";
   const isPrivileged = isSuperAdmin || isAdmin;
 
+  // One global admin sees ALL companies. Staff are scoped to their own company.
+  const viewerCompanyId = user.company_id ?? null;
+  const viewerCompanyName = user.company_name ?? null;
+
   // View mode
   const activeView = params.view || (isPrivileged ? "company" : "personal");
   const isPersonalView = activeView === "personal";
 
   interface DbReportRow {
     id: string;
+    company_id: string | null;
+    company_name: string | null;
     user_id: string;
     report_type: ReportRow["report_type"];
     period_start: string;
@@ -83,41 +83,32 @@ export default async function DashboardPage({
     reviewer_name: string | null;
   }
 
-  // Query reports from Neon
-  let rawReportRows: DbReportRow[];
-  if (isPrivileged) {
-    rawReportRows = (await sql`
-      SELECT r.id, r.user_id, r.report_type,
-             to_char(r.period_start, 'YYYY-MM-DD') as period_start,
-             to_char(r.period_end, 'YYYY-MM-DD') as period_end,
-             r.status, r.data, r.review_notes, r.reviewed_by, r.reviewed_at,
-             r.created_at, r.updated_at,
-             u.full_name as author_name, u.department as author_department, u.email as author_email,
-             rev.full_name as reviewer_name
-      FROM reports r
-      LEFT JOIN users u ON r.user_id = u.id
-      LEFT JOIN users rev ON r.reviewed_by = rev.id
-      ORDER BY r.created_at DESC;
-    `) as DbReportRow[];
-  } else {
-    rawReportRows = (await sql`
-      SELECT r.id, r.user_id, r.report_type,
-             to_char(r.period_start, 'YYYY-MM-DD') as period_start,
-             to_char(r.period_end, 'YYYY-MM-DD') as period_end,
-             r.status, r.data, r.review_notes, r.reviewed_by, r.reviewed_at,
-             r.created_at, r.updated_at,
-             u.full_name as author_name, u.department as author_department, u.email as author_email,
-             rev.full_name as reviewer_name
-      FROM reports r
-      LEFT JOIN users u ON r.user_id = u.id
-      LEFT JOIN users rev ON r.reviewed_by = rev.id
-      WHERE r.user_id = ${user.id}
-      ORDER BY r.created_at DESC;
-    `) as DbReportRow[];
-  }
+  // ── Query reports scoped by company for staff ──
+  const companyWhere =
+    isPrivileged
+      ? sql``
+      : sql`WHERE r.company_id = ${viewerCompanyId}`;
+
+  const rawReportRows = (await sql`
+    SELECT r.id, r.company_id, c.name as company_name, r.user_id, r.report_type,
+           to_char(r.period_start, 'YYYY-MM-DD') as period_start,
+           to_char(r.period_end, 'YYYY-MM-DD') as period_end,
+           r.status, r.data, r.review_notes, r.reviewed_by, r.reviewed_at,
+           r.created_at, r.updated_at,
+           u.full_name as author_name, u.department as author_department, u.email as author_email,
+           rev.full_name as reviewer_name
+    FROM reports r
+    LEFT JOIN companies c ON r.company_id = c.id
+    LEFT JOIN users u ON r.user_id = u.id
+    LEFT JOIN users rev ON r.reviewed_by = rev.id
+    ${companyWhere}
+    ORDER BY r.created_at DESC;
+  `) as DbReportRow[];
 
   const allReportList: ReportRow[] = rawReportRows.map((r) => ({
     id: r.id,
+    company_id: r.company_id,
+    company_name: r.company_name,
     user_id: r.user_id,
     report_type: r.report_type,
     period_start: r.period_start,
@@ -143,11 +134,28 @@ export default async function DashboardPage({
     ? allReportList.filter((r) => r.user_id === user.id)
     : allReportList;
 
-  // Fetch parallel dependencies: portal settings, open tasks, warnings, compliance, directives, and SLA stats
+  // ── Staff scoped by company for staff users ──
+  const staffCompanyWhere =
+    isPrivileged ? sql`` : sql`WHERE u.company_id = ${viewerCompanyId}`;
+
+  const staffRows = isPrivileged
+    ? (await sql`
+        SELECT id, full_name, email, department, role, company_id,
+               telegram_chat_id
+        FROM users
+        ORDER BY full_name ASC;
+      `)
+    : (await sql`
+        SELECT id, full_name, email, department, role, company_id,
+               telegram_chat_id
+        FROM users u
+        ${staffCompanyWhere}
+        ORDER BY full_name ASC;
+      `);
+
   const [
     settings,
     myOpenTasks,
-    staffRows,
     taskSummaryRows,
     allWarnings,
     myWarnings,
@@ -165,13 +173,6 @@ export default async function DashboardPage({
       ORDER BY due_date ASC NULLS LAST, created_at DESC
       LIMIT 4;
     `,
-    isPrivileged
-      ? sql`
-          SELECT id, full_name, email, department, role, telegram_chat_id
-          FROM users
-          ORDER BY full_name ASC;
-        `
-      : Promise.resolve([]),
     isPrivileged
       ? sql`
           SELECT assigned_to,
@@ -278,25 +279,6 @@ export default async function DashboardPage({
     timeZone: ETHIOPIA_TIMEZONE,
   }).format(new Date());
 
-  const activeWeekOption = buildWeekOptions(todayEthYmd, allReportList)[0];
-  const activeMonthOption = buildMonthOptions(todayEthYmd, allReportList)[0];
-
-  const notSubmittedStaff = isPrivileged
-    ? staffList.filter((m) => {
-        if (m.role !== "employee") return false;
-        const weekly = activeWeekOption
-          ? findBestReportInPeriod(allReportList, m.id, "weekly", activeWeekOption.start, activeWeekOption.end)
-          : null;
-        const monthly = activeMonthOption
-          ? findBestReportInPeriod(allReportList, m.id, "monthly", activeMonthOption.start, activeMonthOption.end)
-          : null;
-        const weeklySub = weekly?.status === "submitted" || weekly?.status === "reviewed";
-        const monthlySub = monthly?.status === "submitted" || monthly?.status === "reviewed";
-        return !weeklySub || !monthlySub;
-      })
-    : [];
-
-  const notSubmittedCount = notSubmittedStaff.length;
   const totalCount = reportList.length;
   const pendingReviewCount = reportList.filter((r) => r.status === "submitted").length;
   const reviewedCount = reportList.filter((r) => r.status === "reviewed").length;
@@ -317,10 +299,10 @@ export default async function DashboardPage({
     <AppShell
       user={user}
       title={isSuperAdmin ? "Direction Command Center" : "Report Follow-up Center"}
-      subtitle={isSuperAdmin ? "Directive Follow-up System · Yetaf Holding" : "Directive Follow-up System"}
+      subtitle={isSuperAdmin ? "Directive Follow-up System · Executive Status Board" : "Directive Follow-up System"}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Executive Header */}
+        {/* ── Executive Header ── */}
         <div className="relative isolate overflow-hidden">
           <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-32 -z-10 h-96 w-96 rounded-full bg-brand/20 blur-[100px]" />
           <div className={`relative isolate flex flex-col gap-5 border border-border bg-card shadow-sm ${isSuperAdmin ? "rounded-3xl p-5 sm:gap-7 sm:p-8 lg:p-10" : "rounded-3xl p-4 sm:p-6 lg:p-8"}`}>
@@ -333,12 +315,12 @@ export default async function DashboardPage({
               ) : isAdmin ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-bold text-primary-foreground">
                   <IconShield size={12} />
-                  Executive Management
+                  Executive Administration
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-foreground border border-border">
-                  <IconUser size={12} className="text-muted-foreground" />
-                  {user.department || "Operations & Logistics"}
+                  <IconBuilding size={12} className="text-muted-foreground" />
+                  {viewerCompanyName || "Operations"}
                 </span>
               )}
               <span>&middot;</span>
@@ -352,7 +334,7 @@ export default async function DashboardPage({
                 ? `Report Follow-up Center · ${displayName}`
                 : `Welcome back, ${displayName}`}
             </h1>
-            <p className={`mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base ${isSuperAdmin ? "max-w-3xl" : "max-w-3xl"}`}>
+            <p className={`mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base max-w-3xl`}>
               {isSuperAdmin
                 ? "Panoramic group-wide oversight: Directives follow-up, action plans review, SLA accountability, and subsidiary reporting."
                 : isAdmin
@@ -430,12 +412,9 @@ export default async function DashboardPage({
               </Button>
             </Link>
           </div>
-        {/* End header inner */}
-      </div>
-      {/* End header outer */}
-      {/* Container continues below */}
-        {/* PRIORITY ZONE: High-contrast Alert Cards at the Very Top                   */}
-        {/* ========================================================================= */}
+        </div>
+
+        {/* ── Priority Attention Zone ── */}
         <section aria-label="Priority Attention Zone" className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -478,7 +457,6 @@ export default async function DashboardPage({
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {/* Overdue Directives Alert Card */}
               {overdueDirectives.length > 0 && (
                 <div className="rounded-xl border border-red-500/40 bg-red-500/10 dark:bg-red-500/15 p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
@@ -490,9 +468,7 @@ export default async function DashboardPage({
                         {overdueDirectives.length} Overdue Directive{overdueDirectives.length === 1 ? "" : "s"}
                       </h3>
                     </div>
-                    <Badge variant="destructive" size="sm">
-                      Critical
-                    </Badge>
+                    <Badge variant="destructive" size="sm">Critical</Badge>
                   </div>
                   <div className="space-y-1.5">
                     {overdueDirectives.slice(0, 2).map((d) => (
@@ -521,7 +497,6 @@ export default async function DashboardPage({
                 </div>
               )}
 
-              {/* SLA Breaches Alert Card */}
               {slaBreaches.length > 0 && (
                 <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 dark:bg-amber-500/15 p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
@@ -533,9 +508,7 @@ export default async function DashboardPage({
                         {slaBreaches.length} SLA Response Breach{slaBreaches.length === 1 ? "" : "es"}
                       </h3>
                     </div>
-                    <Badge variant="warning" size="sm">
-                      SLA Warning
-                    </Badge>
+                    <Badge variant="warning" size="sm">SLA Warning</Badge>
                   </div>
                   <div className="space-y-1.5">
                     {slaBreaches.slice(0, 2).map((d) => (
@@ -562,7 +535,6 @@ export default async function DashboardPage({
                 </div>
               )}
 
-              {/* Active Personal / Disciplinary Warnings */}
               {activePersonalWarnings.length > 0 && (
                 <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 dark:bg-rose-500/15 p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
@@ -574,9 +546,7 @@ export default async function DashboardPage({
                         {activePersonalWarnings.length} Active Warning Notice
                       </h3>
                     </div>
-                    <Badge variant="destructive" size="sm">
-                      Attention
-                    </Badge>
+                    <Badge variant="destructive" size="sm">Attention</Badge>
                   </div>
                   <div className="space-y-1.5">
                     {activePersonalWarnings.slice(0, 2).map((w) => (
@@ -610,11 +580,8 @@ export default async function DashboardPage({
           )}
         </section>
 
-        {/* ========================================================================= */}
-        {/* KPI STAT CARDS: Clean Modern Metrics Grid */}
-        {/* ========================================================================= */}
+        {/* ── KPI Stat Cards ── */}
         <section aria-label="Key Performance Indicators" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {/* Directives KPI */}
           <StatCard
             title="Active Directives"
             value={kpiCounts.active_directives}
@@ -626,7 +593,6 @@ export default async function DashboardPage({
             }
           />
 
-          {/* Action Plans KPI */}
           <StatCard
             title="Action Plans"
             value={kpiCounts.submitted_plans}
@@ -638,7 +604,6 @@ export default async function DashboardPage({
             }
           />
 
-          {/* Task Resolution Rate */}
           <StatCard
             title="Task Resolution"
             value={taskResolutionRate + "%"}
@@ -650,7 +615,6 @@ export default async function DashboardPage({
             }
           />
 
-          {/* Submissions & Governance */}
           <StatCard
             title="Governance Filings"
             value={totalCount}
@@ -663,9 +627,10 @@ export default async function DashboardPage({
           />
         </section>
 
-        {/* Live Ethiopian Time Reporting Window Status */}
+        {/* ── Reporting Window ── */}
         <ReportingWindowBanner status={windowStatus} isPrivileged={isPrivileged} />
 
+        {/* ── Executive Status Board (widget grid) ── */}
         {isPrivileged && (
           <StatusBoard
             reports={allReportList}
@@ -674,110 +639,7 @@ export default async function DashboardPage({
           />
         )}
 
-        {/* Staff Assigned Tasks Quick Bar */}
-        {(myOpenTasks.length > 0 || !user.telegram_chat_id) && (
-          <Card className="p-4 sm:p-5">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-foreground">
-                    <IconCheckSquare size={15} className="text-accent" />
-                    {myOpenTasks.length > 0
-                      ? `You have ${myOpenTasks.length} pending assigned task${myOpenTasks.length === 1 ? "" : "s"}`
-                      : "Stay notified on Telegram"}
-                  </span>
-                  {!user.telegram_chat_id && (
-                    <Badge variant="warning" size="sm">
-                      <IconBell size={10} className="mr-1" />
-                      Telegram Not Linked
-                    </Badge>
-                  )}
-                </div>
-                {myOpenTasks.length > 0 ? (
-                  <div className="flex flex-wrap gap-2 pt-0.5">
-                    {myOpenTasks.map((t) => (
-                      <Link
-                        key={t.id}
-                        href="/tasks"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
-                      >
-                        <span className="truncate max-w-[200px]">{t.title}</span>
-                        {t.due_date && (
-                          <span className="text-[10px] text-muted-foreground font-mono">
-                            ({t.due_date})
-                          </span>
-                        )}
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Link your Telegram account in Profile to receive instant task assignments and SLA updates.
-                  </p>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <Link href="/tasks">
-                  <Button variant="primary" size="sm" leftIcon={<IconCheckSquare size={13} />}>
-                    {myOpenTasks.length > 0 ? "Open & Complete Tasks" : "View All Tasks"}
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* View Switcher (for Direction / Admin) */}
-        {isPrivileged && (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-3">
-            <div className="inline-flex h-9 items-center rounded-lg bg-muted/60 p-1 text-muted-foreground text-xs border border-border">
-              <Link
-                href="/dashboard?view=company"
-                scroll={false}
-                className={`rounded-md px-3 py-1 font-semibold transition-all cursor-pointer ${
-                  activeView === "company"
-                    ? "bg-card text-foreground shadow-2xs"
-                    : "hover:text-foreground"
-                }`}
-              >
-                All Company Submissions ({allReportList.length})
-              </Link>
-              <Link
-                href="/dashboard?view=personal"
-                scroll={false}
-                className={`rounded-md px-3 py-1 font-semibold transition-all cursor-pointer ${
-                  activeView === "personal"
-                    ? "bg-card text-foreground shadow-2xs"
-                    : "hover:text-foreground"
-                }`}
-              >
-                My Submissions ({allReportList.filter((r) => r.user_id === user.id).length})
-              </Link>
-              <Link
-                href="/dashboard?view=not_submitted"
-                scroll={false}
-                className={`rounded-md px-3 py-1 font-semibold transition-all cursor-pointer ${
-                  activeView === "not_submitted"
-                    ? "bg-card text-foreground shadow-2xs"
-                    : "hover:text-foreground"
-                }`}
-              >
-                Not Submitted ({notSubmittedCount})
-              </Link>
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              {activeView === "personal"
-                ? "Displaying your personally authored filings"
-                : activeView === "not_submitted"
-                ? "Employees who have not filed within the current window"
-                : "Auditing all division filings across the holding company"}
-            </p>
-          </div>
-        )}
-
-        {/* Staff Submission Tracker (for Direction / Admin) */}
+        {/* ── Staff Submission Tracker ── */}
         {isPrivileged && (
           <div className="space-y-4">
             <StaffSubmissionTracker
@@ -790,7 +652,7 @@ export default async function DashboardPage({
           </div>
         )}
 
-        {/* Reports Archive Table */}
+        {/* ── Reports Archive Table ── */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>

@@ -99,6 +99,8 @@ export type ReportStatus = "draft" | "submitted" | "reviewed";
 export interface ReportRow {
   id: string;
   user_id: string;
+  company_id: string | null;
+  company_name: string | null;
   report_type: ReportType;
   period_start: string;
   period_end: string;

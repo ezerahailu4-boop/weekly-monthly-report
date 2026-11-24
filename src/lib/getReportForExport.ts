@@ -13,7 +13,7 @@ export async function getReportForExport(id: string): Promise<ReportRow | null> 
 
   try {
     const rows = await sql`
-      SELECT r.id, r.user_id, r.report_type,
+      SELECT r.id, r.user_id, r.company_id, c.name as company_name, r.report_type,
              to_char(r.period_start, 'YYYY-MM-DD') as period_start,
              to_char(r.period_end, 'YYYY-MM-DD') as period_end,
              r.status, r.data, r.review_notes, r.reviewed_by, r.reviewed_at,
@@ -21,6 +21,7 @@ export async function getReportForExport(id: string): Promise<ReportRow | null> 
              u.full_name, u.department,
              rev.full_name as reviewer_name
       FROM reports r
+      LEFT JOIN companies c ON r.company_id = c.id
       LEFT JOIN users u ON r.user_id = u.id
       LEFT JOIN users rev ON r.reviewed_by = rev.id
       WHERE r.id = ${id}
@@ -40,6 +41,8 @@ export async function getReportForExport(id: string): Promise<ReportRow | null> 
     return {
       id: row.id,
       user_id: row.user_id,
+      company_id: row.company_id,
+      company_name: row.company_name,
       report_type: row.report_type,
       period_start: row.period_start,
       period_end: row.period_end,
