@@ -6,7 +6,7 @@ import { getPortalSettings, getCompanySettings } from "@/lib/portalSettings";
 import { getWarningsList } from "@/lib/warnings";
 import { ETHIOPIA_TIMEZONE } from "@/lib/windowSchedule";
 import { getWeekBounds, getMonthBounds } from "@/lib/compliancePeriods";
-import { AdminUserManagement, type TeamMember } from "@/components/AdminUserManagement";
+import { AdminUserManagement, type CompanyOption, type TeamMember } from "@/components/AdminUserManagement";
 import { AdminCompanies } from "@/components/AdminCompanies";
 import { AdminPasswordResets } from "@/components/AdminPasswordResets";
 import { OverdueAlertsPanel, type OverdueEntry } from "@/components/OverdueAlertsPanel";
@@ -77,13 +77,17 @@ export default async function AdminPage({
       ? params.company_id
       : user.company_id ?? null;
 
-  // Load companies list for the company selector (super admin only).
+  // Super admins can assign any active company; admins can see their own company assignment.
   const companyRows =
     isSuperAdmin
       ? await sql`
           SELECT id, name, slug, is_active FROM companies ORDER BY name;
         `
-      : [];
+      : user.company_id
+        ? await sql`
+            SELECT id, name, slug, is_active FROM companies WHERE id = ${user.company_id};
+          `
+        : [];
 
   // Query team members, reports, tasks, settings, and warnings in parallel from Neon
 const reportsWhere = isSuperAdmin
@@ -174,6 +178,7 @@ const reportsWhere = isSuperAdmin
     role: t.role as "employee" | "admin" | "super_admin",
     telegram_chat_id: t.telegram_chat_id ?? null,
     telegram_username: t.telegram_username ?? null,
+    company_id: t.company_id ?? null,
     created_at:
       typeof t.created_at === "string" ? t.created_at : t.created_at.toISOString(),
   }));
@@ -463,7 +468,11 @@ const reportsWhere = isSuperAdmin
 
         {/* Tab Content */}
         {activeTab === "team" && (
-          <AdminUserManagement initialTeam={teamList} currentUserRole={user.role} />
+          <AdminUserManagement
+            initialTeam={teamList}
+            currentUserRole={user.role}
+            companies={companyRows as CompanyOption[]}
+          />
         )}
 
         {activeTab === "tasks" && (

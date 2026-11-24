@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { email, password, full_name, department, role, telegram_chat_id } = await request.json();
+    const { email, password, full_name, department, role, telegram_chat_id, company_id } = await request.json();
 
     if (!email || !password || !full_name) {
       return NextResponse.json(
@@ -29,6 +29,33 @@ export async function POST(request: Request) {
     if (password.length < 6) {
       return NextResponse.json(
         { error: "Password must be at least 6 characters long." },
+        { status: 400 }
+      );
+    }
+
+    let assignedCompanyId: string | null = currentUser.company_id;
+    if (currentUser.role === "super_admin") {
+      if (typeof company_id !== "string" || !company_id.trim()) {
+        return NextResponse.json(
+          { error: "Choose a company for this account." },
+          { status: 400 }
+        );
+      }
+      const companyRows = await sql`
+        SELECT id FROM companies WHERE id = ${company_id.trim()} AND is_active = true LIMIT 1;
+      `;
+      if (companyRows.length === 0) {
+        return NextResponse.json(
+          { error: "Choose an active company." },
+          { status: 400 }
+        );
+      }
+      assignedCompanyId = companyRows[0].id;
+    }
+
+    if (!assignedCompanyId) {
+      return NextResponse.json(
+        { error: "Your admin account is not assigned to a company." },
         { status: 400 }
       );
     }
@@ -71,7 +98,7 @@ export async function POST(request: Request) {
     const rows = await sql`
       INSERT INTO users (
         email, password_hash, full_name, department, role,
-        telegram_chat_id, telegram_linked_at
+        telegram_chat_id, telegram_linked_at, company_id
       )
       VALUES (
         ${email.trim().toLowerCase()},
@@ -80,9 +107,10 @@ export async function POST(request: Request) {
         ${department || "Operations & Logistics"},
         ${assignedRole},
         ${cleanChatId},
-        ${linkedAt}
+        ${linkedAt},
+        ${assignedCompanyId}
       )
-      RETURNING id, email, full_name, department, role, telegram_chat_id, telegram_username, created_at;
+      RETURNING id, email, full_name, department, role, telegram_chat_id, telegram_username, company_id, created_at;
     `;
 
     return NextResponse.json({

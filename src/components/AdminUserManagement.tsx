@@ -25,6 +25,13 @@ export interface TeamMember {
   email?: string;
   telegram_chat_id?: string | null;
   telegram_username?: string | null;
+  company_id?: string | null;
+}
+
+export interface CompanyOption {
+  id: string;
+  name: string;
+  is_active: boolean;
 }
 
 const DEPARTMENTS = [
@@ -42,9 +49,11 @@ const DEPARTMENTS = [
 export function AdminUserManagement({
   initialTeam,
   currentUserRole = "admin",
+  companies = [],
 }: {
   initialTeam: TeamMember[];
   currentUserRole?: "employee" | "admin" | "super_admin";
+  companies?: CompanyOption[];
 }) {
   const [team, setTeam] = useState<TeamMember[]>(initialTeam);
   const [showModal, setShowModal] = useState(false);
@@ -55,6 +64,7 @@ export function AdminUserManagement({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [department, setDepartment] = useState("Operations & Logistics");
+  const [companyId, setCompanyId] = useState("");
   const [role, setRole] = useState<"employee" | "admin" | "super_admin">("employee");
   const [telegramChatId, setTelegramChatId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -101,6 +111,7 @@ export function AdminUserManagement({
           email,
           password,
           department,
+          company_id: isSuperAdmin ? companyId : undefined,
           role,
           telegram_chat_id: telegramChatId.trim() || null,
         }),
@@ -257,6 +268,7 @@ export function AdminUserManagement({
           type="button"
           onClick={() => {
             setShowModal(true);
+            setCompanyId("");
             generateRandomPassword();
           }}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-xs hover:opacity-90 transition-all shrink-0"
@@ -595,7 +607,40 @@ export function AdminUserManagement({
 
               <div>
                 <label className="block text-xs font-semibold text-foreground mb-1">
-                  Department / Subsidiary
+                  Company {isSuperAdmin && <span className="text-rose-600">*</span>}
+                </label>
+                {isSuperAdmin ? (
+                  <select
+                    required
+                    value={companyId}
+                    onChange={(e) => setCompanyId(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                  >
+                    <option value="" disabled>Select a company</option>
+                    {companies.filter((company) => company.is_active).map((company) => (
+                      <option key={company.id} value={company.id}>{company.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="w-full rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm font-medium text-foreground">
+                    {companies[0]?.name ?? "No company assigned"}
+                  </div>
+                )}
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {isSuperAdmin
+                    ? "Assigns this account to a company and scopes its reporting access."
+                    : "This account will belong to your company."}
+                </p>
+                {isSuperAdmin && companies.filter((company) => company.is_active).length === 0 && (
+                  <p className="mt-1 text-[11px] font-medium text-rose-600">
+                    No active companies available. Add or activate a company first.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">
+                  Department
                 </label>
                 <select
                   value={department}
@@ -664,7 +709,7 @@ export function AdminUserManagement({
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || (isSuperAdmin && !companies.some((company) => company.is_active))}
                   className="rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
                 >
                   {loading ? "Provisioning..." : "Provision Account"}
