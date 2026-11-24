@@ -334,7 +334,7 @@ export default async function DashboardPage({
 
             <h1 className={`font-display font-extrabold tracking-tight text-foreground ${isSuperAdmin ? "max-w-4xl text-4xl leading-[1.04] sm:text-5xl lg:text-6xl" : "text-2xl sm:text-3xl"}`}>
               {isSuperAdmin
-                ? "Direction Follow-up Command Center"
+                ? "Direction Follow-up"
                 : isAdmin
                 ? `Report Follow-up Center · ${displayName}`
                 : `Welcome back, ${displayName}`}
