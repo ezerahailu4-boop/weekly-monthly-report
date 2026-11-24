@@ -154,6 +154,8 @@ export default async function DashboardPage({
     overdueDirectivesRows,
     slaBreachesRows,
     kpiCountsRows,
+    boardTaskRows,
+    boardPlanRows,
   ] = await Promise.all([
     getPortalSettings(),
     sql`
@@ -204,6 +206,17 @@ export default async function DashboardPage({
         (SELECT COUNT(*) FROM tasks)::int AS total_tasks,
         (SELECT COUNT(*) FROM tasks WHERE status = 'completed')::int AS completed_tasks;
     `,
+    isPrivileged ? sql`
+      SELECT t.id, t.title, t.description, t.status,
+             to_char(t.due_date, 'YYYY-MM-DD') as due_date,
+             t.completion_note, u.full_name as assignee_name
+      FROM tasks t LEFT JOIN users u ON u.id = t.assigned_to
+      ORDER BY t.created_at DESC LIMIT 60;
+    ` : Promise.resolve([]),
+    isPrivileged ? sql`
+      SELECT id, reference_code, title, department, status, summary, objectives
+      FROM action_plans ORDER BY created_at DESC LIMIT 60;
+    ` : Promise.resolve([]),
   ]);
 
   const activePersonalWarnings = (
@@ -654,7 +667,11 @@ export default async function DashboardPage({
         <ReportingWindowBanner status={windowStatus} isPrivileged={isPrivileged} />
 
         {isPrivileged && (
-          <StatusBoard reports={allReportList} />
+          <StatusBoard
+            reports={allReportList}
+            tasks={boardTaskRows as { id: string; title: string; description: string; status: string; due_date: string | null; completion_note: string | null; assignee_name: string | null }[]}
+            plans={boardPlanRows as { id: string; reference_code: string; title: string; department: string; status: string; summary: string | null; objectives: { activity?: string; status?: string; progress?: number }[] }[]}
+          />
         )}
 
         {/* Staff Assigned Tasks Quick Bar */}

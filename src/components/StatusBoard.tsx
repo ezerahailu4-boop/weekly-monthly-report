@@ -68,9 +68,11 @@ function statPill(label: string, value: string | number, color = "text-gold") {
 
 export interface StatusBoardProps {
   reports: ReportRow[];
+  tasks: { id: string; title: string; description?: string; status: string; due_date?: string | null; completion_note?: string | null; assignee_name?: string | null }[];
+  plans: { id: string; reference_code: string; title: string; department: string; status: string; summary?: string | null; objectives: { activity?: string; status?: string; progress?: number }[] }[];
 }
 
-export function StatusBoard({ reports }: StatusBoardProps) {
+export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
   const now = new Date();
 
   // ── Separate weekly and monthly ──
@@ -136,21 +138,41 @@ export function StatusBoard({ reports }: StatusBoardProps) {
 
   const resolutionRate =
     totalSubmitted > 0 ? Math.round((totalReviewed / totalSubmitted) * 100) : 0;
+  const openTasks = tasks.filter((task) => task.status !== "completed");
+  const overdueTasks = openTasks.filter((task) => task.due_date && task.due_date < new Date().toISOString().slice(0, 10));
+  const pendingPlans = plans.filter((plan) => plan.status === "submitted");
+  const objectiveCount = plans.reduce((count, plan) => count + plan.objectives.length, 0);
+  const completedObjectives = plans.flatMap((plan) => plan.objectives).filter((objective) => objective.status === "completed").length;
 
   return (
     <section aria-label="Executive Status Board" className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-heading">
-            Executive Status Board
-          </h2>
-          <p className="text-xs sm:text-sm text-body mt-0.5">
-            Weekly & monthly filings — separated performance tracking.
-          </p>
+          <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-heading">Executive Status Board</h2>
+          <p className="text-xs sm:text-sm text-body mt-0.5">Group performance across tasks, action plans, and weekly &amp; monthly filings.</p>
         </div>
         <Badge variant="muted" size="sm">Live · Neon PostgreSQL</Badge>
       </div>
+
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7 print:shadow-none">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-accent">Executive reporting</p><h3 className="mt-1 font-display text-xl font-extrabold text-foreground">Group performance brief</h3><p className="mt-1 text-sm text-muted-foreground">A live summary with a drill-down for every task, plan, and filing.</p></div>
+          <button type="button" onClick={() => window.print()} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 print:hidden">Print / Save as PDF</button>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[["Open tasks", openTasks.length, `${overdueTasks.length} overdue`], ["Plans awaiting review", pendingPlans.length, `${plans.length} action plans`], ["Weekly filings", submittedWeekly, `${reviewedWeekly} reviewed`], ["Monthly filings", submittedMonthly, `${reviewedMonthly} reviewed`]].map(([label, count, note]) => <div key={String(label)} className="rounded-xl border border-border bg-background p-4"><p className="text-xs font-semibold text-muted-foreground">{label}</p><p className="mt-2 text-3xl font-extrabold tabular-nums text-foreground">{count}</p><p className="mt-1 text-xs text-muted-foreground">{note}</p></div>)}
+        </div>
+        <div className="mt-4 rounded-xl bg-muted/50 p-4"><p className="text-sm leading-6 text-muted-foreground">There are {openTasks.length} open tasks, including {overdueTasks.length} overdue. {pendingPlans.length} action plans await review. {objectiveCount ? Math.round(completedObjectives / objectiveCount * 100) : 0}% of plan objectives are marked complete. The board tracks {submittedWeekly} weekly and {submittedMonthly} monthly filings.</p></div>
+        <div className="mt-5 grid gap-4 xl:grid-cols-2">
+          {[
+            { title: "Tasks", items: tasks.map((item) => ({ id: item.id, name: item.title, meta: `${item.assignee_name || "Unassigned"} · ${item.status.replaceAll("_", " ")}${item.due_date ? ` · Due ${item.due_date}` : ""}`, summary: item.completion_note || item.description || "No task update added yet.", href: "/admin?tab=tasks" })) },
+            { title: "Action plans", items: plans.map((item) => ({ id: item.id, name: item.title, meta: `${item.reference_code} · ${item.department} · ${item.status.replaceAll("_", " ")}`, summary: item.summary || `${item.objectives.length} objectives · ${item.objectives.filter((objective) => objective.status === "completed").length} complete.`, href: "/plans" })) },
+            { title: "Weekly reports", items: reports.filter((item) => item.report_type === "weekly").map((item) => ({ id: item.id, name: `${item.author_name || "Staff"} · ${item.period_start}`, meta: `${item.author_department || "Division"} · ${item.status}`, summary: item.data.executiveSummary || "No executive summary provided.", href: `/reports/${item.id}` })) },
+            { title: "Monthly reports", items: reports.filter((item) => item.report_type === "monthly").map((item) => ({ id: item.id, name: `${item.author_name || "Staff"} · ${item.period_start.slice(0, 7)}`, meta: `${item.author_department || "Division"} · ${item.status}`, summary: item.data.executiveSummary || "No executive summary provided.", href: `/reports/${item.id}` })) },
+          ].map((group) => <div key={group.title} className="overflow-hidden rounded-xl border border-border bg-background"><div className="flex justify-between border-b border-border px-4 py-3"><h4 className="text-sm font-bold text-foreground">{group.title}</h4><span className="text-xs text-muted-foreground">{group.items.length}</span></div><div className="max-h-80 divide-y divide-border/70 overflow-y-auto">{group.items.length ? group.items.map((item) => <a key={item.id} href={item.href} className="block px-4 py-3 transition hover:bg-muted/40"><div className="flex flex-wrap justify-between gap-1"><p className="text-sm font-semibold text-foreground">{item.name}</p><span className="text-[11px] text-muted-foreground">{item.meta}</span></div><p className="mt-1.5 line-clamp-3 text-sm leading-5 text-muted-foreground">{item.summary}</p></a>) : <p className="px-4 py-6 text-center text-sm text-muted-foreground">No records yet.</p>}</div></div>)}
+        </div>
+      </section>
 
       {/* ── Top Metric Cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
