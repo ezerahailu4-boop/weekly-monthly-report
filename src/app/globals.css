@@ -447,17 +447,19 @@ table, .tabular-nums, [data-tabular] {
 
 /* Chart wrappers */
 .chart-card {
-  background: linear-gradient(135deg, #FFF7E6 0%, #E9DFC4 100%);
+  background: var(--card);
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.04);
+  border-radius: 1.25rem;
+  box-shadow: 0 1px 3px 0 oklch(0 0 0 / 0.05);
+  transition: box-shadow 160ms ease, border-color 160ms ease;
 }
-.dark .chart-card {
-  background: #292D30;
+.chart-card:hover {
+  border-color: color-mix(in srgb, var(--primary) 24%, var(--border));
+  box-shadow: 0 8px 24px -12px oklch(0 0 0 / 0.18);
 }
 
 .chart-title {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: -0.01em;

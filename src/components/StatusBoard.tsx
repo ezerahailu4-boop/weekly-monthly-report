@@ -226,7 +226,7 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
         <div className="chart-card p-5 flex flex-col">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gold/10 text-gold">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-300">
                 <IconTrendingUp size={16} />
               </span>
               <div>
@@ -241,8 +241,8 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
               <BarChart data={weeklyData} barGap={6} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
                 <defs>
                   <linearGradient id="weekly-gradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#D6A64B" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#D6A64B" stopOpacity={0.4} />
+                    <stop offset="0%" stopColor="#4680FF" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#4680FF" stopOpacity={0.38} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -250,7 +250,7 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
                 <YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} allowDecimals={false} hide />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted-foreground)", opacity: 0.2 }} />
                 <Legend wrapperStyle={{ fontSize: 10 }} verticalAlign="top" align="left" />
-                <Bar dataKey="weekly" name="Weekly" fill="url(#weekly-gradient)" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="weekly" name="Weekly" fill="url(#weekly-gradient)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -275,8 +275,8 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
               <BarChart data={weeklyData} barGap={6} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
                 <defs>
                   <linearGradient id="monthly-gradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#006B45" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#006B45" stopOpacity={0.4} />
+                    <stop offset="0%" stopColor="#13C2C2" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#13C2C2" stopOpacity={0.38} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -304,7 +304,7 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
               <AreaChart data={monthlyTrend} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
                 <defs>
                   <linearGradient id="area-gold" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#D6A64B" stopOpacity={0.35} />
+                    <stop offset="0%" stopColor="#4680FF" stopOpacity={0.35} />
                     <stop offset="100%" stopColor="#D6A64B" stopOpacity={0} />
                   </linearGradient>
                 </defs>
@@ -312,7 +312,7 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
                 <XAxis dataKey="month" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} allowDecimals={false} hide />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted-foreground)", opacity: 0.2 }} />
-                <Area type="monotone" dataKey="count" stroke="#D6A64B" strokeWidth={3} fillOpacity={1} fill="url(#area-gold)" dot={{ fill: "#D6A64B", stroke: "var(--card)", strokeWidth: 2 }} />
+                <Area type="monotone" dataKey="count" stroke="#4680FF" strokeWidth={3} fillOpacity={1} fill="url(#area-gold)" dot={{ fill: "#4680FF", stroke: "var(--card)", strokeWidth: 2 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -334,8 +334,8 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
                   ]}
                   cx="50%" cy="50%" innerRadius={70} outerRadius={95} paddingAngle={5} dataKey="value" startAngle={180} endAngle={360}
                 >
-                  <Cell fill="#006B45" />
-                  <Cell fill="#D9CBA9" />
+                  <Cell fill="#4680FF" />
+                  <Cell fill="#E8EDF5" />
                 </Pie>
                 <Tooltip contentStyle={tooltipStyle} />
                 <Legend wrapperStyle={{ fontSize: 10 }} verticalAlign="bottom" align="center" height={60} />
@@ -380,7 +380,7 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
                 <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
                 <YAxis type="category" dataKey="dept" tick={{ fontSize: 11, fill: "var(--foreground)" }} axisLine={false} tickLine={false} width={130} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v) => [`${v}%`, "Compliance"]} />
-                <Bar dataKey="rate" name="Compliance %" fill="#D6A64B" radius={[0, 8, 8, 0]} />
+            <Bar dataKey="rate" name="Compliance %" fill="#4680FF" radius={[0, 8, 8, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
