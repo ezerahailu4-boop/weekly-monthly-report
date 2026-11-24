@@ -13,6 +13,7 @@ import {
   IconCheckSquare,
   IconChevronDown,
   IconClock,
+  IconFileText,
   IconMinus,
   IconPlus,
   IconSearch,
@@ -201,6 +202,13 @@ export function TaskWorkspace({
     setSelectedAssignees(new Set());
     setAssigneeSearch("");
     setBulkProgress(null);
+  }
+
+  function loadDemoTasks() {
+    setTaskDrafts([
+      { id: 0, title: "Complete weekly fleet inspection", description: "Inspect assigned vehicles, record safety issues, and upload the checklist.", priority: "high", dueDate: todayEthDate },
+      { id: 1, title: "Submit supplier delivery update", description: "Confirm delivery status and report any delays to Operations.", priority: "medium", dueDate: todayEthDate },
+    ]);
   }
 
   // Complete Task modal state
@@ -835,6 +843,7 @@ export function TaskWorkspace({
                     Create multiple tasks for multiple staff members at once.
                   </p>
                 </div>
+                <button type="button" onClick={loadDemoTasks} className="ml-auto mr-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"><IconFileText size={14} />Load demo</button>
               </div>
               <button
                 type="button"

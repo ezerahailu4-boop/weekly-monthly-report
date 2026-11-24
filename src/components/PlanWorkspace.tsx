@@ -128,6 +128,20 @@ export function PlanWorkspace({
     setAttachments([]);
   }
 
+  function loadDemoPlan() {
+    setEntryMode("form");
+    setTitle("Quarterly Service Reliability Improvement Plan");
+    setDepartment(defaultDepartment || "Operations & Logistics");
+    setPeriodStart(todayYmd);
+    setPeriodEnd(todayYmd);
+    setSummary("Improve service reliability through preventive maintenance, faster incident response, and weekly performance reviews.");
+    setObjectives([
+      { ...emptyActionPlanObjective(), activity: "Complete preventive maintenance checks", kpi: "Vehicles maintained on schedule", target: "95%", owner: "Operations team", targetDate: todayYmd, progress: 35, status: "in_progress" },
+      { ...emptyActionPlanObjective(), activity: "Reduce unresolved service incidents", kpi: "Incidents resolved within SLA", target: "90%", owner: "Service desk", targetDate: todayYmd, progress: 0, status: "not_started" },
+    ]);
+    setAttachments([]);
+  }
+
   function updateObjective(
     index: number,
     field: keyof ActionPlanObjective,
@@ -450,7 +464,8 @@ export function PlanWorkspace({
                   </p>
                 </div>
               </div>
-              <button
+                <button type="button" onClick={loadDemoPlan} className="mr-auto inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"><IconFileText size={14} />Load demo</button>
+                <button
                 type="button"
                 onClick={resetModal}
                 className="rounded-md p-1 text-muted-foreground hover:bg-muted cursor-pointer"
