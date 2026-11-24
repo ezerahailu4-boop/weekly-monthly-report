@@ -46,6 +46,7 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
   const [savingStatus, setSavingStatus] = useState<"idle" | "draft" | "submitted">("idle");
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [plans, setPlans] = useState<ActionPlanRow[]>([]);
+  const [importedPlanIds, setImportedPlanIds] = useState<string[]>([]);
   const [planMessage, setPlanMessage] = useState("");
 
   useEffect(() => {
@@ -71,6 +72,7 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
             remark: `From ${latest.reference_code} · ${latest.title} · ${objective.progress}% complete (${objective.status.replaceAll("_", " ")})`,
           }));
         if (!importedRows.length) return;
+        setImportedPlanIds([latest.id]);
         userEdited.current = true;
         setData((current) => {
           const next = { ...current, kpiRows: [...current.kpiRows.filter((row) => row.kpi.trim()), ...importedRows] };
@@ -99,6 +101,10 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
   }
 
   function applyPlan(plan: ActionPlanRow) {
+    if (importedPlanIds.includes(plan.id)) {
+      setPlanMessage(`${plan.reference_code} is already included in this draft.`);
+      return;
+    }
     const rows = plan.objectives.filter((objective) => objective.activity.trim()).map((objective) => ({
       kpi: objective.activity,
       target: objective.target || objective.kpi || "",
@@ -111,6 +117,7 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
       return;
     }
     update("kpiRows", [...data.kpiRows.filter((row) => row.kpi.trim()), ...rows]);
+    setImportedPlanIds((current) => [...current, plan.id]);
     setPlanMessage(`Imported ${rows.length} editable row${rows.length === 1 ? "" : "s"} from ${plan.reference_code}.`);
   }
 
@@ -181,7 +188,7 @@ export default function NewWeeklyReportPage({ userName }: { userName: string }) 
         // ignore
       }
 
-      router.push("/dashboard");
+      router.push(`/reports/${json.report.id}`);
       router.refresh();
     } catch (err: unknown) {
       setSavingStatus("idle");

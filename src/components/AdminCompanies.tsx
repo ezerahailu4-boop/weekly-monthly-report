@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
-import { IconBuilding, IconPlus, IconShield } from "./Icons";
+import { IconBuilding, IconEdit, IconPlus, IconShield, IconX } from "./Icons";
 import { Input } from "./ui/Input";
 
 interface Company {
@@ -27,6 +28,9 @@ export function AdminCompanies() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [editLogoUrl, setEditLogoUrl] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   useEffect(() => {
@@ -51,6 +55,52 @@ export function AdminCompanies() {
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     setName(e.target.value);
     if (!slug) setSlug(slugify(e.target.value));
+  }
+
+  async function uploadLogo(file: File | undefined, onUploaded: (url: string) => void) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setMsg({ type: "err", text: "Choose an image file for the company logo." });
+      return;
+    }
+    setUploadingLogo(true);
+    setMsg(null);
+    try {
+      const form = new FormData();
+      form.set("file", file);
+      const response = await fetch("/api/uploads", { method: "POST", body: form });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "Logo upload failed.");
+      onUploaded(data.file.url);
+    } catch (err: unknown) {
+      setMsg({ type: "err", text: err instanceof Error ? err.message : "Logo upload failed." });
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
+  async function saveCompanyLogo(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingCompany) return;
+    setSaving(true);
+    setMsg(null);
+    try {
+      const response = await fetch(`/api/admin/companies/${editingCompany.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logo_url: editLogoUrl.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "Could not save the company logo.");
+      setCompanies((current) => current.map((company) => company.id === editingCompany.id ? { ...company, ...data.company } : company));
+      setEditingCompany(null);
+      setMsg({ type: "ok", text: `Logo updated for ${editingCompany.name}.` });
+      router.refresh();
+    } catch (err: unknown) {
+      setMsg({ type: "err", text: err instanceof Error ? err.message : "Could not save the company logo." });
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function createCompany(e: React.FormEvent) {
@@ -152,9 +202,11 @@ export function AdminCompanies() {
                   <tr key={c.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/30 text-muted-foreground">
-                          <IconBuilding size={16} />
-                        </div>
+                        {c.logo_url ? (
+                          <Image src={c.logo_url} alt={`${c.name} logo`} width={36} height={36} unoptimized className="h-9 w-9 shrink-0 rounded-lg border border-border bg-white object-contain p-1" />
+                        ) : (
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold tracking-wide text-primary">{c.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</div>
+                        )}
                         <div>
                           <p className="font-medium text-foreground">{c.name}</p>
                           <p className="text-[10px] text-muted-foreground capitalize">
@@ -201,13 +253,10 @@ export function AdminCompanies() {
                       </label>
                     </td>
                     <td className="px-4 py-3.5 text-right">
-                      <Link
-                        href={`/admin?tab=settings&company_id=${c.id}`}
-                        className="text-xs font-medium text-primary-foreground hover:underline"
-                      >
-                        Manage Settings
-                        <IconShield size={12} className="ml-1" />
-                      </Link>
+                      <div className="inline-flex items-center gap-3">
+                        <button type="button" onClick={() => { setEditingCompany(c); setEditLogoUrl(c.logo_url || ""); setMsg(null); }} className="inline-flex items-center gap-1 text-xs font-medium text-foreground hover:text-accent"><IconEdit size={13} />Logo</button>
+                        <Link href={`/admin?tab=settings&company_id=${c.id}`} className="inline-flex items-center text-xs font-medium text-primary hover:underline">Manage Settings<IconShield size={12} className="ml-1" /></Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -242,9 +291,9 @@ export function AdminCompanies() {
         }}
       >
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
-        <div className="relative bg-card rounded-xl border border-border p-6 sm:p-7 shadow-xl w-full sm:max-w-md animate-in zoom-in-95 duration-200">
+        <div role="dialog" aria-modal="true" aria-labelledby="add-company-title" className="relative max-h-[calc(100dvh-2rem)] overflow-y-auto bg-card rounded-xl border border-border p-5 shadow-xl w-full sm:max-w-md sm:p-7 animate-in zoom-in-95 duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-bold text-foreground">Add Company</h3>
+            <h3 id="add-company-title" className="text-base font-bold text-foreground">Add Company</h3>
             <button
               onClick={() => setOpen(false)}
               className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -285,8 +334,11 @@ export function AdminCompanies() {
                 className="text-sm"
               />
               <p className="text-[10px] text-muted-foreground">
-                Public image URL used on letterheads and exports.
+                Used in the portal, company selector, and official reports. Paste a public image URL or upload a logo.
               </p>
+              <input type="file" accept="image/*" aria-label="Upload company logo" disabled={uploadingLogo} onChange={(event) => uploadLogo(event.target.files?.[0], setLogoUrl)} className="block w-full text-xs text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-muted file:px-3 file:py-2 file:text-xs file:font-semibold file:text-foreground hover:file:bg-muted/70" />
+              {uploadingLogo && <p className="text-xs text-muted-foreground">Uploading logo…</p>}
+              {logoUrl && <Image src={logoUrl} alt="Company logo preview" width={120} height={72} unoptimized className="h-16 w-28 rounded-lg border border-border bg-white object-contain p-2" />}
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
@@ -308,6 +360,28 @@ export function AdminCompanies() {
           </form>
         </div>
       </div>
+
+      {editingCompany && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+          <form onSubmit={saveCompanyLogo} role="dialog" aria-modal="true" aria-labelledby="edit-company-logo-title" className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-card p-5 shadow-2xl sm:p-6">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div><h3 id="edit-company-logo-title" className="text-base font-bold text-foreground">Company Logo</h3><p className="mt-1 text-xs text-muted-foreground">{editingCompany.name}</p></div>
+              <button type="button" onClick={() => setEditingCompany(null)} aria-label="Close" className="rounded-lg p-2 text-muted-foreground hover:bg-muted"><IconX size={16} /></button>
+            </div>
+            <label className="block space-y-1.5 text-xs font-semibold text-foreground">
+              Logo URL
+              <Input value={editLogoUrl} onChange={(event) => setEditLogoUrl(event.target.value)} placeholder="https://… or upload a file" className="text-sm font-normal" />
+            </label>
+            <input type="file" accept="image/*" aria-label="Upload company logo" disabled={uploadingLogo} onChange={(event) => uploadLogo(event.target.files?.[0], setEditLogoUrl)} className="block w-full text-xs text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-muted file:px-3 file:py-2 file:text-xs file:font-semibold file:text-foreground hover:file:bg-muted/70" />
+            {uploadingLogo && <p className="text-xs text-muted-foreground">Uploading logo…</p>}
+            {editLogoUrl ? <Image src={editLogoUrl} alt="Company logo preview" width={120} height={72} unoptimized className="h-16 w-28 rounded-lg border border-border bg-white object-contain p-2" /> : <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">No logo selected. The portal will use the YETAF brand mark.</p>}
+            <div className="flex justify-end gap-2 border-t border-border pt-4">
+              <button type="button" onClick={() => setEditingCompany(null)} className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted">Cancel</button>
+              <button type="submit" disabled={saving || uploadingLogo} className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50">{saving ? "Saving…" : "Save Logo"}</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

@@ -81,28 +81,37 @@ export default async function AdminPage({
   const companyRows =
     isSuperAdmin
       ? await sql`
-          SELECT id, name, slug, is_active FROM companies ORDER BY name;
+          SELECT id, name, slug, logo_url, is_active FROM companies ORDER BY name;
         `
       : user.company_id
         ? await sql`
-            SELECT id, name, slug, is_active FROM companies WHERE id = ${user.company_id};
+            SELECT id, name, slug, logo_url, is_active FROM companies WHERE id = ${user.company_id};
           `
         : [];
 
   // Query team members, reports, tasks, settings, and warnings in parallel from Neon
 const reportsWhere = isSuperAdmin
-  ? sql``
+  ? selectedCompanyId
+    ? sql`WHERE r.company_id = ${selectedCompanyId}`
+    : sql``
   : sql`WHERE r.company_id = ${user.company_id}`;
+const taskCompanyWhere = selectedCompanyId
+  ? sql`WHERE u.company_id = ${selectedCompanyId}`
+  : sql``;
+const planCompanyWhere = selectedCompanyId
+  ? sql`WHERE u.company_id = ${selectedCompanyId}`
+  : sql``;
   const [teamRows, reportRows, taskRows, planRows, settings, allWarnings] = await Promise.all([
     sql`
-      SELECT id, email, full_name, department, role,
-             telegram_chat_id, telegram_username, created_at, company_id
-      FROM users
+      SELECT u.id, u.email, u.full_name, u.department, u.role,
+             u.telegram_chat_id, u.telegram_username, u.created_at, u.company_id,
+             c.name AS company_name, c.logo_url AS company_logo_url
+      FROM users u LEFT JOIN companies c ON c.id = u.company_id
       ${!isSuperAdmin ? sql`WHERE company_id = ${user.company_id}` : sql``}
       ORDER BY created_at DESC;
     `,
     sql`
-      SELECT r.id, r.user_id, r.company_id, r.report_type,
+      SELECT r.id, r.user_id, r.company_id, c.name AS company_name, r.report_type,
              to_char(r.period_start, 'YYYY-MM-DD') as period_start,
              to_char(r.period_end, 'YYYY-MM-DD') as period_end,
              r.status, r.data, r.review_notes, r.reviewed_by, r.reviewed_at,
@@ -112,6 +121,7 @@ const reportsWhere = isSuperAdmin
       FROM reports r
       LEFT JOIN users u ON r.user_id = u.id
       LEFT JOIN users rev ON r.reviewed_by = rev.id
+      LEFT JOIN companies c ON r.company_id = c.id
       ${reportsWhere}
       ORDER BY r.created_at DESC;
     `,
@@ -126,14 +136,19 @@ const reportsWhere = isSuperAdmin
       FROM tasks t
       JOIN users u ON t.assigned_to = u.id
       LEFT JOIN users ab ON t.assigned_by = ab.id
+      ${taskCompanyWhere}
       ORDER BY
         CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END ASC,
         t.due_date ASC NULLS LAST,
         t.created_at DESC;
     `,
     sql`
-      SELECT id, reference_code, title, department, status, period_start, period_end, summary, objectives
-      FROM action_plans ORDER BY created_at DESC;
+      SELECT p.id, p.reference_code, p.title, p.department, p.status,
+             p.period_start, p.period_end, p.summary, p.objectives
+      FROM action_plans p
+      JOIN users u ON u.id = p.user_id
+      ${planCompanyWhere}
+      ORDER BY p.created_at DESC;
     `,
     selectedCompanyId ? getCompanySettings(selectedCompanyId) : getPortalSettings(),
     getWarningsList(),
@@ -179,6 +194,8 @@ const reportsWhere = isSuperAdmin
     telegram_chat_id: t.telegram_chat_id ?? null,
     telegram_username: t.telegram_username ?? null,
     company_id: t.company_id ?? null,
+    company_name: t.company_name ?? null,
+    company_logo_url: t.company_logo_url ?? null,
     created_at:
       typeof t.created_at === "string" ? t.created_at : t.created_at.toISOString(),
   }));

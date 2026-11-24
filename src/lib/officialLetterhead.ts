@@ -15,6 +15,7 @@ import {
   DEFAULT_LETTERHEAD_CONFIG,
   type LetterheadConfig,
 } from "./portalSettings";
+import { sql } from "./db";
 
 let cachedLogoBuffer: Buffer | null | undefined;
 
@@ -49,8 +50,25 @@ export async function fetchCompanyLogoBuffer(logoUrl: string): Promise<Buffer | 
 /** Resolve a logo data URI: company URL first, then local file. */
 export async function getCompanyLogoDataUri(logoUrl?: string): Promise<string | null> {
   if (logoUrl) {
+    const uploadedFile = logoUrl.match(/^\/api\/uploads\/([\w-]+)$/);
+    if (uploadedFile) {
+      try {
+        const rows = await sql`
+          SELECT mime_type, content_base64 FROM uploaded_files WHERE id = ${uploadedFile[1]} LIMIT 1;
+        `;
+        if (rows.length > 0) {
+          return `data:${String(rows[0].mime_type || "image/png")};base64,${String(rows[0].content_base64)}`;
+        }
+      } catch {
+        // Use the default logo if a stored logo is unavailable.
+      }
+    }
     const buf = await fetchCompanyLogoBuffer(logoUrl);
-    if (buf) return `data:image/jpeg;base64,${buf.toString("base64")}`;
+    if (buf) {
+      const mime = logoUrl.match(/\.(png|webp|gif|svg)(?:[?#]|$)/i)?.[1]?.toLowerCase();
+      const mimeType = mime === "png" ? "image/png" : mime === "webp" ? "image/webp" : mime === "gif" ? "image/gif" : mime === "svg" ? "image/svg+xml" : "image/jpeg";
+      return `data:${mimeType};base64,${buf.toString("base64")}`;
+    }
   }
   const buf = getCompanyLogoBuffer();
   if (!buf) return null;

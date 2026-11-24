@@ -33,7 +33,7 @@ export async function getReportForExport(id: string): Promise<ReportRow | null> 
     const row = rows[0];
 
     // Access control: owner, admin, or super_admin
-    const isPrivileged = user.role === "admin" || user.role === "super_admin";
+    const isPrivileged = user.role === "super_admin" || (user.role === "admin" && row.company_id === user.company_id);
     if (row.user_id !== user.id && !isPrivileged) {
       return null;
     }

@@ -31,6 +31,8 @@ export interface ShellUser {
   email: string;
   full_name?: string | null;
   department?: string | null;
+  company_name?: string | null;
+  company_logo_url?: string | null;
   role: "employee" | "admin" | "super_admin";
 }
 
@@ -72,6 +74,8 @@ interface SidebarContentProps {
   initials: string;
   role: ShellUser["role"];
   isSuperAdmin: boolean;
+  companyLogo?: string | null;
+  companyName?: string | null;
   onToggleCollapse: () => void;
   onNavigate?: () => void;
 }
@@ -84,6 +88,8 @@ function SidebarContent({
   initials,
   role,
   isSuperAdmin,
+  companyLogo,
+  companyName,
   onToggleCollapse,
   onNavigate,
 }: SidebarContentProps) {
@@ -99,9 +105,9 @@ function SidebarContent({
           href="/dashboard"
           onClick={onNavigate}
           className="flex items-center gap-3 min-w-0 group"
-          title="YETAF Holding Follow-up System"
+          title={`${companyName || "YETAF Holding"} Follow-up System`}
         >
-          <BrandLogo size={collapsed && !mobile ? "compact" : "sidebar"} priority className="transition-transform duration-150 group-hover:scale-[1.03]" />
+          <BrandLogo src={companyLogo || undefined} size={collapsed && !mobile ? "compact" : "sidebar"} priority className="transition-transform duration-150 group-hover:scale-[1.03]" />
           {(!collapsed || mobile) && (
             <div className="min-w-0">
               <p
@@ -454,6 +460,8 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
           initials={initials}
           role={role}
           isSuperAdmin={isSuperAdmin}
+          companyLogo={user?.company_logo_url}
+          companyName={user?.company_name}
           onToggleCollapse={toggleCollapse}
         />
       </aside>
@@ -484,6 +492,8 @@ export function AppShell({ user, title, subtitle, children }: AppShellProps) {
               initials={initials}
               role={role}
               isSuperAdmin={isSuperAdmin}
+              companyLogo={user?.company_logo_url}
+              companyName={user?.company_name}
               onToggleCollapse={toggleCollapse}
               onNavigate={() => setMobileOpen(false)}
             />

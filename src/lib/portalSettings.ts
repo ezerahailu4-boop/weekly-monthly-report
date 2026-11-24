@@ -72,10 +72,13 @@ export async function getCompanySettings(
 ): Promise<PortalSettingsRow> {
   try {
     const companyRows = await sql`
-      SELECT name FROM companies WHERE id = ${companyId} LIMIT 1;
+      SELECT name, logo_url FROM companies WHERE id = ${companyId} LIMIT 1;
     `;
     const companyName = companyRows.length > 0
       ? (companyRows[0].name as string)
+      : null;
+    const companyLogo = companyRows.length > 0 && typeof companyRows[0].logo_url === "string"
+      ? (companyRows[0].logo_url as string)
       : null;
 
     const rows = await sql`
@@ -100,11 +103,13 @@ export async function getCompanySettings(
         penalty_policy_verified: false,
         sla_response_days: 3,
         system_name: "Directive Follow-up System",
-        letterhead_config: { ...DEFAULT_LETTERHEAD_CONFIG },
+        letterhead_config: { ...DEFAULT_LETTERHEAD_CONFIG, organizationName: companyName || DEFAULT_LETTERHEAD_CONFIG.organizationName, logo_url: companyLogo },
         erp_api_key: process.env.ERP_API_KEY || null,
         updated_at: null,
       };
     }
+
+    const letterheadConfig = normalizeLetterheadConfig(r.letterhead_config);
 
     return {
       window_mode: (r.window_mode as WindowMode) || DEFAULT_WINDOW_CONFIG.window_mode,
@@ -135,7 +140,11 @@ export async function getCompanySettings(
         typeof r.system_name === "string" && r.system_name.trim()
           ? r.system_name.trim()
           : "Directive Follow-up System",
-      letterhead_config: normalizeLetterheadConfig(r.letterhead_config),
+      letterhead_config: {
+        ...letterheadConfig,
+        organizationName: companyName || letterheadConfig.organizationName,
+        logo_url: letterheadConfig.logo_url || companyLogo,
+      },
       erp_api_key: r.erp_api_key || process.env.ERP_API_KEY || null,
       updated_at: r.updated_at
         ? typeof r.updated_at === "string"

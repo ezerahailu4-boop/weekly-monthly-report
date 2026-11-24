@@ -11,7 +11,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
 } from "recharts";
 import type { ReportRow } from "@/types/report";
 import type { TaskRow } from "@/types/task";
@@ -29,12 +28,8 @@ function getWeekKey(dateStr: string): string {
   const diff = dow === 0 ? -6 : 1 - dow;
   const mon = new Date(d);
   mon.setUTCDate(d.getUTCDate() + diff);
-  const m = String(mon.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(mon.getUTCDate()).padStart(2, "0");
-  return `${m}/${day}`;
+  return mon.toISOString().slice(0, 10);
 }
-
-const SHORT_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 export function AdminAnalytics({ reports, staffList, tasks, plans }: Props) {
   const submitted = reports.filter((r) => r.status !== "draft");
@@ -48,21 +43,27 @@ export function AdminAnalytics({ reports, staffList, tasks, plans }: Props) {
   const employees = staffList.filter((s) => s.role === "employee");
 
   // ── 1. Submissions over last 8 weeks ──────────────────────────────────────
-  const weekMap: Record<string, { weekly: number; monthly: number }> = {};
+  const weekMap: Record<string, { weekly: number }> = {};
   const now = new Date();
+  const currentWeekStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const currentDow = currentWeekStart.getUTCDay();
+  currentWeekStart.setUTCDate(currentWeekStart.getUTCDate() + (currentDow === 0 ? -6 : 1 - currentDow));
   for (let i = 7; i >= 0; i--) {
-    const d = new Date(now);
-    d.setUTCDate(now.getUTCDate() - i * 7);
-    const key = getWeekKey(d.toISOString().slice(0, 10));
-    weekMap[key] = { weekly: 0, monthly: 0 };
+    const d = new Date(currentWeekStart);
+    d.setUTCDate(currentWeekStart.getUTCDate() - i * 7);
+    const key = d.toISOString().slice(0, 10);
+    weekMap[key] = { weekly: 0 };
   }
   for (const r of submitted) {
+    if (r.report_type !== "weekly") continue;
     const key = getWeekKey(r.created_at.slice(0, 10));
-    if (weekMap[key]) {
-      weekMap[key][r.report_type === "weekly" ? "weekly" : "monthly"] += 1;
-    }
+    if (weekMap[key]) weekMap[key].weekly += 1;
   }
-  const weeklyData = Object.entries(weekMap).map(([week, v]) => ({ week, ...v }));
+  const weeklyData = Object.entries(weekMap).map(([weekStart, v]) => ({
+    week: new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(`${weekStart}T00:00:00Z`)),
+    ...v,
+  }));
+  const recentWeeklyTotal = weeklyData.reduce((sum, week) => sum + week.weekly, 0);
 
   // ── 2. Status breakdown (donut) ───────────────────────────────────────────
   const draft = reports.filter((r) => r.status === "draft").length;
@@ -95,15 +96,20 @@ export function AdminAnalytics({ reports, staffList, tasks, plans }: Props) {
   const monthMap: Record<string, number> = {};
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getUTCFullYear(), now.getUTCMonth() - i, 1);
-    const key = `${SHORT_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     monthMap[key] = 0;
   }
   for (const r of submitted) {
+    if (r.report_type !== "monthly") continue;
     const d = new Date(r.created_at);
-    const key = `${SHORT_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
     if (key in monthMap) monthMap[key] += 1;
   }
-  const monthlyTrend = Object.entries(monthMap).map(([month, count]) => ({ month, count }));
+  const monthlyTrend = Object.entries(monthMap).map(([monthKey, count]) => ({
+    month: new Intl.DateTimeFormat("en", { month: "short", year: "2-digit", timeZone: "UTC" }).format(new Date(`${monthKey}-01T00:00:00Z`)),
+    count,
+  }));
+  const recentMonthlyTotal = monthlyTrend.reduce((sum, month) => sum + month.count, 0);
 
   // ── 5. Top submitters ─────────────────────────────────────────────────────
   const submitterMap: Record<string, { name: string; count: number }> = {};
@@ -165,18 +171,21 @@ export function AdminAnalytics({ reports, staffList, tasks, plans }: Props) {
       {/* Row 1: Weekly submissions + Status donut */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-xl border border-border bg-card p-5 shadow-xs">
-          <p className="text-sm font-bold text-foreground mb-4">Submissions — Last 8 Weeks</p>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={weeklyData} barGap={2}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="week" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)", opacity: 0.4 }} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="weekly" name="Weekly" fill="var(--brand)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="monthly" name="Monthly" fill="var(--accent)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <p className="text-sm font-bold text-foreground mb-4">Weekly Filings — Last 8 Weeks</p>
+          <p className="mb-4 text-xs text-muted-foreground">Weekly report filings counted by submission date; current week is in progress.</p>
+          {recentWeeklyTotal === 0 ? (
+            <div className="flex h-[220px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 px-5 text-center text-sm text-muted-foreground">No weekly reports have been submitted in this period.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={weeklyData} barGap={2}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="week" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)", opacity: 0.4 }} />
+                <Bar dataKey="weekly" name="Weekly reports" fill="var(--brand)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5 shadow-xs">
@@ -192,7 +201,6 @@ export function AdminAnalytics({ reports, staffList, tasks, plans }: Props) {
                   ))}
                 </Pie>
                 <Tooltip contentStyle={tooltipStyle} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
               </PieChart>
             </ResponsiveContainer>
           )}
@@ -202,16 +210,21 @@ export function AdminAnalytics({ reports, staffList, tasks, plans }: Props) {
       {/* Row 2: Monthly trend + Department compliance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="rounded-xl border border-border bg-card p-5 shadow-xs">
-          <p className="text-sm font-bold text-foreground mb-4">Monthly Submission Trend</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={monthlyTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)", opacity: 0.4 }} />
-              <Bar dataKey="count" name="Submissions" fill="var(--brand)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <p className="text-sm font-bold text-foreground mb-4">Monthly Filings — Last 6 Months</p>
+          <p className="mb-4 text-xs text-muted-foreground">Monthly report filings grouped by submission month.</p>
+          {recentMonthlyTotal === 0 ? (
+            <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 px-5 text-center text-sm text-muted-foreground">No monthly reports have been submitted in this period.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={monthlyTrend}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)", opacity: 0.4 }} />
+                <Bar dataKey="count" name="Monthly reports" fill="var(--brand)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5 shadow-xs">

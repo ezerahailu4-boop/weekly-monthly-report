@@ -17,6 +17,7 @@ export interface AuthUser {
   company_id: string | null;
   company_name: string | null;
   company_slug: string | null;
+  company_logo_url: string | null;
   telegram_chat_id?: string | null;
   telegram_username?: string | null;
 }
@@ -37,7 +38,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
     const rows = await sql`
       SELECT u.id, u.email, u.full_name, u.department, u.role, u.company_id,
-             c.name as company_name, c.slug as company_slug,
+             c.name as company_name, c.slug as company_slug, c.logo_url as company_logo_url,
              u.telegram_chat_id, u.telegram_username
       FROM sessions s
       JOIN users u ON s.user_id = u.id
@@ -58,6 +59,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       company_id: u.company_id ?? null,
       company_name: u.company_name ?? null,
       company_slug: u.company_slug ?? null,
+      company_logo_url: u.company_logo_url ?? null,
       telegram_chat_id: u.telegram_chat_id ?? null,
       telegram_username: u.telegram_username ?? null,
     };

@@ -128,7 +128,7 @@ export default function NewMonthlyReportPage({ userName }: { userName: string })
         // ignore
       }
 
-      router.push("/dashboard");
+      router.push(`/reports/${json.report.id}`);
       router.refresh();
     } catch (err: unknown) {
       setSavingStatus("idle");

@@ -113,9 +113,19 @@ export async function POST(request: Request) {
       RETURNING id, email, full_name, department, role, telegram_chat_id, telegram_username, company_id, created_at;
     `;
 
+    const userRows = await sql`
+      SELECT u.id, u.email, u.full_name, u.department, u.role,
+             u.telegram_chat_id, u.telegram_username, u.company_id, u.created_at,
+             c.name AS company_name, c.logo_url AS company_logo_url
+      FROM users u
+      LEFT JOIN companies c ON c.id = u.company_id
+      WHERE u.id = ${rows[0].id}
+      LIMIT 1;
+    `;
+
     return NextResponse.json({
       success: true,
-      user: rows[0],
+      user: userRows[0],
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Database error";
@@ -150,12 +160,15 @@ export async function DELETE(request: Request) {
 
   try {
     // Check target's role
-    const targetRows = await sql`SELECT role FROM users WHERE id = ${targetId} LIMIT 1;`;
+    const targetRows = await sql`SELECT role, company_id FROM users WHERE id = ${targetId} LIMIT 1;`;
     if (targetRows.length === 0) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
 
     const targetRole = targetRows[0].role;
+    if (currentUser.role !== "super_admin" && targetRows[0].company_id !== currentUser.company_id) {
+      return NextResponse.json({ error: "You can only manage users in your company." }, { status: 403 });
+    }
     if (targetRole === "super_admin") {
       return NextResponse.json(
         { error: "Super Admin accounts cannot be deleted." },
@@ -189,14 +202,14 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    const { id, full_name, department, role, telegram_chat_id } = await request.json();
+    const { id, full_name, department, role, telegram_chat_id, company_id } = await request.json();
 
     if (!id) {
       return NextResponse.json({ error: "Missing user ID." }, { status: 400 });
     }
 
     const existingRows = await sql`
-      SELECT id, role, full_name, department, telegram_chat_id, telegram_linked_at
+      SELECT id, role, full_name, department, telegram_chat_id, telegram_linked_at, company_id
       FROM users WHERE id = ${id} LIMIT 1;
     `;
     if (existingRows.length === 0) {
@@ -204,6 +217,9 @@ export async function PATCH(request: Request) {
     }
 
     const existing = existingRows[0];
+    if (currentUser.role !== "super_admin" && existing.company_id !== currentUser.company_id) {
+      return NextResponse.json({ error: "You can only manage users in your company." }, { status: 403 });
+    }
     if (existing.role === "super_admin" && currentUser.role !== "super_admin") {
       return NextResponse.json(
         { error: "Only a Super Admin can modify a Super Admin account." },
@@ -233,18 +249,40 @@ export async function PATCH(request: Request) {
       ? existing.telegram_linked_at || new Date().toISOString()
       : null;
 
+    let nextCompanyId = existing.company_id;
+    if (company_id !== undefined) {
+      if (currentUser.role !== "super_admin") {
+        return NextResponse.json({ error: "Only a Super Admin can change a user's company." }, { status: 403 });
+      }
+      if (typeof company_id !== "string" || !company_id.trim()) {
+        return NextResponse.json({ error: "Choose a company." }, { status: 400 });
+      }
+      const companyRows = await sql`SELECT id FROM companies WHERE id = ${company_id.trim()} AND is_active = true LIMIT 1;`;
+      if (companyRows.length === 0) {
+        return NextResponse.json({ error: "Choose an active company." }, { status: 400 });
+      }
+      nextCompanyId = companyRows[0].id;
+    }
+
     const rows = await sql`
       UPDATE users
       SET full_name = ${typeof full_name === "string" && full_name.trim() ? full_name.trim() : existing.full_name},
           department = ${typeof department === "string" && department.trim() ? department.trim() : existing.department},
           role = ${nextRole},
           telegram_chat_id = ${cleanChatId},
-          telegram_linked_at = ${nextLinkedAt}
+          telegram_linked_at = ${nextLinkedAt},
+          company_id = ${nextCompanyId}
       WHERE id = ${id}
-      RETURNING id, email, full_name, department, role, telegram_chat_id, telegram_username, created_at;
+      RETURNING id, email, full_name, department, role, telegram_chat_id, telegram_username, company_id, created_at;
     `;
-
-    return NextResponse.json({ success: true, user: rows[0] });
+    const userRows = await sql`
+      SELECT u.id, u.email, u.full_name, u.department, u.role,
+             u.telegram_chat_id, u.telegram_username, u.company_id, u.created_at,
+             c.name AS company_name, c.logo_url AS company_logo_url
+      FROM users u LEFT JOIN companies c ON c.id = u.company_id
+      WHERE u.id = ${rows[0].id} LIMIT 1;
+    `;
+    return NextResponse.json({ success: true, user: userRows[0] });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Database error";
     return NextResponse.json({ error: message }, { status: 500 });

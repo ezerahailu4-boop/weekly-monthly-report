@@ -12,7 +12,7 @@ import {
   ShadingType,
 } from "docx";
 import { getReportForExport } from "@/lib/getReportForExport";
-import { getPortalSettings, type LetterheadConfig } from "@/lib/portalSettings";
+import { getCompanySettings, getPortalSettings, type LetterheadConfig } from "@/lib/portalSettings";
 import {
   buildOfficialDocxFooterBlock,
   buildOfficialDocxLetterhead,
@@ -202,13 +202,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const [report, settings] = await Promise.all([
-    getReportForExport(id),
-    getPortalSettings(),
-  ]);
+  const report = await getReportForExport(id);
   if (!report) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+  const settings = report.company_id
+    ? await getCompanySettings(report.company_id)
+    : await getPortalSettings();
 
   const children =
     report.report_type === "weekly"

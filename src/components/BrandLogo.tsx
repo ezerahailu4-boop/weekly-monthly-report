@@ -30,6 +30,7 @@ export function BrandLogo({
         alt={src ? "Company logo" : "YETAF Holding Limited"}
         fill
         priority={priority}
+        unoptimized={Boolean(src)}
         sizes={size === "hero" ? "260px" : size === "letterhead" ? "136px" : "104px"}
         className="object-contain"
       />

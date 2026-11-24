@@ -31,7 +31,7 @@ export async function PUT(
 
   // Verify ownership or admin/super_admin role
   const existingRows = await sql`
-    SELECT id, user_id, status, reviewed_by, reviewed_at FROM reports WHERE id = ${id} LIMIT 1;
+    SELECT id, user_id, company_id, status, reviewed_by, reviewed_at FROM reports WHERE id = ${id} LIMIT 1;
   `;
 
   if (existingRows.length === 0) {
@@ -39,7 +39,7 @@ export async function PUT(
   }
 
   const report = existingRows[0];
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
+  const isPrivileged = user.role === "super_admin" || (user.role === "admin" && report.company_id === user.company_id);
   if (report.user_id !== user.id && !isPrivileged) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -150,7 +150,7 @@ export async function DELETE(
   const { id } = await params;
 
   const existingRows = await sql`
-    SELECT id, user_id FROM reports WHERE id = ${id} LIMIT 1;
+    SELECT id, user_id, company_id FROM reports WHERE id = ${id} LIMIT 1;
   `;
 
   if (existingRows.length === 0) {
@@ -158,7 +158,7 @@ export async function DELETE(
   }
 
   const report = existingRows[0];
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
+  const isPrivileged = user.role === "super_admin" || (user.role === "admin" && report.company_id === user.company_id);
   if (report.user_id !== user.id && !isPrivileged) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

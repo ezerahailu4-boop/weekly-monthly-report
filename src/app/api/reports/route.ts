@@ -53,7 +53,9 @@ export async function POST(request: Request) {
 
     // Notify admins via Telegram when a report is submitted (not draft)
     if (safeStatus === "submitted") {
-      const admins = await sql`SELECT id FROM users WHERE role IN ('admin', 'super_admin') AND id <> ${user.id};`;
+      const admins = user.role === "super_admin"
+        ? await sql`SELECT id FROM users WHERE role = 'super_admin' AND id <> ${user.id};`
+        : await sql`SELECT id FROM users WHERE role IN ('admin', 'super_admin') AND company_id = ${user.company_id} AND id <> ${user.id};`;
       await Promise.all(admins.map((admin) => createNotification({ userId: admin.id, title: "Report submitted", message: `${user.full_name} submitted a ${report_type} report.`, href: `/reports/${rows[0].id}`, kind: "info" })));
       const origin = request.headers.get("origin") || request.headers.get("referer")?.split("/").slice(0, 3).join("/") || null;
       notifyAdminsReportSubmitted({

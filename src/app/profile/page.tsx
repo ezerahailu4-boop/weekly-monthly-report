@@ -55,7 +55,7 @@ export default async function ProfilePage() {
           <StatCard
             title="Account Role"
             value={user.role?.replace("_", " ").toUpperCase() || "STAFF"}
-            caption={`${user.department || "Division not set"}`}
+            caption={[user.company_name, user.department].filter(Boolean).join(" · ") || "Company or department not set"}
             icon={
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand/10 text-brand">
                 <IconShield size={16} />

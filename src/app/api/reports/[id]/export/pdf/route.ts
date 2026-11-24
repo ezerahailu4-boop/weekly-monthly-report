@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { chromium } from "playwright";
 import { getReportForExport } from "@/lib/getReportForExport";
-import { getPortalSettings } from "@/lib/portalSettings";
+import { getCompanySettings, getPortalSettings } from "@/lib/portalSettings";
 import { renderReportHtml } from "@/lib/reportHtml";
 
 export async function GET(
@@ -9,13 +9,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const [report, settings] = await Promise.all([
-    getReportForExport(id),
-    getPortalSettings(),
-  ]);
+  const report = await getReportForExport(id);
   if (!report) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+  const settings = report.company_id
+    ? await getCompanySettings(report.company_id)
+    : await getPortalSettings();
 
   const html = await renderReportHtml(report, settings.letterhead_config);
 

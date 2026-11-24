@@ -13,10 +13,14 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
+  const planScope =
+    user.role === "super_admin"
+      ? sql``
+      : user.role === "admin"
+        ? sql`WHERE u.company_id = ${user.company_id}`
+        : sql`WHERE p.user_id = ${user.id}`;
 
-  const rows = isPrivileged
-    ? await sql`
+  const rows = await sql`
         SELECT p.id, p.reference_code, p.user_id, p.directive_id, p.title, p.department,
                to_char(p.period_start, 'YYYY-MM-DD') as period_start,
                to_char(p.period_end, 'YYYY-MM-DD') as period_end,
@@ -29,24 +33,9 @@ export async function GET() {
         JOIN users u ON p.user_id = u.id
         LEFT JOIN users rev ON p.reviewed_by = rev.id
         LEFT JOIN directives d ON p.directive_id = d.id
+        ${planScope}
         ORDER BY p.created_at DESC;
       `
-    : await sql`
-        SELECT p.id, p.reference_code, p.user_id, p.directive_id, p.title, p.department,
-               to_char(p.period_start, 'YYYY-MM-DD') as period_start,
-               to_char(p.period_end, 'YYYY-MM-DD') as period_end,
-               p.entry_mode, p.objectives, p.summary, p.attachments, p.status,
-               p.review_notes, p.reviewed_by, p.reviewed_at, p.created_at, p.updated_at,
-               u.full_name as author_name, u.email as author_email,
-               rev.full_name as reviewer_name,
-               d.reference_code as directive_ref, d.title as directive_title
-        FROM action_plans p
-        JOIN users u ON p.user_id = u.id
-        LEFT JOIN users rev ON p.reviewed_by = rev.id
-        LEFT JOIN directives d ON p.directive_id = d.id
-        WHERE p.user_id = ${user.id}
-        ORDER BY p.created_at DESC;
-      `;
 
   return NextResponse.json({ success: true, plans: rows });
 }

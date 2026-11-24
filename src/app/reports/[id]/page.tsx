@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { getPortalSettings, getReportingWindowStatus } from "@/lib/portalSettings";
+import { getCompanySettings, getPortalSettings, getReportingWindowStatus } from "@/lib/portalSettings";
 import { renderReportHtml } from "@/lib/reportHtml";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ReportActionButtons } from "@/components/ReportActionButtons";
@@ -47,7 +47,7 @@ export default async function ReportDetailPage({
 
   const row = rows[0];
 
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
+  const isPrivileged = user.role === "super_admin" || (user.role === "admin" && row.company_id === user.company_id);
   const isOwner = user.id === row.user_id;
   const isOwnerOrAdmin = isOwner || isPrivileged;
 
@@ -55,7 +55,7 @@ export default async function ReportDetailPage({
 
   const [windowStatus, settings] = await Promise.all([
     getReportingWindowStatus(),
-    getPortalSettings(),
+    row.company_id ? getCompanySettings(row.company_id) : getPortalSettings(),
   ]);
   const activityRows = await sql`
     SELECT a.action, a.details, a.created_at, u.full_name AS actor_name

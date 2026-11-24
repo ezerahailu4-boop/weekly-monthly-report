@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   IconBell,
   IconCheck,
@@ -26,12 +27,15 @@ export interface TeamMember {
   telegram_chat_id?: string | null;
   telegram_username?: string | null;
   company_id?: string | null;
+  company_name?: string | null;
+  company_logo_url?: string | null;
 }
 
 export interface CompanyOption {
   id: string;
   name: string;
   is_active: boolean;
+  logo_url?: string | null;
 }
 
 const DEPARTMENTS = [
@@ -59,12 +63,14 @@ export function AdminUserManagement({
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
+  const [companyFilter, setCompanyFilter] = useState("all");
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [department, setDepartment] = useState("Operations & Logistics");
   const [companyId, setCompanyId] = useState("");
+  const [editCompanyId, setEditCompanyId] = useState("");
   const [role, setRole] = useState<"employee" | "admin" | "super_admin">("employee");
   const [telegramChatId, setTelegramChatId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -82,11 +88,13 @@ export function AdminUserManagement({
     fullName: string;
     role: string;
     department: string;
+    companyName: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const isSuperAdmin = currentUserRole === "super_admin";
+  const selectedCompany = companies.find((company) => company.id === companyId);
 
   function generateRandomPassword() {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
@@ -131,6 +139,7 @@ export function AdminUserManagement({
         fullName,
         role,
         department,
+          companyName: data.user?.company_name || companies.find((company) => company.id === companyId)?.name || companies[0]?.name || "",
       });
 
       if (data.user) {
@@ -154,6 +163,7 @@ export function AdminUserManagement({
     setEditingMember(member);
     setEditName(member.full_name || "");
     setEditDepartment(member.department || "Logistics");
+    setEditCompanyId(member.company_id || "");
     setEditRole(member.role);
     setEditChatId(member.telegram_chat_id || "");
     setEditError(null);
@@ -173,6 +183,7 @@ export function AdminUserManagement({
           id: editingMember.id,
           full_name: editName,
           department: editDepartment,
+          company_id: isSuperAdmin ? editCompanyId : undefined,
           role: editRole,
           telegram_chat_id: editChatId.trim(),
         }),
@@ -231,13 +242,15 @@ export function AdminUserManagement({
 
   const filteredTeam = team.filter((m) => {
     const matchesDept = deptFilter === "all" || m.department === deptFilter;
+    const matchesCompany = companyFilter === "all" || m.company_id === companyFilter;
     const q = search.toLowerCase();
     const matchesSearch =
       !search ||
       (m.full_name && m.full_name.toLowerCase().includes(q)) ||
       (m.email && m.email.toLowerCase().includes(q)) ||
-      (m.department && m.department.toLowerCase().includes(q));
-    return matchesDept && matchesSearch;
+      (m.department && m.department.toLowerCase().includes(q)) ||
+      (m.company_name && m.company_name.toLowerCase().includes(q));
+    return matchesDept && matchesCompany && matchesSearch;
   });
 
   const superAdminCount = team.filter((m) => m.role === "super_admin").length;
@@ -346,16 +359,20 @@ export function AdminUserManagement({
             <p><strong>Name:</strong> {createdCredentials.fullName}</p>
             <p><strong>Email:</strong> {createdCredentials.email}</p>
             <p><strong>Temporary Password:</strong> {createdCredentials.password}</p>
+            <p><strong>Company:</strong> {createdCredentials.companyName || "Assigned company"}</p>
             <p><strong>Department:</strong> {createdCredentials.department}</p>
             <p><strong>Role:</strong> <span className="capitalize">{createdCredentials.role}</span></p>
           </div>
+          <p className="mt-2 text-[11px] text-emerald-800 dark:text-emerald-300">
+            Share the initial password privately and ask the user to change it from Profile after signing in.
+          </p>
 
           <div className="mt-3 flex gap-2">
             <button
               type="button"
               onClick={() =>
                 copyToClipboard(
-                  `Yetaf Holding Reporting Portal\nPortal Login: ${window.location.origin}/login\nEmail: ${createdCredentials.email}\nTemporary Password: ${createdCredentials.password}\nRole: ${createdCredentials.role}`
+                  `Yetaf Holding Reporting Portal\nPortal Login: ${window.location.origin}/login\nEmail: ${createdCredentials.email}\nTemporary Password: ${createdCredentials.password}\nCompany: ${createdCredentials.companyName || "Assigned company"}\nDepartment: ${createdCredentials.department}\nRole: ${createdCredentials.role}\nPlease change your password after signing in.`
                 )
               }
               className="rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity shadow-2xs"
@@ -382,18 +399,18 @@ export function AdminUserManagement({
           />
         </div>
 
-        <select
-          value={deptFilter}
-          onChange={(e) => setDeptFilter(e.target.value)}
-          className="rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground shadow-2xs focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-        >
-          <option value="all">All Departments</option>
-          {DEPARTMENTS.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          {isSuperAdmin && (
+            <select aria-label="Filter users by company" value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)} className="rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground shadow-2xs focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20">
+              <option value="all">All companies</option>
+              {companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
+            </select>
+          )}
+          <select aria-label="Filter users by department" value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className="rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground shadow-2xs focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20">
+            <option value="all">All Departments</option>
+            {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </div>
       </div>
 
       {/* Team Roster Table */}
@@ -403,7 +420,8 @@ export function AdminUserManagement({
             <thead className="sticky top-0 z-10 border-b border-border bg-muted/70 backdrop-blur-xs font-semibold text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">Staff Member</th>
-                <th className="px-4 py-3">Division / Department</th>
+                <th className="px-4 py-3">Company</th>
+                <th className="px-4 py-3">Department</th>
                 <th className="px-4 py-3">Assigned Role</th>
                 <th className="px-4 py-3">Telegram Alerts</th>
                 <th className="px-4 py-3">Joined Date</th>
@@ -443,6 +461,17 @@ export function AdminUserManagement({
                           </p>
                           <p className="text-[11px] text-muted-foreground">{member.email}</p>
                         </div>
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3.5">
+                      <div className="flex min-w-36 items-center gap-2">
+                        {member.company_logo_url ? (
+                          <Image src={member.company_logo_url} alt="" width={28} height={28} unoptimized className="h-7 w-7 rounded-md border border-border bg-white object-contain p-0.5" />
+                        ) : (
+                          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-[9px] font-bold text-primary">{(member.company_name || "?").split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span>
+                        )}
+                        <span className="font-medium text-foreground">{member.company_name || "Unassigned"}</span>
                       </div>
                     </td>
 
@@ -523,21 +552,21 @@ export function AdminUserManagement({
 
         <div className="border-t border-border bg-muted/40 px-4 py-2.5 text-xs text-muted-foreground flex items-center justify-between">
           <span>Showing {filteredTeam.length} of {team.length} registered accounts</span>
-          <span className="font-mono text-[10px]">AUTH DOMAIN: @YETAF-HOLDING.COM</span>
+          <span className="text-[10px]">Company-scoped access · assigned users only</span>
         </div>
       </div>
 
       {/* Provision Account Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs animate-in fade-in-50">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-150">
+          <div role="dialog" aria-modal="true" aria-labelledby="provision-account-title" className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-2xl animate-in zoom-in-95 duration-150 sm:p-6">
             <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <IconPlus size={16} />
                 </div>
                 <div>
-                  <h3 className="font-display text-base font-bold text-foreground">
+                  <h3 id="provision-account-title" className="font-display text-base font-bold text-foreground">
                     Provision Corporate Account
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
@@ -576,7 +605,7 @@ export function AdminUserManagement({
                 <input
                   type="email"
                   required
-                  placeholder="name@yetaf-holding.com"
+                  placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
@@ -610,20 +639,26 @@ export function AdminUserManagement({
                   Company {isSuperAdmin && <span className="text-rose-600">*</span>}
                 </label>
                 {isSuperAdmin ? (
-                  <select
-                    required
-                    value={companyId}
-                    onChange={(e) => setCompanyId(e.target.value)}
-                    className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  >
-                    <option value="" disabled>Select a company</option>
-                    {companies.filter((company) => company.is_active).map((company) => (
-                      <option key={company.id} value={company.id}>{company.name}</option>
-                    ))}
-                  </select>
+                  <>
+                    <select
+                      required
+                      value={companyId}
+                      onChange={(e) => setCompanyId(e.target.value)}
+                      className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                    >
+                      <option value="" disabled>Select a company</option>
+                      {companies.filter((company) => company.is_active).map((company) => (
+                        <option key={company.id} value={company.id}>{company.name}</option>
+                      ))}
+                    </select>
+                    {selectedCompany?.logo_url && <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground"><Image src={selectedCompany.logo_url} alt="" width={28} height={28} unoptimized className="h-7 w-7 rounded-md border border-border bg-white object-contain p-1" />Company brand preview</div>}
+                  </>
                 ) : (
                   <div className="w-full rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm font-medium text-foreground">
-                    {companies[0]?.name ?? "No company assigned"}
+                    <span className="inline-flex items-center gap-2">
+                      {companies[0]?.logo_url && <Image src={companies[0].logo_url} alt="" width={24} height={24} unoptimized className="h-6 w-6 rounded border border-border bg-white object-contain p-0.5" />}
+                      {companies[0]?.name ?? "No company assigned"}
+                    </span>
                   </div>
                 )}
                 <p className="mt-1 text-[11px] text-muted-foreground">
@@ -723,14 +758,14 @@ export function AdminUserManagement({
       {/* Edit User & Telegram Modal */}
       {editingMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs animate-in fade-in-50">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-150">
+          <div role="dialog" aria-modal="true" aria-labelledby="edit-account-title" className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-2xl animate-in zoom-in-95 duration-150 sm:p-6">
             <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent">
                   <IconEdit size={16} />
                 </div>
                 <div>
-                  <h3 className="font-display text-base font-bold text-foreground">
+                  <h3 id="edit-account-title" className="font-display text-base font-bold text-foreground">
                     Edit User &amp; Telegram ID
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
@@ -763,7 +798,21 @@ export function AdminUserManagement({
 
               <div>
                 <label className="block text-xs font-semibold text-foreground mb-1">
-                  Department / Subsidiary
+                  Company {isSuperAdmin && <span className="text-rose-600">*</span>}
+                </label>
+                {isSuperAdmin ? (
+                  <select required value={editCompanyId} onChange={(e) => setEditCompanyId(e.target.value)} className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20">
+                    <option value="" disabled>Select a company</option>
+                    {companies.filter((company) => company.is_active).map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
+                  </select>
+                ) : (
+                  <div className="w-full rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs font-medium text-foreground">{editingMember.company_name || "No company assigned"}</div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">
+                  Department
                 </label>
                 <select
                   value={editDepartment}
