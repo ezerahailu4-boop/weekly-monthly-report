@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { BrandLogo } from "@/components/BrandLogo";
+import { ThemeToggle } from "@/components/ThemeProvider";
 import {
   IconAlertCircle,
   IconArrowLeft,
@@ -97,7 +98,8 @@ export default function ResetPasswordPage() {
 
   if (!tokenValid) {
     return (
-      <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden">
+      <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden gradient-main">
+        <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6"><ThemeToggle /></div>
         <div className="relative z-10 w-full max-w-sm">
           <div className="flex flex-col items-center gap-4 text-center py-8">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive mx-auto mb-6">
@@ -123,22 +125,16 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand/20 blur-[120px] rounded-full -z-10" />
-      <div className="absolute bottom-0 right-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-accent/20 blur-[120px] rounded-full -z-10" />
+    <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 overflow-hidden gradient-main">
+      <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6"><ThemeToggle /></div>
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/15 blur-[120px] rounded-full -z-10" />
+      <div className="absolute bottom-0 right-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-accent/15 blur-[120px] rounded-full -z-10" />
 
       <div className="relative z-10 w-full max-w-sm space-y-8">
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-card ring-1 ring-border shadow-sm">
-            <Image
-              src="/logo.jpg"
-              alt="YETAF"
-              width={112}
-              height={112}
-              className="h-full w-full object-contain"
-              priority
-            />
-          </div>
+          <Link href="/" aria-label="YETAF Holding home" className="inline-flex rounded-2xl transition-transform hover:scale-[1.02]">
+            <BrandLogo size="letterhead" priority />
+          </Link>
           <div>
             <h1 className="font-display text-3xl font-extrabold tracking-tight text-foreground">
               Reset Password

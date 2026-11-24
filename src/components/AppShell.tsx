@@ -210,7 +210,7 @@ function SidebarContent({
           <div
             className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
               isSuperAdmin
-                ? "bg-zinc-950 text-amber-300 ring-1 ring-amber-500/40"
+                ? "bg-amber-500/20 text-amber-800 dark:bg-amber-950 dark:text-amber-300 ring-1 ring-amber-500/40"
                 : "bg-primary text-primary-foreground"
             }`}
           >

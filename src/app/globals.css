@@ -30,18 +30,18 @@
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   /* Warm Luxury custom colors */
-  --color-gold: #D6A64B;
-  --color-gold-foreground: #153D30;
-  --color-champagne: #D9CBA9;
-  --color-champagne-foreground: #153D30;
-  --color-deep-emerald: #006B45;
-  --color-deep-emerald-foreground: #FFF7E6;
-  --color-warm-cream: #FFF7E6;
-  --color-warm-cream-foreground: #153D30;
-  --color-body: #3A4A42;
-  --color-body-foreground: #FFF7E6;
-  --color-heading: #153D30;
-  --color-heading-foreground: #FFF7E6;
+  --color-gold: #C8973A;
+  --color-gold-foreground: #122A1F;
+  --color-champagne: #E2D9C8;
+  --color-champagne-foreground: #122A1F;
+  --color-deep-emerald: #0A5238;
+  --color-deep-emerald-foreground: #FAF8F5;
+  --color-warm-cream: #FAF8F5;
+  --color-warm-cream-foreground: #122A1F;
+  --color-body: #33463D;
+  --color-body-foreground: #FAF8F5;
+  --color-heading: #122A1F;
+  --color-heading-foreground: #FAF8F5;
 
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display: "Playfair Display", Georgia, serif;
@@ -54,110 +54,109 @@
   --radius-2xl: calc(var(--radius) + 8px);
 }
 
-/* ─── Light Theme · Warm Luxury · Cream + Deep Emerald + Champagne Gold ─── */
-/* WCAG AA contrast: body #3A4A42 on #F7F0DE = 4.6:1 */
+/* ─── Light Theme · Warm Luxury · Modern Executive Alabaster & Royal Emerald ─── */
+/* WCAG AAA contrast: foreground #122A1F on #FAF8F5 = 13.5:1 */
 :root {
   --radius: 0.75rem;
 
-  --background: #F7F0DE;
-  --foreground: #153D30;
+  --background: #FAF8F5;
+  --foreground: #122A1F;
 
-  --card: #FFF7E6;
-  --card-foreground: #153D30;
+  --card: #FFFFFF;
+  --card-foreground: #122A1F;
 
-  --popover: #FFF7E6;
-  --popover-foreground: #153D30;
+  --popover: #FFFFFF;
+  --popover-foreground: #122A1F;
 
-  --primary: #006B45;
-  --primary-foreground: #FFF7E6;
+  --primary: #0A5238;
+  --primary-foreground: #FFFFFF;
 
-  --secondary: #E9DFC4;
-  --secondary-foreground: #153D30;
+  --secondary: #F1ECE2;
+  --secondary-foreground: #122A1F;
 
-  /* Muted text — raised contrast from #52645A to #3A4A42 */
-  --muted: #D9CBA9;
-  --muted-foreground: #3A4A42;
+  --muted: #EBE5D8;
+  --muted-foreground: #556B60;
 
-  --accent: #D6A64B;
-  --accent-foreground: #153D30;
+  --accent: #C8973A;
+  --accent-foreground: #122A1F;
 
-  --destructive: #DC5550;
-  --destructive-foreground: #FFF7E6;
+  --destructive: #DC3838;
+  --destructive-foreground: #FFFFFF;
 
-  --border: #D9CBA9;
-  --input: #D9CBA9;
-  --ring: #006B45;
+  --border: #E5DEC9;
+  --input: #E5DEC9;
+  --ring: #0A5238;
 
-  --brand: #006B45;
-  --brand-foreground: #FFF7E6;
+  --brand: #0A5238;
+  --brand-foreground: #FFFFFF;
 
-  --sidebar: #063D2B;
-  --sidebar-foreground: #FFF7E6;
-  --sidebar-border: #0D6344;
-  --sidebar-accent: #D6A64B;
-  --sidebar-accent-foreground: #153D30;
-  --sidebar-light-bg: #E5EDE7;
-  --sidebar-light-text: #263B30;
-  --sidebar-light-icon: #405F4C;
-  --sidebar-light-active-bg: #D0E0D5;
-  --sidebar-light-active-text: #064D35;
-  --sidebar-light-active-icon: #08764F;
-  --sidebar-light-hover-text: #173D30;
-  --sidebar-light-section: #3A4A42;
-  --sidebar-light-divider: #CAD7CD;
-  --sidebar-light-profile-name: #263B30;
-  --sidebar-light-profile-desc: #52645A;
+  --sidebar: #06261B;
+  --sidebar-foreground: #FAF8F5;
+  --sidebar-border: #0C4633;
+  --sidebar-accent: #C8973A;
+  --sidebar-accent-foreground: #122A1F;
+  --sidebar-light-bg: #F0F5F2;
+  --sidebar-light-text: #1C3328;
+  --sidebar-light-icon: #3A574A;
+  --sidebar-light-active-bg: #D8E7E0;
+  --sidebar-light-active-text: #06452E;
+  --sidebar-light-active-icon: #0A6343;
+  --sidebar-light-hover-text: #122A1F;
+  --sidebar-light-section: #556B60;
+  --sidebar-light-divider: #D2DED8;
+  --sidebar-light-profile-name: #1C3328;
+  --sidebar-light-profile-desc: #556B60;
 }
 
-/* ─── Dark Theme · Warm Luxury · Midnight Charcoal + Warm Graphite + Champagne Gold ─── */
+/* ─── Dark Theme · Midnight Obsidian & Brushed Champagne Gold ─── */
 .dark {
-  --background: #17191B;
-  --foreground: #F4F0E7;
+  --background: #111514;
+  --foreground: #F5F3EC;
 
-  --card: #292D30;
-  --card-foreground: #F4F0E7;
+  --card: #181E1C;
+  --card-foreground: #F5F3EC;
 
-  --popover: #292D30;
-  --popover-foreground: #F4F0E7;
+  --popover: #181E1C;
+  --popover-foreground: #F5F3EC;
 
-  --primary: #087B50;
-  --primary-foreground: #F4F0E7;
+  --primary: #15A069;
+  --primary-foreground: #0B1F16;
 
-  --secondary: #34383A;
-  --secondary-foreground: #F4F0E7;
+  --secondary: #222A26;
+  --secondary-foreground: #F5F3EC;
 
-  --muted: #34383A;
-  --muted-foreground: #B5B2AA;
+  --muted: #222A26;
+  --muted-foreground: #98A69E;
 
-  --accent: #D6B56D;
-  --accent-foreground: #17191B;
+  --accent: #E2BE76;
+  --accent-foreground: #111514;
 
-  --destructive: #E47777;
-  --destructive-foreground: #F4F0E7;
+  --destructive: #EF5350;
+  --destructive-foreground: #FFFFFF;
 
-  --border: #414548;
-  --input: #414548;
-  --ring: #087B50;
+  --border: #2A352F;
+  --input: #2A352F;
+  --ring: #15A069;
 
-  --brand: #D6B56D;
-  --brand-foreground: #17191B;
+  --brand: #E2BE76;
+  --brand-foreground: #111514;
 
-  --sidebar: #222629;
-  --sidebar-foreground: #F4F0E7;
-  --sidebar-border: #414548;
-  --sidebar-accent: #34383A;
-  --sidebar-accent-foreground: #D6B56D;
-  --sidebar-light-bg: #222629;
-  --sidebar-light-text: #F4F0E7;
-  --sidebar-light-icon: #B5B2AA;
-  --sidebar-light-active-bg: #34383A;
-  --sidebar-light-active-text: #D6B56D;
-  --sidebar-light-active-icon: #D6B56D;
-  --sidebar-light-hover-text: #F4F0E7;
-  --sidebar-light-section: #B5B2AA;
-  --sidebar-light-divider: #414548;
-  --sidebar-light-profile-name: #F4F0E7;
-  --sidebar-light-profile-desc: #B5B2AA;
+  --sidebar: #131716;
+  --sidebar-foreground: #F5F3EC;
+  --sidebar-border: #232C27;
+  --sidebar-accent: #222A26;
+  --sidebar-accent-foreground: #E2BE76;
+  --sidebar-light-bg: #131716;
+  --sidebar-light-text: #F5F3EC;
+  --sidebar-light-icon: #98A69E;
+  --sidebar-light-active-bg: #222A26;
+  --sidebar-light-active-text: #E2BE76;
+  --sidebar-light-active-icon: #E2BE76;
+  --sidebar-light-hover-text: #F5F3EC;
+  --sidebar-light-section: #78857D;
+  --sidebar-light-divider: #2A352F;
+  --sidebar-light-profile-name: #F5F3EC;
+  --sidebar-light-profile-desc: #98A69E;
 }
 
 /* ─── Base ────────────────────────────────────────────────── */
@@ -167,14 +166,14 @@
 }
 
 html {
-  background: linear-gradient(135deg, #E9E0C7 0%, #F7F0DE 100%);
+  background: #FAF8F5;
   color: var(--foreground);
   scroll-behavior: smooth;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-text-size-adjust: 100%;
 }
 .dark html {
-  background: #17191B;
+  background: #111514;
 }
 
 body {
@@ -278,20 +277,22 @@ table, .tabular-nums, [data-tabular] {
 
 /* ─── Warm Luxury Utilities ─── */
 .glass-card {
-  background: linear-gradient(135deg, #FFF7E6 0%, #E9DFC4 100%);
+  background: var(--card);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.05), 0 0 0 1px oklch(0 0 0 / 0.03);
+  box-shadow: 0 1px 3px 0 rgba(18, 42, 31, 0.04), 0 1px 2px -1px rgba(18, 42, 31, 0.04);
 }
 .dark .glass-card {
-  background: #292D30;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
 }
 
 .glass-card-hover {
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .glass-card-hover:hover {
-  box-shadow: 0 8px 24px -4px oklch(0 0 0 / 0.08), 0 0 0 1px oklch(0 0 0 / 0.04);
-  transform: translateY(-1px);
+  box-shadow: 0 10px 25px -4px rgba(18, 42, 31, 0.08), 0 0 0 1px var(--border);
+  transform: translateY(-1.5px);
 }
 
 .stat-card {
@@ -322,11 +323,13 @@ table, .tabular-nums, [data-tabular] {
 }
 
 /* Text color helpers — WCAG AA compliant */
-.text-deep-emerald { color: #006B45; }
-.text-warm-cream { color: #FFF7E6; }
-.text-gold { color: #D6A64B; }
-.text-heading { color: #153D30; }
-.text-body { color: #3A4A42; }
+.text-deep-emerald { color: #0A5238; }
+.dark .text-deep-emerald { color: #15A069; }
+.text-warm-cream { color: #FAF8F5; }
+.text-gold { color: #C8973A; }
+.dark .text-gold { color: #E2BE76; }
+.text-heading { color: var(--foreground); }
+.text-body { color: var(--muted-foreground); }
 
 /* Sidebar text color helpers */
 .text-sidebar-light { color: var(--sidebar-light-text); }
@@ -339,59 +342,59 @@ table, .tabular-nums, [data-tabular] {
 .text-sidebar-profile-desc { color: var(--sidebar-light-profile-desc); }
 
 /* Chart color tokens — single source of truth */
-.chart-color-gold { color: #D6A64B; }
-.chart-color-emerald { color: #006B45; }
-.chart-color-gold-dark { color: #D6B56D; }
-.chart-color-emerald-dark { color: #087B50; }
+.chart-color-gold { color: #C8973A; }
+.chart-color-emerald { color: #0A5238; }
+.chart-color-gold-dark { color: #E2BE76; }
+.chart-color-emerald-dark { color: #15A069; }
 
 /* Gradients */
 .gradient-sidebar {
-  background: linear-gradient(135deg, #063D2B 0%, #0D6344 100%);
+  background: linear-gradient(145deg, #06261B 0%, #0A3D2C 100%);
 }
 .dark .gradient-sidebar {
-  background: linear-gradient(135deg, #222629 0%, #34383A 100%);
+  background: linear-gradient(145deg, #131716 0%, #1A221F 100%);
 }
 .gradient-main {
-  background: linear-gradient(135deg, #E9E0C7 0%, #F7F0DE 100%);
+  background: linear-gradient(180deg, #F5F1E8 0%, #FAF8F5 100%);
 }
 .dark .gradient-main {
-  background: #17191B;
+  background: #111514;
 }
 .gradient-card {
-  background: linear-gradient(135deg, #FFF7E6 0%, #E9DFC4 100%);
+  background: var(--card);
 }
 .dark .gradient-card {
-  background: #292D30;
+  background: var(--card);
 }
 .gradient-gold {
-  background: linear-gradient(135deg, #D6A64B 0%, #E8B96E 100%);
+  background: linear-gradient(135deg, #C8973A 0%, #DEB35E 100%);
 }
 .dark .gradient-gold {
-  background: linear-gradient(135deg, #D6B56D 0%, #E8B96E 100%);
+  background: linear-gradient(135deg, #D4AF60 0%, #E8C982 100%);
 }
 .gradient-emerald {
-  background: linear-gradient(135deg, #006B45 0%, #0D6344 100%);
+  background: linear-gradient(145deg, #0A5238 0%, #0F6B4B 100%);
 }
 .dark .gradient-emerald {
-  background: linear-gradient(135deg, #087B50 0%, #2E7D5B 100%);
+  background: linear-gradient(145deg, #118456 0%, #17A36B 100%);
 }
 .gradient-hero {
-  background: linear-gradient(135deg, #F7F0DE 0%, #E9E0C7 100%);
+  background: linear-gradient(180deg, #F3EFE7 0%, #FAF8F5 100%);
 }
 .dark .gradient-hero {
-  background: #17191B;
+  background: #111514;
 }
 
 /* Borders */
 .border-depth {
   border: 1px solid var(--border);
-  box-shadow: 0 1px 3px 0 oklch(0 0 0 / 0.04);
+  box-shadow: 0 1px 3px 0 rgba(18, 42, 31, 0.04);
 }
 .border-gold {
-  border: 1px solid #D6A64B;
+  border: 1px solid #C8973A;
 }
 .dark .border-gold {
-  border-color: #D6B56D;
+  border-color: #E2BE76;
 }
 
 /* Sidebar gradient */

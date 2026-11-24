@@ -93,7 +93,7 @@ const DARK_STATUS: Record<StatusVariant, StatusColorDef> = {
 const LIGHT_ROLE: Record<RoleVariant, { text: string; bg: string }> = {
   employee: { text: "text-[#263B30]", bg: "bg-[#D9CBA9/30]" },
   admin: { text: "text-[#006B45]", bg: "bg-[#E8F2EC]" },
-  super_admin: { text: "text-[#D6A64B]", bg: "bg-[#FBF0DF]" },
+  super_admin: { text: "text-[#8A5A1B]", bg: "bg-[#FBF0DF]" },
 } as const;
 
 /**

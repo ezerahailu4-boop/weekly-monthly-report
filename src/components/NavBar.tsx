@@ -48,7 +48,7 @@ export default function NavBar({ user }: { user: NavUser | null }) {
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-semibold tracking-tight text-foreground">Directive Follow-up System</span>
               {isSuperAdmin && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-950 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300 ring-1 ring-amber-500/30">
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 px-2 py-0.5 text-[10px] font-semibold ring-1 ring-amber-500/30">
                   <IconCrown size={9} />
                   Direction
                 </span>
@@ -116,7 +116,7 @@ export default function NavBar({ user }: { user: NavUser | null }) {
                 href="/admin"
                 className={`hidden sm:inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                   isSuperAdmin
-                    ? "bg-amber-950 text-amber-300 ring-1 ring-amber-500/30 hover:bg-amber-900"
+                    ? "bg-amber-500/10 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 ring-1 ring-amber-500/30 hover:bg-amber-500/20"
                     : "bg-primary text-primary-foreground hover:opacity-90"
                 }`}
               >
@@ -140,7 +140,7 @@ export default function NavBar({ user }: { user: NavUser | null }) {
                 <div
                   className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ${
                     isSuperAdmin
-                      ? "bg-amber-950 text-amber-300 ring-1 ring-amber-500/40"
+                      ? "bg-amber-500/15 text-amber-800 dark:bg-amber-950 dark:text-amber-300 ring-1 ring-amber-500/40"
                       : "bg-primary text-primary-foreground"
                   }`}
                 >
