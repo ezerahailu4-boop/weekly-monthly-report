@@ -66,7 +66,12 @@ export async function POST(request: Request) {
         periodStart: period_start,
         periodEnd: period_end,
         portalOrigin: origin,
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error("Telegram admin submission notification failed:", {
+          reportId: rows[0].id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
     }
 
     return NextResponse.json({ success: true, report: rows[0] });

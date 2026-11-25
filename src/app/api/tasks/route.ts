@@ -208,7 +208,15 @@ async function handleBulkCreate(
         });
         telegramResults.push({ taskId: ct.id, ...result });
       } catch {
-        telegramResults.push({ taskId: ct.id, sent: false, error: "notification failed" });
+        telegramResults.push({
+          taskId: ct.id,
+          sent: false,
+          error: "notification failed",
+        });
+        console.error("Telegram task notification failed:", {
+          taskId: ct.id,
+          error: "notification failed",
+        });
       }
     }
   }

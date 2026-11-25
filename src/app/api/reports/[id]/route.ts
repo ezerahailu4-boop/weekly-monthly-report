@@ -115,7 +115,12 @@ export async function PUT(
         reviewNotes: nextReviewNotes,
         portalOrigin: origin,
         authorUserId: report.user_id,
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error("Telegram review notification failed:", {
+          reportId: id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
     }
 
     return NextResponse.json({ success: true, report: updatedRows[0] });

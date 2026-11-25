@@ -40,10 +40,19 @@ export async function PATCH(
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       const origin = new URL(request.url).origin;
-      const telegramResult = await notifyTaskAssigneeViaTelegram({
-        taskId: id,
-        portalOrigin: process.env.NEXT_PUBLIC_APP_URL || origin,
-      });
+      let telegramResult: { sent: boolean; error?: string } = { sent: false };
+      try {
+        telegramResult = await notifyTaskAssigneeViaTelegram({
+          taskId: id,
+          portalOrigin: process.env.NEXT_PUBLIC_APP_URL || origin,
+        });
+      } catch (err) {
+        console.error("Telegram task notification failed:", {
+          taskId: id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        telegramResult = { sent: false, error: err instanceof Error ? err.message : String(err) };
+      }
 
       const refreshed = await sql`
         SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by,

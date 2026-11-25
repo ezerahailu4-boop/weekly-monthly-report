@@ -242,8 +242,12 @@ export async function POST(request: Request) {
             taskId: String(tRow[0].id),
             portalOrigin,
           });
-        } catch {
-          // Non-blocking notification
+        } catch (err) {
+          console.error("Telegram task notification failed:", {
+            taskId: String(tRow[0].id),
+            directiveId,
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
       }
     }
