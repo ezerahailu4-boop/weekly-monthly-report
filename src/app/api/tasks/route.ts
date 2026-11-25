@@ -14,9 +14,11 @@ export async function GET(request: Request) {
   const scope = searchParams.get("scope");
   const isPrivileged = user.role === "admin" || user.role === "super_admin";
 
-  const rows =
-    isPrivileged && scope !== "mine"
-      ? await sql`
+  let rows: unknown[];
+  try {
+    rows =
+      isPrivileged && scope !== "mine"
+        ? await sql`
           SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by, t.directive_id,
                  t.status, t.priority, to_char(t.due_date, 'YYYY-MM-DD') as due_date,
                  t.completion_note, t.completed_at, t.telegram_notified_at, t.telegram_error,
@@ -34,7 +36,7 @@ export async function GET(request: Request) {
             t.due_date ASC NULLS LAST,
             t.created_at DESC;
         `
-      : await sql`
+        : await sql`
           SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by, t.directive_id,
                  t.status, t.priority, to_char(t.due_date, 'YYYY-MM-DD') as due_date,
                  t.completion_note, t.completed_at, t.telegram_notified_at, t.telegram_error,
@@ -53,6 +55,12 @@ export async function GET(request: Request) {
             t.due_date ASC NULLS LAST,
             t.created_at DESC;
         `;
+  } catch (err: unknown) {
+    return NextResponse.json(
+      { error: "Failed to load tasks." },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json({ success: true, tasks: rows });
 }
