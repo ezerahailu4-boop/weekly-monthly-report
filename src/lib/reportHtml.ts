@@ -44,7 +44,8 @@ function renderExecutiveReviewBlock(report: ReportRow): string {
 }
 
 export async function renderWeeklyHtml(report: ReportRow, letterhead?: LetterheadConfig): Promise<string> {
-  const d = report.data as WeeklyReportData;
+  // report.data can be NULL in the DB; guard against it so the page never crashes.
+  const d = (report.data as Partial<WeeklyReportData> | null) || {};
   const refCode = `${letterhead?.referencePrefix || "YH-DFC"}-WK-${report.period_start.replace(/-/g, "")}`;
   return `<!doctype html><html><head><meta charset="utf-8"/><style>${baseStyles}</style></head><body>
   ${await renderOfficialLetterheadHtml({
@@ -65,10 +66,12 @@ export async function renderWeeklyHtml(report: ReportRow, letterhead?: Letterhea
   <table>
     <thead><tr><th style="width: 36px; text-align: center;">No.</th><th>KPI / planned activity</th><th>Weekly target</th><th>Performance</th><th>% Achievement</th><th>Remark</th></tr></thead>
     <tbody>
-      ${d.kpiRows
+      ${(d.kpiRows || [])
         .map(
           (r, i) =>
-            `<tr><td style="text-align: center;">${i + 1}</td><td>${esc(r.kpi)}</td><td>${esc(r.target)}</td><td>${esc(
+            `<tr><td style="text-align: center;">${i + 1}</td><td>${esc(r.kpi)}</td><td>${esc(
+              r.target
+            )}</td><td>${esc(
               r.performance
             )}</td><td>${esc(r.percentAchievement)}</td><td>${esc(r.remark)}</td></tr>`
         )
@@ -80,7 +83,7 @@ export async function renderWeeklyHtml(report: ReportRow, letterhead?: Letterhea
   <table>
     <thead><tr><th style="width: 36px; text-align: center;">No.</th><th>Planned activity</th><th>Reason not completed</th></tr></thead>
     <tbody>
-      ${d.incompleteRows
+      ${(d.incompleteRows || [])
         .map((r, i) => `<tr><td style="text-align: center;">${i + 1}</td><td>${esc(r.activity)}</td><td>${esc(r.reason)}</td></tr>`)
         .join("")}
     </tbody>
@@ -101,7 +104,7 @@ export async function renderWeeklyHtml(report: ReportRow, letterhead?: Letterhea
 }
 
 export async function renderMonthlyHtml(report: ReportRow, letterhead?: LetterheadConfig): Promise<string> {
-  const d = report.data as MonthlyReportData;
+  const d = (report.data as Partial<MonthlyReportData> | null) || {};
   const refCode = `${letterhead?.referencePrefix || "YH-DFC"}-MO-${report.period_start.replace(/-/g, "")}`;
   return `<!doctype html><html><head><meta charset="utf-8"/><style>${baseStyles}</style></head><body>
   ${await renderOfficialLetterheadHtml({
@@ -121,7 +124,7 @@ export async function renderMonthlyHtml(report: ReportRow, letterhead?: Letterhe
   <table>
     <thead><tr><th style="width: 36px; text-align: center;">S/N</th><th>Planned activities</th><th>/KPI /</th><th>Target</th><th>Actual Performance</th><th>Percentage</th><th>Remarks</th></tr></thead>
     <tbody>
-      ${d.goalRows
+      ${(d.goalRows || [])
         .map(
           (r, i) =>
             `<tr><td style="text-align: center;">${i + 1}</td><td>${esc(r.plannedActivity)}</td><td>${esc(
