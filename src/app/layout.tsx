@@ -8,20 +8,6 @@ export const metadata: Metadata = {
     "Modern Directive Follow-up System and Report Follow-up Center for Yetaf Holding Limited — AI summarization, multi-tasking, contextual chat, SLA enforcement, and action plan tracking.",
 };
 
-const themeScript = `
-(function() {
-  try {
-    var stored = localStorage.getItem('yh_theme');
-    var isDark = stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  } catch (e) {}
-})();
-`;
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,9 +15,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className="antialiased font-sans min-h-screen bg-background text-foreground transition-colors duration-150">
         <ThemeProvider>{children}</ThemeProvider>
       </body>
