@@ -15,6 +15,8 @@ import {
   emptyWeeklyKpiRow,
   emptyWeeklyIncompleteRow,
   emptyMonthlyGoalRow,
+  emptyWeeklyReport,
+  emptyMonthlyReport,
   type ReportRow,
   type WeeklyReportData,
   type MonthlyReportData,
@@ -27,13 +29,13 @@ export function EditReportForm({ initialReport }: { initialReport: ReportRow }) 
   const [periodEnd, setPeriodEnd] = useState(initialReport.period_end);
   const [weeklyData, setWeeklyData] = useState<WeeklyReportData>(
     initialReport.report_type === "weekly"
-      ? (initialReport.data as WeeklyReportData)
-      : ({} as WeeklyReportData)
+      ? ((initialReport.data as WeeklyReportData | null) ?? emptyWeeklyReport())
+      : emptyWeeklyReport()
   );
   const [monthlyData, setMonthlyData] = useState<MonthlyReportData>(
     initialReport.report_type === "monthly"
-      ? (initialReport.data as MonthlyReportData)
-      : ({} as MonthlyReportData)
+      ? ((initialReport.data as MonthlyReportData | null) ?? emptyMonthlyReport())
+      : emptyMonthlyReport()
   );
   const [error, setError] = useState<string | null>(null);
   const [savingStatus, setSavingStatus] = useState<"idle" | "draft" | "submitted">("idle");
