@@ -26,8 +26,10 @@ export async function GET(request: Request) {
   const statusFilter = searchParams.get("status");
   const isPrivileged = user.role === "admin" || user.role === "super_admin";
 
-  const rows = isPrivileged
-    ? await sql`
+  let rows: any[];
+  try {
+    rows = isPrivileged
+      ? await sql`
         SELECT d.id, d.reference_code, d.title, d.department, d.priority,
                d.directions, d.executive_summary, d.entry_mode, d.attachments,
                d.status, to_char(d.due_date, 'YYYY-MM-DD') as due_date,
@@ -41,7 +43,7 @@ export async function GET(request: Request) {
         LEFT JOIN users u ON d.created_by = u.id
         ORDER BY d.created_at DESC;
       `
-    : await sql`
+      : await sql`
         SELECT d.id, d.reference_code, d.title, d.department, d.priority,
                d.directions, d.executive_summary, d.entry_mode, d.attachments,
                d.status, to_char(d.due_date, 'YYYY-MM-DD') as due_date,
@@ -61,6 +63,12 @@ export async function GET(request: Request) {
            )
         ORDER BY d.created_at DESC;
       `;
+  } catch (err: unknown) {
+    return NextResponse.json(
+      { error: "Failed to load directives." },
+      { status: 500 }
+    );
+  }
 
   const filtered =
     statusFilter && statusFilter !== "all"
