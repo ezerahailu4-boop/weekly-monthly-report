@@ -1,7 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+
+const ERROR_REPORT_URL = process.env.NEXT_PUBLIC_ERROR_REPORT_URL;
+
+function generateErrorId(): string {
+  return `yh-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+async function reportError(params: {
+  errorId: string;
+  message: string;
+  stack?: string | null;
+  url: string;
+  timestamp: string;
+}) {
+  if (!ERROR_REPORT_URL) return;
+  try {
+    await fetch(ERROR_REPORT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    }).catch(() => {
+      // Silently ignore reporting failures — never crash the error page itself.
+    });
+  } catch {
+    // ignore
+  }
+}
 
 export default function GlobalError({
   error,
@@ -11,13 +38,31 @@ export default function GlobalError({
   reset: () => void;
 }) {
   const [logged, setLogged] = useState(false);
+  const [errorId] = useState(generateErrorId);
+
+  const handleLog = useCallback(() => {
+    if (logged) return;
+    const timestamp = new Date().toISOString();
+    console.error("Global error caught:", {
+      errorId,
+      message: error.message,
+      stack: error.stack,
+      url: typeof window !== "undefined" ? window.location.href : "",
+      timestamp,
+    });
+    reportError({
+      errorId,
+      message: error.message,
+      stack: error.stack ?? null,
+      url: typeof window !== "undefined" ? window.location.href : "",
+      timestamp,
+    });
+    setLogged(true);
+  }, [error, logged, errorId]);
 
   useEffect(() => {
-    if (!logged) {
-      console.error("Global error caught:", error);
-      setLogged(true);
-    }
-  }, [error, logged]);
+    handleLog();
+  }, [handleLog]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -30,6 +75,9 @@ export default function GlobalError({
         </h1>
         <p className="text-lg text-muted-foreground max-w-sm mx-auto mb-6">
           An unexpected error occurred in the executive portal.
+        </p>
+        <p className="text-xs text-muted-foreground max-w-sm mx-auto mb-4">
+          Reference: <span className="font-mono">{errorId}</span>
         </p>
         <button
           onClick={() => reset()}
