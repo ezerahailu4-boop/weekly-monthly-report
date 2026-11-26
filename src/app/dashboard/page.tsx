@@ -304,9 +304,18 @@ export default async function DashboardPage({
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
         {/* ── Executive Header ── */}
-        <div className="relative isolate overflow-hidden">
-          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-32 -z-10 h-96 w-96 rounded-full bg-brand/20 blur-[100px]" />
-          <div className={`relative isolate flex flex-col gap-5 border border-border bg-card shadow-sm ${isSuperAdmin ? "rounded-3xl p-5 sm:gap-7 sm:p-8 lg:p-10" : "rounded-3xl p-4 sm:p-6 lg:p-8"}`}>
+        <div
+          className="relative isolate overflow-hidden"
+          style={{ animationDelay: "0ms" }}
+        >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-24 -top-32 -z-10 h-96 w-96 rounded-full bg-brand/20 blur-[100px] animate-pulse-slow"
+          />
+          <div
+            className={`relative isolate flex flex-col gap-5 border border-border bg-card shadow-sm ${isSuperAdmin ? "rounded-3xl p-5 sm:gap-7 sm:p-8 lg:p-10" : "rounded-3xl p-4 sm:p-6 lg:p-8"} fade-in-up`}
+            style={{ animationDelay: "100ms" }}
+          >
             <div className={`flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground ${isSuperAdmin ? "mb-4" : "mb-1.5"}`}>
               {isSuperAdmin ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-950 px-2.5 py-0.5 text-[11px] font-bold text-amber-300 ring-1 ring-amber-500/30">
@@ -421,7 +430,11 @@ export default async function DashboardPage({
         )}
 
         {/* ── Priority Attention Zone ── */}
-        <section aria-label="Priority Attention Zone" className="space-y-3">
+        <section
+          aria-label="Priority Attention Zone"
+          className="space-y-3 fade-in-up"
+          style={{ animationDelay: "300ms" }}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="flex h-2 w-2 rounded-full bg-accent animate-pulse" />
@@ -587,7 +600,11 @@ export default async function DashboardPage({
         </section>
 
         {/* ── KPI Stat Cards ── */}
-        <section aria-label="Key Performance Indicators" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <section
+          aria-label="Key Performance Indicators"
+          className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 fade-in-up"
+          style={{ animationDelay: "200ms" }}
+        >
           <StatCard
             title="Active Directives"
             value={kpiCounts.active_directives}
@@ -634,32 +651,39 @@ export default async function DashboardPage({
         </section>
 
         {/* ── Reporting Window ── */}
-        <ReportingWindowBanner status={windowStatus} isPrivileged={isPrivileged} />
+        <div className="fade-in-up" style={{ animationDelay: "400ms" }}>
+          <ReportingWindowBanner status={windowStatus} isPrivileged={isPrivileged} />
+        </div>
 
         {/* ── Executive Status Board (widget grid) ── */}
         {isPrivileged && (
-          <StatusBoard
-            reports={allReportList}
-            tasks={boardTaskRows as { id: string; title: string; description: string; status: string; due_date: string | null; completion_note: string | null; assignee_name: string | null }[]}
-            plans={boardPlanRows as { id: string; reference_code: string; title: string; department: string; status: string; summary: string | null; objectives: { activity?: string; status?: string; progress?: number }[] }[]}
-          />
-        )}
-
-        {/* ── Staff Submission Tracker ── */}
-        {isPrivileged && (
-          <div className="space-y-4">
-            <StaffSubmissionTracker
-              staffList={staffList}
+          <div className="fade-in-up" style={{ animationDelay: "450ms" }}>
+            <StatusBoard
               reports={allReportList}
-              taskStats={taskStats}
-              todayEthYmd={todayEthYmd}
-              highlightMissingOnly={activeView === "not_submitted"}
+              tasks={boardTaskRows as { id: string; title: string; description: string; status: string; due_date: string | null; completion_note: string | null; assignee_name: string | null }[]}
+              plans={boardPlanRows as { id: string; reference_code: string; title: string; department: string; status: string; summary: string | null; objectives: { activity?: string; status?: string; progress?: number }[] }[]}
             />
           </div>
         )}
 
+        {/* ── Staff Submission Tracker ── */}
+        {isPrivileged && (
+          <div className="fade-in-up" style={{ animationDelay: "500ms" }}>
+            <div className="space-y-4">
+              <StaffSubmissionTracker
+                staffList={staffList}
+                reports={allReportList}
+                taskStats={taskStats}
+                todayEthYmd={todayEthYmd}
+                highlightMissingOnly={activeView === "not_submitted"}
+              />
+            </div>
+          </div>
+        )}
+
         {/* ── Reports Archive Table ── */}
-        <div className="space-y-4">
+        <div className="fade-in-up" style={{ animationDelay: "550ms" }}>
+          <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold tracking-tight text-foreground">
@@ -677,6 +701,7 @@ export default async function DashboardPage({
             isPrivileged={isPrivileged}
             windowLocked={windowLocked}
           />
+        </div>
         </div>
       </div>
     </AppShell>
