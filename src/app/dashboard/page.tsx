@@ -14,6 +14,7 @@ import {
   type TrackedStaffMember,
 } from "@/components/StaffSubmissionTracker";
 import { AppShell } from "@/components/AppShell";
+import { TelegramConnectionBanner } from "@/components/TelegramConnectionBanner";
 import { StatCard } from "@/components/StatCard";
 import { StatusBoard } from "@/components/StatusBoard";
 import {
@@ -413,6 +414,11 @@ export default async function DashboardPage({
             </Link>
           </div>
         </div>
+
+        {/* ── Telegram Connection Required Banner ── */}
+        {!user.telegram_chat_id && (
+          <TelegramConnectionBanner connected={false} />
+        )}
 
         {/* ── Priority Attention Zone ── */}
         <section aria-label="Priority Attention Zone" className="space-y-3">
