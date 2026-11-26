@@ -11,9 +11,12 @@ import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
 } from "recharts";
 import type { ReportRow } from "@/types/report";
 import type { TaskRow } from "@/types/task";
+import { Badge } from "@/components/ui";
 
 interface Props {
   reports: ReportRow[];
@@ -110,6 +113,57 @@ export function AdminAnalytics({ reports, staffList, tasks, plans }: Props) {
     count,
   }));
   const recentMonthlyTotal = monthlyTrend.reduce((sum, month) => sum + month.count, 0);
+
+  // ── 6. Task delivery trend — last 6 weeks ──
+  const taskWeekMap: Record<string, { completed: number; overdue: number }> = {};
+  const taskNow = new Date();
+  const taskWeekStart = new Date(Date.UTC(taskNow.getUTCFullYear(), taskNow.getUTCMonth(), taskNow.getUTCDate()));
+  const taskDow = taskWeekStart.getUTCDay();
+  taskWeekStart.setUTCDate(taskWeekStart.getUTCDate() + (taskDow === 0 ? -6 : 1 - taskDow));
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(taskWeekStart);
+    d.setUTCDate(taskWeekStart.getUTCDate() - i * 7);
+    const key = d.toISOString().slice(0, 10);
+    taskWeekMap[key] = { completed: 0, overdue: 0 };
+  }
+  const todayYmd = new Date().toISOString().slice(0, 10);
+  for (const t of tasks) {
+    if (t.status === "completed" && t.completed_at) {
+      const key = new Date(t.completed_at).toISOString().slice(0, 10);
+      // bucket by task week (monday) of completion
+      const weekKey = weekOf(new Date(key));
+      if (taskWeekMap[weekKey]) taskWeekMap[weekKey].completed += 1;
+    } else if (t.due_date && t.due_date < todayYmd && t.status !== "completed") {
+      const key = new Date(t.due_date).toISOString().slice(0, 10);
+      const weekKey = weekOf(new Date(key));
+      if (taskWeekMap[weekKey]) taskWeekMap[weekKey].overdue += 1;
+    }
+  }
+  const taskTrend = Object.entries(taskWeekMap).map(([weekStart, v]) => ({
+    week: new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(`${weekStart}T00:00:00Z`)),
+    ...v,
+  }));
+
+  // ── 7. Review turnaround ──
+  const reviewCutoff = new Date();
+  reviewCutoff.setUTCDate(reviewCutoff.getUTCDate() - 30);
+  const reviewedReports = reports.filter((r) => r.status === "reviewed" && r.reviewed_at && new Date(r.reviewed_at) >= reviewCutoff);
+  const turnaroundDays = reviewedReports.map((r) => {
+    const start = new Date(r.created_at).getTime();
+    const end = new Date(r.reviewed_at!).getTime();
+    return Math.max(0, (end - start) / (1000 * 60 * 60 * 24));
+  });
+  const avgTurnaround = turnaroundDays.length ? Math.round((turnaroundDays.reduce((a, b) => a + b, 0) / turnaroundDays.length) * 10) / 10 : 0;
+  const onTimeSLA = reviewedReports.length
+    ? Math.round((reviewedReports.filter((r, i) => turnaroundDays[i] <= 3).length / reviewedReports.length) * 100)
+    : 0;
+
+  function weekOf(date: Date): string {
+    const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    const dow = d.getUTCDay();
+    d.setUTCDate(d.getUTCDate() + (dow === 0 ? -6 : 1 - dow));
+    return d.toISOString().slice(0, 10);
+  }
 
   // ── 5. Top submitters ─────────────────────────────────────────────────────
   const submitterMap: Record<string, { name: string; count: number }> = {};
@@ -242,6 +296,74 @@ export function AdminAnalytics({ reports, staffList, tasks, plans }: Props) {
               </BarChart>
             </ResponsiveContainer>
           )}
+        </div>
+      </div>
+
+      {/* Row 3: Task delivery trend + Review turnaround */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-xs">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-foreground">Task Delivery Trend — Last 6 Weeks</p>
+              <p className="mb-1 text-xs text-muted-foreground">Completed vs. overdue tasks by week. Overdue = due date passed and still not completed.</p>
+            </div>
+            <Badge variant={recentWeeklyTotal ? "outline" : "muted"} size="sm">
+              {taskTrend.reduce((s, w) => s + w.completed, 0)} completed this period
+            </Badge>
+          </div>
+          {taskTrend.every((w) => w.completed === 0 && w.overdue === 0) ? (
+            <div className="flex h-[210px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 px-5 text-center text-sm text-muted-foreground">No task activity in this period.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={210}>
+              <LineChart data={taskTrend} margin={{ top: 8, right: 20, bottom: 4, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="week" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Line type="monotone" dataKey="completed" name="Completed" stroke="var(--brand)" strokeWidth={3} dot={{ r: 4, stroke: "var(--brand)", strokeWidth: 2 }} />
+                <Line type="monotone" dataKey="overdue" name="Overdue" stroke="var(--destructive)" strokeWidth={3} dot={{ r: 4, stroke: "var(--destructive)", strokeWidth: 2 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-5 shadow-xs flex flex-col">
+          <div className="mb-4">
+            <p className="text-sm font-bold text-foreground">Review Turnaround</p>
+            <p className="mb-1 text-xs text-muted-foreground">Avg days from submission to review (last 30 days) vs. 3‑day SLA, on‑time share.</p>
+          </div>
+          <div className="flex-1 flex flex-col items-center justify-center relative">
+            <ResponsiveContainer width={160} height={160}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: "On time", value: onTimeSLA },
+                    { name: "Over SLA", value: Math.max(0, 100 - onTimeSLA) },
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={70}
+                  outerRadius={95}
+                  paddingAngle={5}
+                  dataKey="value"
+                  startAngle={180}
+                  endAngle={360}
+                >
+                  <Cell key="on-time" fill="var(--brand)" />
+                  <Cell key="over-sla" fill="var(--muted)" />
+                </Pie>
+                <Tooltip contentStyle={tooltipStyle} />
+                <text x="50%" y="48%" textAnchor="middle" dominantBaseline="middle" fill="var(--foreground)" fontSize="22" fontWeight="800" fontFamily="var(--font-mono)">
+                  {avgTurnaround}
+                </text>
+                <text x="50%" y="60%" textAnchor="middle" dominantBaseline="middle" fill="var(--muted-foreground)" fontSize="10">avg days to review</text>
+                <text x="50%" y="70%" textAnchor="middle" dominantBaseline="middle" fill="var(--muted-foreground)" fontSize="10">{onTimeSLA}% on time</text>
+              </PieChart>
+            </ResponsiveContainer>
+            {reviewedReports.length === 0 && (
+              <p className="mt-4 text-xs text-muted-foreground">No reviews in the last 30 days.</p>
+            )}
+          </div>
         </div>
       </div>
 
