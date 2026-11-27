@@ -31,10 +31,18 @@ Added a vitest-based unit test suite for the pure utility functions in `src/lib/
 - Added `"test": "vitest run"` and `"test:watch": "vitest"` scripts
 - Added devDependencies: `vitest@3`, `@vitest/ui@3`, `jsdom`
 
-**Verification:**
+**Verification (both commits):**
 - `npx vitest run` → 49 passed, 0 failed
 - `npx tsc --noEmit` → clean
-- `npx eslint` on new/modified files → clean
+- `npx eslint src/` → 0 errors (15 pre-existing warnings only)
+- `npm run build` → passes
+
+**Follow-up commit (`f41ea61`) — fixed 7 pre-existing lint/type errors:**
+- `src/app/api/directives/route.ts` — `any[]` → `Record<string, unknown>[]` with `r.status as string` cast
+- `src/app/global-error.tsx` — `logged` state → `useRef` to avoid setState in useEffect
+- `src/app/not-found.tsx` — apostrophes escaped as `&rsquo;`
+- `src/app/reset-password/page.tsx` — initialize error/tokenValid state from token instead of setState in effect; restored dropped state declarations
+- `src/components/StatusBadge.tsx` — `as any` → typed `StatusKey` union
 
 **Why:** Closed the "Test coverage", "Print styles", and "Accessibility audit" gaps identified in the codebase. The project previously had only one Playwright e2e file (`tests/e2e/auth.spec.ts`) and no unit tests; print CSS covered only `.report-render`; and there was no programmatic table/modal/station card accessibility.
 

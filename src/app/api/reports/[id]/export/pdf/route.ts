@@ -17,10 +17,20 @@ export async function GET(
     ? await getCompanySettings(report.company_id)
     : await getPortalSettings();
 
-  const html = await renderReportHtml(report, settings.letterhead_config);
+  // Render letterhead HTML (guarded so a letterhead failure never breaks the whole export)
+  let html = "";
+  try {
+    html = await renderReportHtml(report, settings.letterhead_config);
+  } catch (err) {
+    console.warn("Report HTML render failed:", err instanceof Error ? err.message : String(err));
+    // Minimal fallback HTML so we still have something to render
+    html = `<!doctype html><html><head><meta charset="utf-8"/><style>body{font-family:sans-serif;padding:2rem;}</style></head><body><p>Report export failed to render.</p></body></html>`;
+  }
 
   try {
-    const browser = await chromium.launch();
+    const browser = await chromium.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
     try {
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: "load" });

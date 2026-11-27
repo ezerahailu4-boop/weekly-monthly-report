@@ -82,6 +82,19 @@ export async function GET(
   const refCode = String(p.reference_code);
   const safeSlug = refCode.toLowerCase().replace(/[^a-z0-9-]+/g, "-");
 
+  // Render letterhead HTML (guarded so a letterhead failure never breaks the whole export)
+  let letterheadHtml = "";
+  try {
+    letterheadHtml = await renderOfficialLetterheadHtml({
+      config: settings.letterhead_config,
+      documentTitle: "Official Action Plan Submission",
+      documentSubtitle: `${String(p.title)} · ${String(p.department)} (${String(p.period_start)} to ${String(p.period_end)})`,
+      referenceCode: refCode,
+    });
+  } catch (err) {
+    console.warn("Letterhead render failed:", err instanceof Error ? err.message : String(err));
+  }
+
   if (format === "docx") {
     const children: (Paragraph | Table)[] = [
       ...buildOfficialDocxLetterhead({
@@ -205,12 +218,7 @@ export async function GET(
     th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; vertical-align: top; }
     th { background: #f1f5f9; font-weight: 700; }
   </style></head><body>
-    ${await renderOfficialLetterheadHtml({
-      config: settings.letterhead_config,
-      documentTitle: "Official Action Plan Submission",
-      documentSubtitle: `${String(p.title)} · ${String(p.department)} (${String(p.period_start)} to ${String(p.period_end)})`,
-      referenceCode: refCode,
-    })}
+    ${letterheadHtml}
     ${p.summary ? `<h2>Plan Overview</h2><p>${esc(String(p.summary))}</p>` : ""}
     <h2>Planning Format</h2>
     ${
@@ -236,7 +244,9 @@ export async function GET(
   </body></html>`;
 
   try {
-    const browser = await chromium.launch();
+    const browser = await chromium.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
     try {
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: "load" });
@@ -255,11 +265,20 @@ export async function GET(
     } finally {
       await browser.close();
     }
-  } catch {
-    return new NextResponse(
-      html.replace("</body>", `<script>window.onload=function(){window.print();}</script></body>`),
-      { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("Headless Chromium launch failed for plan PDF export:", message);
+
+    // Fallback: Return printable HTML with auto-print script triggered
+    const printableHtml = html.replace(
+      "</body>",
+      `<script>window.onload = function() { window.print(); }</script></body>`
     );
+
+    return new NextResponse(printableHtml, {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
   }
 }
 

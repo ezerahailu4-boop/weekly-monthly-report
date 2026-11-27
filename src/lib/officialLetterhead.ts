@@ -38,10 +38,16 @@ export function getCompanyLogoBuffer(): Buffer | null {
 /** Fetch a logo from an external URL and return its Buffer (server-side only). */
 export async function fetchCompanyLogoBuffer(logoUrl: string): Promise<Buffer | null> {
   try {
-    const response = await fetch(logoUrl);
-    if (!response.ok || !response.body) return null;
-    const arrayBuffer = await response.arrayBuffer();
-    return Buffer.from(arrayBuffer);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+      const response = await fetch(logoUrl, { signal: controller.signal });
+      if (!response.ok || !response.body) return null;
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    } finally {
+      clearTimeout(timeout);
+    }
   } catch {
     return null;
   }
