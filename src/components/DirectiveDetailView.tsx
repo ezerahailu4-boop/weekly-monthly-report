@@ -351,7 +351,7 @@ export function DirectiveDetailView({
         <div
           className={`rounded-xl border p-3.5 text-xs font-medium flex items-center justify-between gap-2 ${
             banner.type === "ok"
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-brand"
               : "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
           }`}
         >
@@ -792,8 +792,8 @@ export function DirectiveDetailView({
               <div
                 className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${
                   slaState.overdue
-                    ? "border-rose-500/35 bg-rose-500/15 text-rose-800 dark:text-rose-200"
-                    : "border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200"
+                    ? "border-rose-500/35 bg-rose-500/15 text-rose-800 dark:text-accent"
+                    : "border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-accent"
                 }`}
               >
                 <span className="inline-flex items-center gap-1.5">

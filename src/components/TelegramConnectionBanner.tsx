@@ -15,33 +15,33 @@ export function TelegramConnectionBanner({ connected }: TelegramConnectionBanner
 
   return (
     <>
-      {/* Prominent required-action banner */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/50 to-emerald-600/70" />
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-xl border border-amber-200/30 bg-gradient-to-r from-amber-500 to-emerald-600 p-6 sm:p-7 text-white shadow-xl animate-fade-in">
+      {/* Focused required-action banner in the shared navy, white, and gold palette. */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-y-0 left-0 w-1.5 bg-accent" />
+        <div className="relative z-10 flex flex-col gap-4 border border-border bg-card p-5 pl-6 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6 sm:pl-7 animate-fade-in">
           <div className="flex items-center gap-3 sm:flex-1">
-            <div className="h-11 w-11 shrink-0 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
-              <IconSend size={22} className="text-white" />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-accent/25 bg-accent/10 text-accent">
+              <IconSend size={21} />
             </div>
             <div>
-              <h3 className="font-display text-sm sm:text-base font-bold text-white leading-tight">
+              <h3 className="font-display text-sm font-bold leading-tight text-foreground sm:text-base">
                 Connect Telegram &mdash; Required
               </h3>
-              <p className="mt-0.5 text-xs sm:text-sm text-amber-100/90 leading-relaxed">
+              <p className="mt-1 max-w-3xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
                 Link your Telegram account to receive instant task assignments, SLA alerts, and compliance notifications from management.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:flex-shrink-0">
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white border border-white/20">
-              <IconAlertCircle size={10} className="text-amber-300" />
+          <div className="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[10px] font-bold text-foreground">
+              <IconAlertCircle size={11} className="text-accent" />
               Action Required
             </span>
             <button
               onClick={() => setOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-md hover:bg-amber-50 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <IconSend size={13} className="text-amber-600" />
+              <IconSend size={13} />
               Connect Now
             </button>
           </div>

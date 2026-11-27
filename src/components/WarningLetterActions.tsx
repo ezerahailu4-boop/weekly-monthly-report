@@ -150,7 +150,7 @@ export function WarningLetterActions({
         <div
           className={`rounded-lg border p-3 text-xs font-medium ${
             feedback.type === "ok"
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-brand"
               : "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
           }`}
         >

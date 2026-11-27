@@ -390,7 +390,7 @@ export default async function DashboardPage({
             {windowLocked ? (
               <span
                 title={`Reporting closed. ${windowStatus.countdownLabel}`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-800 dark:text-[#D6B56D] cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-800 dark:text-accent cursor-not-allowed"
               >
                 <IconLock size={14} />
                 Submissions Locked
@@ -463,7 +463,7 @@ export default async function DashboardPage({
           {totalPriorityIssues === 0 ? (
             <Card className="border-emerald-500/30 bg-emerald-500/5 p-4 sm:p-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-[#36A879]">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-brand">
                   <IconCheckCircle size={20} />
                 </div>
                 <div className="flex-1">
@@ -490,7 +490,7 @@ export default async function DashboardPage({
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-500/20 text-red-700 dark:text-red-300">
                         <IconAlertCircle size={16} />
                       </div>
-                      <h3 className="text-xs font-bold text-red-950 dark:text-red-200">
+                      <h3 className="text-xs font-bold text-accent-strong dark:text-accent">
                         {overdueDirectives.length} Overdue Directive{overdueDirectives.length === 1 ? "" : "s"}
                       </h3>
                     </div>
@@ -530,7 +530,7 @@ export default async function DashboardPage({
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300">
                         <IconClock size={16} />
                       </div>
-                      <h3 className="text-xs font-bold text-amber-950 dark:text-amber-200">
+                      <h3 className="text-xs font-bold text-accent-strong dark:text-accent">
                         {slaBreaches.length} SLA Response Breach{slaBreaches.length === 1 ? "" : "es"}
                       </h3>
                     </div>
@@ -547,7 +547,7 @@ export default async function DashboardPage({
                           <p className="font-semibold text-foreground truncate">{d.title}</p>
                           <p className="text-[10px] text-muted-foreground">{d.department}</p>
                         </div>
-                        <span className="text-[10px] font-mono text-amber-800 dark:text-[#D6B56D] shrink-0">
+                        <span className="text-[10px] font-mono text-amber-800 dark:text-accent shrink-0">
                           Breached {d.sla_due_str}
                         </span>
                       </Link>
@@ -568,7 +568,7 @@ export default async function DashboardPage({
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-rose-500/20 text-rose-700 dark:text-rose-300">
                         <IconAlertCircle size={16} />
                       </div>
-                      <h3 className="text-xs font-bold text-rose-950 dark:text-rose-200">
+                      <h3 className="text-xs font-bold text-accent-strong dark:text-accent">
                         {activePersonalWarnings.length} Active Warning Notice
                       </h3>
                     </div>
@@ -628,7 +628,7 @@ export default async function DashboardPage({
             value={kpiCounts.submitted_plans}
             caption={`${kpiCounts.total_plans} total division commitments`}
             icon={
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-[#36A879]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-brand">
                 <IconTarget size={16} />
               </div>
             }

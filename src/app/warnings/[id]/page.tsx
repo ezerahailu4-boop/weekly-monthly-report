@@ -125,7 +125,7 @@ export default async function WarningLetterPage({
             <div
               className={`rounded-lg border px-4 py-3 text-xs font-medium flex items-center gap-2 ${
                 warning.status === "acknowledged"
-                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-brand"
                   : "border-border bg-muted/60 text-muted-foreground"
               }`}
             >

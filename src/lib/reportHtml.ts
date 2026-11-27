@@ -18,14 +18,14 @@ const baseStyles = `
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Georgia, serif; color: #0f172a; padding: 34px 40px; max-width: 840px; margin: 0 auto; line-height: 1.5; }
   ${OFFICIAL_LETTERHEAD_CSS}
   h2 { font-size: 13px; margin-top: 22px; margin-bottom: 8px; border-bottom: 1.5px solid #0f172a; padding-bottom: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #0f172a; }
-  h3 { font-size: 12.5px; margin-top: 14px; margin-bottom: 4px; font-weight: 600; color: #166534; }
+  h3 { font-size: 12.5px; margin-top: 14px; margin-bottom: 4px; font-weight: 600; color: #183454; }
   p { font-size: 12px; line-height: 1.6; margin: 4px 0; color: #334155; }
   table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11px; }
   th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; vertical-align: top; }
   th { background: #f8fafc; font-weight: 600; color: #0f172a; }
-  .review-box { margin-top: 24px; border: 1.5px solid #2563eb; background: #eff6ff; padding: 16px; border-radius: 8px; }
-  .review-box h2 { border-bottom: 1px solid #93c5fd; color: #1e3a8a; margin-top: 0; padding-bottom: 4px; }
-  .review-box p { color: #1e3a8a; }
+  .review-box { margin-top: 24px; border: 1.5px solid #c69b43; background: #f7eedb; padding: 16px; border-radius: 8px; }
+  .review-box h2 { border-bottom: 1px solid #d9c28b; color: #765510; margin-top: 0; padding-bottom: 4px; }
+  .review-box p { color: #765510; }
 `;
 
 function renderExecutiveReviewBlock(report: ReportRow): string {

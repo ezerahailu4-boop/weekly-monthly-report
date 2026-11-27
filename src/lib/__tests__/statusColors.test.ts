@@ -21,18 +21,18 @@ describe("statusColorsFor", () => {
 
   it("returns consistent values for draft", () => {
     const c = statusColorsFor("draft");
-    expect(c.light.bg).toBe("bg-[#F0EDE0]");
-    expect(c.light.text).toBe("text-[#52645A]");
-    expect(c.dark.bg).toBe("bg-[#3A3E41]");
-    expect(c.dark.text).toBe("text-[#B5B2AA]");
+    expect(c.light.bg).toBe("bg-muted");
+    expect(c.light.text).toBe("text-muted-foreground");
+    expect(c.dark.bg).toBe("bg-muted");
+    expect(c.dark.text).toBe("text-muted-foreground");
   });
 
   it("returns consistent values for overdue", () => {
     const c = statusColorsFor("overdue");
-    expect(c.light.bg).toBe("bg-[#FBE8E8]");
-    expect(c.light.text).toBe("text-[#DC5550]");
-    expect(c.dark.bg).toBe("bg-[#4A1B1B]");
-    expect(c.dark.text).toBe("text-[#E47777]");
+    expect(c.light.bg).toBe("bg-accent/10");
+    expect(c.light.text).toBe("text-accent-strong");
+    expect(c.dark.bg).toBe("bg-accent/10");
+    expect(c.dark.text).toBe("text-accent-strong");
   });
 });
 
@@ -51,17 +51,17 @@ describe("roleColorsFor", () => {
 
   it("returns consistent values for super_admin", () => {
     const c = roleColorsFor("super_admin");
-    expect(c.light.text).toBe("text-[#8A5A1B]");
-    expect(c.light.bg).toBe("bg-[#FBF0DF]");
-    expect(c.dark.text).toBe("text-[#D6B56D]");
-    expect(c.dark.bg).toBe("bg-[#3A2E14]");
+    expect(c.light.text).toBe("text-accent-strong");
+    expect(c.light.bg).toBe("bg-accent/10");
+    expect(c.dark.text).toBe("text-accent-strong");
+    expect(c.dark.bg).toBe("bg-accent/10");
   });
 
   it("returns consistent values for employee", () => {
     const c = roleColorsFor("employee");
-    expect(c.light.text).toBe("text-[#263B30]");
-    expect(c.light.bg).toBe("bg-[#D9CBA9/30]");
-    expect(c.dark.text).toBe("text-[#F4F0E7]");
-    expect(c.dark.bg).toBe("bg-[#34383A/50]");
+    expect(c.light.text).toBe("text-foreground");
+    expect(c.light.bg).toBe("bg-secondary");
+    expect(c.dark.text).toBe("text-foreground");
+    expect(c.dark.bg).toBe("bg-secondary");
   });
 });

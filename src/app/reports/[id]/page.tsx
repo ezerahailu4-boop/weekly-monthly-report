@@ -137,9 +137,9 @@ export default async function ReportDetailPage({
 
       {/* Executive Review Guidance Note Banner */}
       {report.review_notes && (
-        <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-xs text-blue-900 dark:text-blue-200 no-print">
+          <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-xs text-blue-900 dark:text-brand no-print">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="font-bold flex items-center gap-1.5 text-blue-950 dark:text-blue-100">
+            <span className="font-bold flex items-center gap-1.5 text-brand dark:text-brand">
               <IconMessageSquare size={14} className="text-blue-600 dark:text-blue-400" />
               Executive Leadership Feedback &amp; Directives
             </span>
@@ -149,7 +149,7 @@ export default async function ReportDetailPage({
               </span>
             )}
           </div>
-          <p className="whitespace-pre-wrap leading-relaxed text-blue-900 dark:text-blue-200">
+          <p className="whitespace-pre-wrap leading-relaxed text-blue-900 dark:text-brand">
             {report.review_notes}
           </p>
         </div>
