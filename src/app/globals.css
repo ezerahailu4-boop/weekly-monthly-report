@@ -255,10 +255,10 @@
   --sidebar-border: #263D5A;
   --sidebar-accent: #C69B43;
   --sidebar-accent-foreground: #14243A;
-  --sidebar-light-bg: #F2F5F9;
+  --sidebar-light-bg: #E8EEF5;
   --sidebar-light-text: #14243A;
   --sidebar-light-icon: #53657B;
-  --sidebar-light-active-bg: #E3EAF2;
+  --sidebar-light-active-bg: #D7E1EC;
   --sidebar-light-active-text: #183454;
   --sidebar-light-active-icon: #183454;
   --sidebar-light-hover-text: #14243A;
@@ -302,12 +302,12 @@
   --brand: #D7B35D;
   --brand-foreground: #101A2A;
 
-  --sidebar: #0D192B;
+  --sidebar: #14243A;
   --sidebar-foreground: #F6F8FC;
   --sidebar-border: #24364E;
   --sidebar-accent: #D7B35D;
   --sidebar-accent-foreground: #101A2A;
-  --sidebar-light-bg: #0D192B;
+  --sidebar-light-bg: #14243A;
   --sidebar-light-text: #F6F8FC;
   --sidebar-light-icon: #B6C2D1;
   --sidebar-light-active-bg: #1B2A40;
@@ -424,6 +424,39 @@ table, .tabular-nums, [data-tabular] {
 .animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
 .fade-in-up { animation: fade-in-up 0.8s ease-out both; }
 .fade-in-right { animation: fade-in-right 0.8s ease-out both; }
+
+/* Login screen motion: restrained entrances and clear error feedback. */
+@keyframes login-card-enter {
+  from { opacity: 0; transform: translateY(22px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes login-content-enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes login-orbit {
+  from { transform: translate3d(-2%, -1%, 0) scale(0.96); }
+  to { transform: translate3d(3%, 2%, 0) scale(1.04); }
+}
+@keyframes login-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes login-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+.login-card-enter { animation: login-card-enter 720ms cubic-bezier(.2,.75,.25,1) both; }
+.login-content-enter { animation: login-content-enter 620ms cubic-bezier(.2,.75,.25,1) both; }
+.login-orbit { animation: login-orbit 16s ease-in-out infinite alternate; }
+.login-float { animation: login-float 5s ease-in-out infinite; }
+.login-shake { animation: login-shake 420ms ease-in-out; }
+@media (prefers-reduced-motion: reduce) {
+  .login-card-enter, .login-content-enter, .login-orbit, .login-float, .login-shake {
+    animation: none !important;
+  }
+}
 
 /* ─── Report Document Render ──────────────────────────────── */
 .report-render {
