@@ -13,13 +13,6 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const planScope =
-    user.role === "super_admin"
-      ? sql``
-      : user.role === "admin"
-        ? sql`WHERE u.company_id = ${user.company_id}`
-        : sql`WHERE p.user_id = ${user.id}`;
-
   const rows = await sql`
         SELECT p.id, p.reference_code, p.user_id, p.directive_id, p.title, p.department,
                to_char(p.period_start, 'YYYY-MM-DD') as period_start,
@@ -33,7 +26,11 @@ export async function GET() {
         JOIN users u ON p.user_id = u.id
         LEFT JOIN users rev ON p.reviewed_by = rev.id
         LEFT JOIN directives d ON p.directive_id = d.id
-        ${planScope}
+        WHERE (
+          ${user.role === "super_admin"}::boolean
+          OR (${user.role === "admin"}::boolean AND u.company_id = ${user.company_id}::uuid)
+          OR (${user.role !== "super_admin" && user.role !== "admin"}::boolean AND p.user_id = ${user.id}::uuid)
+        )
         ORDER BY p.created_at DESC;
       `
 

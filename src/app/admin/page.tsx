@@ -90,24 +90,14 @@ export default async function AdminPage({
         : [];
 
   // Query team members, reports, tasks, settings, and warnings in parallel from Neon
-const reportsWhere = isSuperAdmin
-  ? selectedCompanyId
-    ? sql`WHERE r.company_id = ${selectedCompanyId}`
-    : sql``
-  : sql`WHERE r.company_id = ${user.company_id}`;
-const taskCompanyWhere = selectedCompanyId
-  ? sql`WHERE u.company_id = ${selectedCompanyId}`
-  : sql``;
-const planCompanyWhere = selectedCompanyId
-  ? sql`WHERE u.company_id = ${selectedCompanyId}`
-  : sql``;
   const [teamRows, reportRows, taskRows, planRows, settings, allWarnings] = await Promise.all([
     sql`
       SELECT u.id, u.email, u.full_name, u.department, u.role,
              u.telegram_chat_id, u.telegram_username, u.created_at, u.company_id,
              c.name AS company_name, c.logo_url AS company_logo_url
       FROM users u LEFT JOIN companies c ON c.id = u.company_id
-      ${!isSuperAdmin ? sql`WHERE company_id = ${user.company_id}` : sql``}
+      WHERE (${selectedCompanyId}::uuid IS NULL OR u.company_id = ${selectedCompanyId}::uuid)
+        AND (${isSuperAdmin}::boolean OR u.company_id = ${user.company_id}::uuid)
       ORDER BY created_at DESC;
     `,
     sql`
@@ -122,7 +112,10 @@ const planCompanyWhere = selectedCompanyId
       LEFT JOIN users u ON r.user_id = u.id
       LEFT JOIN users rev ON r.reviewed_by = rev.id
       LEFT JOIN companies c ON r.company_id = c.id
-      ${reportsWhere}
+      WHERE (
+        (${isSuperAdmin}::boolean AND (${selectedCompanyId}::uuid IS NULL OR r.company_id = ${selectedCompanyId}::uuid))
+        OR (NOT ${isSuperAdmin}::boolean AND r.company_id = ${user.company_id}::uuid)
+      )
       ORDER BY r.created_at DESC;
     `,
     sql`
@@ -136,7 +129,10 @@ const planCompanyWhere = selectedCompanyId
       FROM tasks t
       JOIN users u ON t.assigned_to = u.id
       LEFT JOIN users ab ON t.assigned_by = ab.id
-      ${taskCompanyWhere}
+      WHERE (
+        (${isSuperAdmin}::boolean AND (${selectedCompanyId}::uuid IS NULL OR u.company_id = ${selectedCompanyId}::uuid))
+        OR (NOT ${isSuperAdmin}::boolean AND u.company_id = ${user.company_id}::uuid)
+      )
       ORDER BY
         CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END ASC,
         t.due_date ASC NULLS LAST,
@@ -147,7 +143,10 @@ const planCompanyWhere = selectedCompanyId
              p.period_start, p.period_end, p.summary, p.objectives
       FROM action_plans p
       JOIN users u ON u.id = p.user_id
-      ${planCompanyWhere}
+      WHERE (
+        (${isSuperAdmin}::boolean AND (${selectedCompanyId}::uuid IS NULL OR u.company_id = ${selectedCompanyId}::uuid))
+        OR (NOT ${isSuperAdmin}::boolean AND u.company_id = ${user.company_id}::uuid)
+      )
       ORDER BY p.created_at DESC;
     `,
     selectedCompanyId ? getCompanySettings(selectedCompanyId) : getPortalSettings(),
