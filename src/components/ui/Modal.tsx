@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useCallback, useId } from "react";
 
 export interface ModalProps {
   isOpen: boolean;
@@ -8,7 +8,10 @@ export interface ModalProps {
   children: React.ReactNode;
   maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "4xl";
   className?: string;
+  ariaLabel?: string;
 }
+
+const ModalIdContext = createContext<string | null>(null);
 
 const maxWidthMap: Record<NonNullable<ModalProps["maxWidth"]>, string> = {
   sm: "max-w-sm",
@@ -25,7 +28,11 @@ export function Modal({
   children,
   maxWidth = "lg",
   className = "",
+  ariaLabel,
 }: ModalProps) {
+  const generatedId = useId();
+  const modalTitleId = `modal-title-${generatedId}`;
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -50,27 +57,33 @@ export function Modal({
 
   if (!isOpen) return null;
 
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
-      role="dialog"
-      aria-modal="true"
-    >
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-150 animate-in fade-in"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+  const ariaLabelledBy = ariaLabel ? undefined : modalTitleId;
 
-      {/* Modal Dialog Window */}
+  return (
+    <ModalIdContext.Provider value={modalTitleId}>
       <div
-        className={`relative w-full ${maxWidthMap[maxWidth]} rounded-2xl border border-border bg-card p-6 shadow-xl transition-all duration-150 animate-in zoom-in-95 ${className}`}
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
       >
-        {children}
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-150 animate-in fade-in"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+
+        {/* Modal Dialog Window */}
+        <div
+          className={`relative w-full ${maxWidthMap[maxWidth]} rounded-2xl border border-border bg-card p-6 shadow-xl transition-all duration-150 animate-in zoom-in-95 ${className}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {children}
+        </div>
       </div>
-    </div>
+    </ModalIdContext.Provider>
   );
 }
 
@@ -115,8 +128,12 @@ export function ModalTitle({
   children: React.ReactNode;
   className?: string;
 }) {
+  const titleId = useContext(ModalIdContext);
   return (
-    <h3 className={`text-lg font-semibold tracking-tight text-foreground ${className}`}>
+    <h3
+      id={titleId ?? undefined}
+      className={`text-lg font-semibold tracking-tight text-foreground ${className}`}
+    >
       {children}
     </h3>
   );

@@ -19,10 +19,10 @@ export function StatCard({ title, value, caption, delta, deltaPositive, icon }: 
     : "text-muted-foreground";
 
   return (
-    <Card className="glass-card">
+    <Card className="glass-card" role="region" aria-label={title}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="stat-label text-sm font-normal leading-none">{title}</CardTitle>
-        {icon && <div className="text-muted-foreground">{icon}</div>}
+        {icon && <div className="text-muted-foreground" aria-hidden="true">{icon}</div>}
       </CardHeader>
       <CardContent>
         <div className="stat-card">
