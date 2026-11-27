@@ -6,6 +6,8 @@ const PUBLIC_PATHS = [
   "/login",
   "/logout",
   "/",
+  "/forgot-password",
+  "/reset-password",
   "/auth",
   "/api/auth",
   "/api/telegram/webhook",
