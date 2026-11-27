@@ -312,7 +312,7 @@ export async function listResetRequests({
         FROM password_reset_requests r
         JOIN users u ON r.requested_by_user_id = u.id
         WHERE u.company_id = ${companyId}
-          ${status ? sql`AND r.status = ${status}` : sql``}
+          AND (${status || null}::text IS NULL OR r.status = ${status || null})
         ORDER BY r.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `
@@ -320,7 +320,7 @@ export async function listResetRequests({
         SELECT id, email, status, created_at, expires_at,
                requested_by_user_id, admin_action_by, admin_action_at, admin_notes
         FROM password_reset_requests
-        ${status ? sql`WHERE status = ${status}` : sql``}
+        WHERE (${status || null}::text IS NULL OR status = ${status || null})
         ORDER BY created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `;
