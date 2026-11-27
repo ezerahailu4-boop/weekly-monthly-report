@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   buildMonthOptions,
@@ -10,6 +10,7 @@ import {
   formatExecutiveSummaryText,
   generateExecutiveSummary,
   type DepartmentSummaryRow,
+  type ExecutiveSummaryResult,
   type SummaryStaffMember,
 } from "@/lib/executiveSummary";
 import {
@@ -111,6 +112,10 @@ function ExecutiveSummaryModal({
   const [includeDrafts, setIncludeDrafts] = useState(false);
   const [activeTab, setActiveTab] = useState<SummaryTab>("overview");
   const [copied, setCopied] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<ExecutiveSummaryResult>(
+    emptySummaryResult(todayEthYmd, "weekly", "Current Week", "all", false)
+  );
 
   const departmentsList = useMemo(() => {
     const set = new Set<string>();
@@ -150,19 +155,37 @@ function ExecutiveSummaryModal({
     };
   }, [reportType, selectedWeekKey, selectedMonthKey, weekOptions, monthOptions]);
 
-  const summary = useMemo(() => {
+  useEffect(() => {
+    let cancelled = false;
     const generatedAtLabel = `${todayEthYmd} · Live Portal Snapshot`;
-    return generateExecutiveSummary({
-      reportType,
-      periodStart: activePeriod.start,
-      periodEnd: activePeriod.end,
-      periodLabel: activePeriod.label,
-      departmentFilter,
-      includeDrafts,
-      reports,
-      staff,
-      generatedAtLabel,
-    });
+    const compute = () => {
+      try {
+        const result = generateExecutiveSummary({
+          reportType,
+          periodStart: activePeriod.start,
+          periodEnd: activePeriod.end,
+          periodLabel: activePeriod.label,
+          departmentFilter,
+          includeDrafts,
+          reports,
+          staff,
+          generatedAtLabel,
+        });
+        if (!cancelled) {
+          setSummary(result);
+          setSummaryError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setSummaryError(err instanceof Error ? err.message : "Failed to generate summary");
+          setSummary(emptySummaryResult(todayEthYmd, reportType, activePeriod.label, departmentFilter, includeDrafts));
+        }
+      }
+    };
+    compute();
+    return () => {
+      cancelled = true;
+    };
   }, [
     reportType,
     activePeriod,
@@ -382,6 +405,30 @@ function ExecutiveSummaryModal({
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+          {summaryError && (
+            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 space-y-2">
+              <div className="flex items-start gap-3">
+                <IconAlertCircle size={18} className="text-rose-600 dark:text-rose-400 shrink-0" />
+                <div>
+                  <h3 className="text-xs font-bold text-rose-800 dark:text-rose-300">
+                    Summary generation failed
+                  </h3>
+                  <p className="text-[11px] text-rose-700 dark:text-rose-300/90 whitespace-pre-wrap">
+                    {summaryError}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSummaryError(null);
+                }}
+                className="text-xs font-medium text-accent hover:underline"
+              >
+                Try again
+              </button>
+            </div>
+          )}
           {/* 4 Metric Tiles */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="rounded-xl border border-border bg-muted/25 p-3.5">
@@ -898,5 +945,57 @@ function ExecutiveSummaryModal({
       </div>
     </div>
   );
+}
+
+/**
+ * Returns an empty ExecutiveSummaryResult used as a safe fallback when
+ * summary generation fails, so the modal still renders instead of crashing.
+ */
+function emptySummaryResult(
+  todayEthYmd: string,
+  reportType: "weekly" | "monthly" | "all",
+  periodLabel: string,
+  departmentFilter: string,
+  includeDrafts: boolean
+): ExecutiveSummaryResult {
+  return {
+    meta: {
+      reportType,
+      periodStart: null,
+      periodEnd: null,
+      periodLabel,
+      departmentFilter,
+      includeDrafts,
+      generatedAtLabel: `${todayEthYmd} · Live Portal Snapshot`,
+    },
+    metrics: {
+      totalReports: 0,
+      weeklyReports: 0,
+      monthlyReports: 0,
+      reviewedCount: 0,
+      pendingReviewCount: 0,
+      draftCount: 0,
+      trackedStaffCount: 0,
+      submittedStaffCount: 0,
+      complianceRate: null,
+      totalKpis: 0,
+      avgAchievement: null,
+      kpisMeetingTarget: 0,
+      kpisBelowTarget: 0,
+      incompleteCount: 0,
+      challengesCount: 0,
+      supportRequestsCount: 0,
+      performanceBand: "No Data",
+    },
+    narrativeParagraphs: [],
+    keyTakeaways: [],
+    departments: [],
+    highlights: [],
+    challenges: [],
+    supportRequests: [],
+    nextPriorities: [],
+    incompleteActivities: [],
+    nonSubmitters: [],
+  };
 }
 
