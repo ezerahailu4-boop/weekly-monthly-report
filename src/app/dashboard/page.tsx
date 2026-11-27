@@ -85,12 +85,8 @@ export default async function DashboardPage({
   }
 
   // ── Query reports scoped by company for staff ──
-  const companyWhere =
-    isPrivileged
-      ? sql``
-      : sql`WHERE r.company_id = ${viewerCompanyId}`;
-
-  const rawReportRows = (await sql`
+  const rawReportRows = (isPrivileged
+    ? await sql`
     SELECT r.id, r.company_id, c.name as company_name, r.user_id, r.report_type,
            to_char(r.period_start, 'YYYY-MM-DD') as period_start,
            to_char(r.period_end, 'YYYY-MM-DD') as period_end,
@@ -102,7 +98,21 @@ export default async function DashboardPage({
     LEFT JOIN companies c ON r.company_id = c.id
     LEFT JOIN users u ON r.user_id = u.id
     LEFT JOIN users rev ON r.reviewed_by = rev.id
-    ${companyWhere}
+    ORDER BY r.created_at DESC;
+  `
+    : await sql`
+    SELECT r.id, r.company_id, c.name as company_name, r.user_id, r.report_type,
+           to_char(r.period_start, 'YYYY-MM-DD') as period_start,
+           to_char(r.period_end, 'YYYY-MM-DD') as period_end,
+           r.status, r.data, r.review_notes, r.reviewed_by, r.reviewed_at,
+           r.created_at, r.updated_at,
+           u.full_name as author_name, u.department as author_department, u.email as author_email,
+           rev.full_name as reviewer_name
+    FROM reports r
+    LEFT JOIN companies c ON r.company_id = c.id
+    LEFT JOIN users u ON r.user_id = u.id
+    LEFT JOIN users rev ON r.reviewed_by = rev.id
+    WHERE r.company_id = ${viewerCompanyId}
     ORDER BY r.created_at DESC;
   `) as DbReportRow[];
 
@@ -136,9 +146,6 @@ export default async function DashboardPage({
     : allReportList;
 
   // ── Staff scoped by company for staff users ──
-  const staffCompanyWhere =
-    isPrivileged ? sql`` : sql`WHERE u.company_id = ${viewerCompanyId}`;
-
   const staffRows = isPrivileged
     ? (await sql`
         SELECT id, full_name, email, department, role, company_id,
@@ -150,7 +157,7 @@ export default async function DashboardPage({
         SELECT id, full_name, email, department, role, company_id,
                telegram_chat_id
         FROM users u
-        ${staffCompanyWhere}
+        WHERE u.company_id = ${viewerCompanyId}
         ORDER BY full_name ASC;
       `);
 
