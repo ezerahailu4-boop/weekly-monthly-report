@@ -265,7 +265,54 @@ table, .tabular-nums, [data-tabular] {
 .fade-in-right { animation: fade-in-right 0.8s ease-out both; }
 
 /* ─── Report Document Render ──────────────────────────────── */
-.report-render { color: var(--foreground); }
+.report-render {
+  color: #0f172a;
+  background: #fff;
+  --border: #cbd5e1;
+  --foreground: #0f172a;
+  --muted-foreground: #475569;
+  --muted: #f1f5f9;
+  --brand: #0f5138;
+}
+.report-render .official-lh {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding-bottom: 0.9rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 2px solid #0f172a;
+}
+.report-render .official-lh-brand { display: flex; align-items: center; gap: 1rem; min-width: 0; }
+.report-render .official-lh-logo {
+  display: block;
+  width: 128px !important;
+  height: 62px !important;
+  max-width: 128px !important;
+  max-height: 62px !important;
+  flex: 0 0 128px;
+  padding: 3px;
+  object-fit: contain !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+.report-render .official-lh-org { margin: 0; color: #0f172a; font-size: 1rem; font-weight: 800; line-height: 1.2; }
+.report-render .official-lh-sub { margin: 0.25rem 0; color: #9a6e18; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.report-render .official-lh-addr { margin: 0; color: #475569; font-size: 0.65rem; line-height: 1.4; }
+.report-render .official-lh-ref { flex: 0 0 auto; color: #334155; font-size: 0.7rem; line-height: 1.5; text-align: right; }
+.report-render .official-doc-title-bar { margin: 1.1rem 0 0.9rem; text-align: center; }
+.report-render .official-doc-title { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 800; text-transform: uppercase; }
+.report-render .official-doc-subtitle { margin: 0.25rem 0 0; color: #475569; font-size: 0.75rem; }
+.report-render .official-footer { display: flex; justify-content: space-between; margin-top: 1.75rem; padding-top: 0.65rem; border-top: 1px solid #cbd5e1; color: #64748b; font-size: 0.65rem; }
+.report-render .official-footer strong { color: #0f172a; }
+@media (max-width: 640px) {
+  .report-render .official-lh { flex-wrap: wrap; }
+  .report-render .official-lh-logo { width: 96px !important; height: 52px !important; max-width: 96px !important; max-height: 52px !important; flex-basis: 96px; }
+  .report-render .official-lh-ref { flex-basis: 100%; text-align: left; }
+  .report-render .official-lh-addr { overflow-wrap: anywhere; }
+  .report-render .official-footer { flex-wrap: wrap; gap: 0.5rem 1rem; }
+}
 .report-render h1 {
   font-size: 1.5rem; text-align: center; font-weight: 700;
   color: var(--foreground); letter-spacing: -0.025em;

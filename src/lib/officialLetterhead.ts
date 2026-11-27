@@ -147,8 +147,11 @@ export const OFFICIAL_LETTERHEAD_CSS = `
     gap: 14px;
   }
   .official-lh-logo {
-    width: 90px;
-    height: 42px;
+    width: 128px;
+    height: 62px;
+    max-width: 128px;
+    max-height: 62px;
+    flex: 0 0 128px;
     object-fit: contain;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
@@ -237,7 +240,7 @@ export async function renderOfficialLetterheadHtml(opts: {
       <div class="official-lh-brand">
         ${
           logoUri
-            ? `<img src="${logoUri}" alt="${escHtml(cfg.organizationName)}" class="official-lh-logo" width="90" height="42" style="width:90px;height:42px;object-fit:contain;display:block;" />`
+            ? `<img src="${logoUri}" alt="${escHtml(cfg.organizationName)}" class="official-lh-logo" width="128" height="62" style="width:128px;height:62px;max-width:128px;max-height:62px;object-fit:contain;display:block;flex:0 0 128px;" />`
             : ""
         }
         <div>

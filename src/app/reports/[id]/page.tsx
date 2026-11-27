@@ -281,23 +281,7 @@ export default async function ReportDetailPage({
       </div>
 
       {/* Official Document Rendering Sheet */}
-      <div className="relative rounded-xl border border-border bg-card p-6 sm:p-12 shadow-sm report-render">
-        {/* Subtle official watermark / header */}
-        <div className="mb-6 flex items-center justify-between border-b-2 border-foreground/80 pb-4">
-          <div>
-            <p className="font-display text-base sm:text-lg font-bold tracking-tight text-foreground">
-              YETAF HOLDING LIMITED
-            </p>
-            <p className="text-[10px] sm:text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-              Performance &amp; Governance Reporting
-            </p>
-          </div>
-          <div className="text-right text-[11px] text-muted-foreground">
-            <p className="font-mono">REF: YH-{report.id.slice(0, 8).toUpperCase()}</p>
-            <p suppressHydrationWarning>{formatDate(report.created_at)}</p>
-          </div>
-        </div>
-
+      <div className="relative rounded-xl border border-slate-200 bg-white p-4 shadow-sm report-render sm:p-8 lg:p-10">
         <div dangerouslySetInnerHTML={{ __html: bodyHtml }} />
       </div>
     </div>
