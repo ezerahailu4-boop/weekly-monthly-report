@@ -37,10 +37,13 @@ Added a vitest-based unit test suite for the pure utility functions in `src/lib/
 - `npx eslint src/` → 0 errors (15 pre-existing warnings only)
 - `npm run build` → passes
 
-**Follow-up commit (`b719f8b`) — fixed plan/report PDF letterhead export on Vercel:**
-- `src/app/api/plans/[id]/export/route.ts` — added `--no-sandbox`/`--disable-setuid-sandbox` to `chromium.launch()`; wrapped `renderOfficialLetterheadHtml` in try/catch so letterhead failures don’t break the whole export; improved catch-block logging
-- `src/app/api/reports/[id]/export/pdf/route.ts` — same Chromium flags + try/catch around `renderReportHtml` with minimal fallback HTML
-- `src/lib/officialLetterhead.ts` — added 8s `AbortController` timeout to `fetchCompanyLogoBuffer` to prevent hanging on unreachable external logo URLs
+**Follow-up commit (pending) — fixed PDF letterhead export on Vercel serverless:**
+- `src/app/api/plans/[id]/export/route.ts` — replaced `chromium.launch()` with `launchChromium()` helper using `@sparticux/chromium` serverless binary
+- `src/app/api/reports/[id]/export/pdf/route.ts` — same Chromium fix
+- `src/lib/officialLetterhead.ts` — added `launchChromium()` helper that uses `@sparticux/chromium` `Chromium.executablePath()`/`Chromium.args` on serverless, falls back to Playwright Chromium locally
+- Installed `@sparticux/chromium@^129` as devDependency
+- Also fixed oversized logo (90×42px) in `renderOfficialLetterheadHtml`
+
 
 **Why:** Closed the "Test coverage", "Print styles", and "Accessibility audit" gaps identified in the codebase. The project previously had only one Playwright e2e file (`tests/e2e/auth.spec.ts`) and no unit tests; print CSS covered only `.report-render`; and there was no programmatic table/modal/station card accessibility.
 

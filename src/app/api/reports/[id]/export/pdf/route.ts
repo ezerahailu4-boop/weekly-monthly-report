@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { chromium } from "playwright";
 import { getReportForExport } from "@/lib/getReportForExport";
 import { getCompanySettings, getPortalSettings } from "@/lib/portalSettings";
+import { launchChromium } from "@/lib/officialLetterhead";
 import { renderReportHtml } from "@/lib/reportHtml";
 
 export async function GET(
@@ -28,9 +28,7 @@ export async function GET(
   }
 
   try {
-    const browser = await chromium.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    const browser = await launchChromium();
     try {
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: "load" });

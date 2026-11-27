@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { chromium } from "playwright";
 import {
   Document,
   HeadingLevel,
@@ -16,6 +15,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { getPortalSettings } from "@/lib/portalSettings";
 import {
+  launchChromium,
   OFFICIAL_LETTERHEAD_CSS,
   buildOfficialDocxFooterBlock,
   buildOfficialDocxLetterhead,
@@ -244,9 +244,7 @@ export async function GET(
   </body></html>`;
 
   try {
-    const browser = await chromium.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    const browser = await launchChromium();
     try {
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: "load" });

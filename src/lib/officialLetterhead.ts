@@ -1,5 +1,7 @@
 import fs from "fs";
 import path from "path";
+import { chromium } from "playwright-core";
+import Chromium from "@sparticuz/chromium";
 import {
   AlignmentType,
   BorderStyle,
@@ -33,6 +35,34 @@ export function getCompanyLogoBuffer(): Buffer | null {
   }
   cachedLogoBuffer = null;
   return null;
+}
+
+/**
+ * Launch headless Chromium with Vercel serverless support.
+ * Uses @sparticux/chromium binary when available (production/ serverless),
+ * otherwise falls back to Playwright's bundled Chromium (local dev).
+ */
+export async function launchChromium() {
+  try {
+    const exePath = await Chromium.executablePath();
+    return await chromium.launch({
+      args: [
+        ...Chromium.args,
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+      ],
+      executablePath: exePath,
+      headless: true,
+    });
+  } catch {
+    // Fallback to Playwright's bundled Chromium (local development)
+    return await chromium.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      headless: true,
+    });
+  }
 }
 
 /** Fetch a logo from an external URL and return its Buffer (server-side only). */
