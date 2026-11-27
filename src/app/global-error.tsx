@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 const ERROR_REPORT_URL = process.env.NEXT_PUBLIC_ERROR_REPORT_URL;
@@ -37,11 +37,12 @@ export default function GlobalError({
   error: Error;
   reset: () => void;
 }) {
-  const [logged, setLogged] = useState(false);
   const [errorId] = useState(generateErrorId);
+  const loggedRef = useRef(false);
 
   const handleLog = useCallback(() => {
-    if (logged) return;
+    if (loggedRef.current) return;
+    loggedRef.current = true;
     const timestamp = new Date().toISOString();
     console.error("Global error caught:", {
       errorId,
@@ -57,8 +58,7 @@ export default function GlobalError({
       url: typeof window !== "undefined" ? window.location.href : "",
       timestamp,
     });
-    setLogged(true);
-  }, [error, logged, errorId]);
+  }, [error, errorId]);
 
   useEffect(() => {
     handleLog();

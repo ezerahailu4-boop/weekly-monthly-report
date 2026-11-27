@@ -26,7 +26,8 @@ export async function GET(request: Request) {
   const statusFilter = searchParams.get("status");
   const isPrivileged = user.role === "admin" || user.role === "super_admin";
 
-  let rows: any[];
+  type DirectiveRow = Record<string, unknown>;
+  let rows: DirectiveRow[];
   try {
     rows = isPrivileged
       ? await sql`
@@ -72,7 +73,7 @@ export async function GET(request: Request) {
 
   const filtered =
     statusFilter && statusFilter !== "all"
-      ? rows.filter((r) => r.status === statusFilter)
+      ? rows.filter((r) => (r.status as string) === statusFilter)
       : rows;
 
   return NextResponse.json({ success: true, directives: filtered });

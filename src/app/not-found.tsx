@@ -11,7 +11,7 @@ export default function NotFound() {
           Page Not Found
         </h1>
         <p className="text-lg text-muted-foreground mb-8">
-          The page you're looking for doesn't exist. It may have been moved or deleted.
+          The page you&rsquo;re looking for doesn&rsquo;t exist. It may have been moved or deleted.
         </p>
         <Link
           href="/dashboard"

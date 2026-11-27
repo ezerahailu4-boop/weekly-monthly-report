@@ -1,5 +1,7 @@
 import { statusColorsFor } from "@/lib/statusColors";
 
+type StatusKey = "draft" | "submitted" | "reviewed" | "overdue" | "warning";
+
 export function StatusBadge({
   status,
   size = "md",
@@ -9,9 +11,9 @@ export function StatusBadge({
 }) {
   const norm = (status || "draft").toLowerCase();
   const key = (["draft", "submitted", "reviewed", "overdue", "warning"] as const).includes(
-    norm as any
+    norm as StatusKey
   )
-    ? (norm as any)
+    ? (norm as StatusKey)
     : "draft";
   const { light, dark } = statusColorsFor(key);
   const label =

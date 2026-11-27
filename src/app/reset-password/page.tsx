@@ -22,16 +22,12 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(token ? null : "No reset token provided.");
   const [success, setSuccess] = useState(false);
-  const [tokenValid, setTokenValid] = useState<boolean | null>(null);
+  const [tokenValid, setTokenValid] = useState<boolean | null>(token ? null : false);
 
   useEffect(() => {
-    if (!token) {
-      setError("No reset token provided.");
-      setTokenValid(false);
-      return;
-    }
+    if (!token) return;
     async function verify() {
       try {
         const res = await fetch(
