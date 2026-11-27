@@ -37,12 +37,10 @@ Added a vitest-based unit test suite for the pure utility functions in `src/lib/
 - `npx eslint src/` → 0 errors (15 pre-existing warnings only)
 - `npm run build` → passes
 
-**Follow-up commit (pending) — fixed PDF letterhead export on Vercel serverless:**
-- `src/app/api/plans/[id]/export/route.ts` — replaced `chromium.launch()` with `launchChromium()` helper using `@sparticux/chromium` serverless binary
-- `src/app/api/reports/[id]/export/pdf/route.ts` — same Chromium fix
-- `src/lib/officialLetterhead.ts` — added `launchChromium()` helper that uses `@sparticux/chromium` `Chromium.executablePath()`/`Chromium.args` on serverless, falls back to Playwright Chromium locally
-- Installed `@sparticux/chromium@^129` as devDependency
-- Also fixed oversized logo (90×42px) in `renderOfficialLetterheadHtml`
+**Follow-up commit — fixed executive summary modal/page:**
+- `src/app/api/reports/summary/export/route.ts` — replaced bare `chromium.launch()` with `launchChromium()` helper using `@sparticux/chromium` serverless binary + `--no-sandbox` flags, so PDF export works on Vercel instead of falling back to HTML
+- `src/components/ExecutiveSummaryModal.tsx` — refactored summary computation from `useMemo` (which illegally called `setState`) to `useState` + `useEffect`; added defensive try/catch around `generateExecutiveSummary`; renders empty summary result on first render so modal never shows blank; shows error message with "Try again" if generation fails
+- `src/lib/officialLetterhead.ts` — previously added `launchChromium()` helper (already committed)
 
 
 **Why:** Closed the "Test coverage", "Print styles", and "Accessibility audit" gaps identified in the codebase. The project previously had only one Playwright e2e file (`tests/e2e/auth.spec.ts`) and no unit tests; print CSS covered only `.report-render`; and there was no programmatic table/modal/station card accessibility.

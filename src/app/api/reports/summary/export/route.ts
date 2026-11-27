@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { chromium } from "playwright";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { ETHIOPIA_TIMEZONE } from "@/lib/windowSchedule";
@@ -11,6 +10,7 @@ import {
   buildExecutiveSummaryDocx,
   renderExecutiveSummaryHtml,
 } from "@/lib/executiveSummaryExport";
+import { launchChromium } from "@/lib/officialLetterhead";
 import type { ReportRow } from "@/types/report";
 
 interface DbReportExportRow {
@@ -178,7 +178,7 @@ export async function GET(request: Request) {
   const html = renderExecutiveSummaryHtml(summary);
 
   try {
-    const browser = await chromium.launch();
+    const browser = await launchChromium();
     try {
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: "load" });
