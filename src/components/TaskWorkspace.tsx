@@ -424,9 +424,9 @@ export function TaskWorkspace({
         <div
           className={`rounded-xl border p-4 text-xs font-medium flex items-center justify-between gap-3 ${
             banner.type === "ok"
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-brand"
               : banner.type === "warn"
-              ? "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200"
+              ? "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-accent"
               : "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
           }`}
         >

@@ -113,10 +113,10 @@ export function AdminGovernanceControls({
           <IconAlertCircle size={18} />
         </div>
         <div className="space-y-1 text-xs">
-          <h3 className="font-bold text-amber-950 dark:text-amber-200">
+          <h3 className="font-bold text-accent-strong dark:text-accent">
             Audit Flag: Legacy &quot;Penalty Scale&quot; Logic Paused Pending Official HR Policy Review
           </h3>
-          <p className="text-amber-900 dark:text-amber-200/85 leading-relaxed">
+          <p className="text-amber-900 dark:text-accent/85 leading-relaxed">
             Hardcoded 2-strike escalation rules (<code>src/lib/warnings.ts</code> &amp;{" "}
             <code>src/lib/warningLetter.ts</code>) have been quarantined: automated daily cron
             enforcement has been removed from <code>vercel.json</code> and{" "}
@@ -257,7 +257,7 @@ export function AdminGovernanceControls({
             <div
               className={`rounded-lg border p-3 text-xs font-medium ${
                 govMsg.type === "ok"
-                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-brand"
                   : "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
               }`}
             >
@@ -319,7 +319,7 @@ export function AdminGovernanceControls({
 
               {newPlainKey && (
                 <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2.5 space-y-1.5">
-                  <p className="text-[10px] font-bold text-emerald-800 dark:text-emerald-200">
+                  <p className="text-[10px] font-bold text-emerald-800 dark:text-brand">
                     Copy this ERP API key now (shown once):
                   </p>
                   <div className="flex items-center gap-2">

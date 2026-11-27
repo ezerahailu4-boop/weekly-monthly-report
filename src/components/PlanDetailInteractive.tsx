@@ -51,7 +51,7 @@ export function PlanDetailInteractive({
         <div
           className={`rounded-xl border p-3.5 text-xs font-medium flex items-center justify-between ${
             notice.type === "ok"
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-brand"
               : "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
           }`}
         >

@@ -181,7 +181,7 @@ export default async function PlanDetailPage({
         )}
 
         {plan.review_notes && (
-          <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-xs text-blue-900 dark:text-blue-200 space-y-1">
+          <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-xs text-blue-900 dark:text-brand space-y-1">
             <p className="font-bold">
               Direction Review Notes
               {plan.reviewer_name ? ` — ${plan.reviewer_name}` : ""}

@@ -12,7 +12,7 @@ import { ThemeToggle } from "@/components/ThemeProvider";
 /* ------------------------------------------------------------------ */
 
 const BRAND_GRADIENT =
-  "linear-gradient(135deg, #06261B 0%, #0A3D2C 30%, #0F6B4B 60%, #10593F 100%)";
+  "linear-gradient(135deg, #0D192B 0%, #10233D 55%, #183454 100%)";
 
 /* ------------------------------------------------------------------ */
 /*  Page                                                              */
@@ -31,9 +31,6 @@ export default function LoginPage() {
 /* ------------------------------------------------------------------ */
 
 function LoginSkeleton() {
-  const prefersDark = typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const isCardDark = prefersDark ? "bg-[#181E1C] text-[#F5F3EC]" : "bg-[#FFFFFF] text-[#122A1F]";
-
   return (
     <main className="flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-brand/10 via-background/50 to-accent/10 px-4 py-8">
       <div className="w-full max-w-5xl rounded-[2.25rem] border border-border relative overflow-hidden shadow-xl animate-pulse">
@@ -55,7 +52,7 @@ function LoginSkeleton() {
                 <div className="h-12 w-3/4 rounded-lg bg-border animate-pulse" />
                 <div className="h-4 w-1/2 rounded-full bg-border animate-pulse mx-auto mt-4" />
               </div>
-              <div className={`h-4 w-full rounded-b-xl border-t border-border ${isCardDark}`} />
+              <div className="h-4 w-full rounded-b-xl border-t border-border bg-card text-card-foreground" />
             </div>
           </div>
         </div>
@@ -176,7 +173,7 @@ function LoginForm() {
 
           {/* Floating seal icon */}
           <div aria-hidden="true" className="relative z-20 absolute right-[22%] bottom-[20%] h-28 w-28 rounded-full bg-white/14 border border-white/20 flex items-center justify-center backdrop-blur-sm animate-float-slow">
-            <IconShield size={32} className="text-amber-200/90 drop-shadow-[0_0_14px_rgba(234,179,8,0.35)]" />
+            <IconShield size={32} className="text-amber-200/90 drop-shadow-[0_0_14px_rgba(215,179,93,0.35)]" />
           </div>
 
           <div className="relative z-20">
@@ -186,7 +183,7 @@ function LoginForm() {
             </Link>
 
             <div className="mt-8 inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/9 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-200 backdrop-blur-xs">
-              <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_14px_rgba(234,179,8,0.7)] animate-pulse-slow" />
+              <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_14px_rgba(215,179,93,0.7)] animate-pulse-slow" />
               YETAF Holding · Executive Portal
             </div>
 
@@ -223,7 +220,7 @@ function LoginForm() {
             {/* Header */}
             <div className={`mb-9 `} style={{ animationDelay: "160ms" }}>
               <div className="inline-flex items-center gap-1.5 rounded-lg border border-brand/20 bg-brand/7 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.17em] text-brand">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand shadow-[0_0_14px_rgba(10,82,56,0.5)]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-brand shadow-[0_0_14px_rgba(24,52,84,0.5)]" />
                 Authorized Access
               </div>
               <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-foreground sm:text-[2.5rem]">
@@ -236,7 +233,7 @@ function LoginForm() {
 
             {/* Notice banner */}
             {notice === "no-signup" && (
-              <div className="mb-7 flex items-start gap-3 rounded-xl border border-amber-200/60 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-900/10 p-3.5 text-sm text-amber-900 dark:text-amber-200" role="status">
+              <div className="mb-7 flex items-start gap-3 rounded-xl border border-amber-200/60 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-900/10 p-3.5 text-sm text-amber-900 dark:text-accent" role="status">
                 <IconAlertCircle size={17} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
                 <p>Public registration is disabled. Contact your administrator for access.</p>
               </div>
@@ -244,7 +241,7 @@ function LoginForm() {
 
             {/* Caps Lock hint */}
             {capsLock && !error && (
-              <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-200/50 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-900/10 p-3 text-sm text-amber-900 dark:text-amber-200">
+              <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-200/50 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-900/10 p-3 text-sm text-amber-900 dark:text-accent">
                 <IconAlertCircle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
                 <span>Caps Lock is on</span>
               </div>
@@ -267,7 +264,7 @@ function LoginForm() {
 
             {/* Success moment */}
             {success && (
-              <div className="mb-9 flex flex-col items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/8 p-5 text-emerald-800 dark:text-emerald-200 dark:border-emerald-500/20 dark:bg-emerald-900/5 animate-zoom-in-95">
+              <div className="mb-9 flex flex-col items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/8 p-5 text-emerald-800 dark:text-brand dark:border-emerald-500/20 dark:bg-emerald-900/5 animate-zoom-in-95">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 mb-3 animate-pulse-slow">
                   <IconCheck size={26} className="text-emerald-600 dark:text-emerald-400" />
                 </div>

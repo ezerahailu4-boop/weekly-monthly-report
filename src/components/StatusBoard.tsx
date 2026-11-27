@@ -182,8 +182,8 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
           <p className="font-display text-3xl sm:text-4xl font-extrabold text-heading tabular-nums">
             {submittedWeekly}
           </p>
-          <div className="mt-2 flex items-center gap-1 text-[11px] text-deep-emerald dark:text-[#36A879] font-medium">
-            <span className="flex h-1 w-1 rounded-full bg-deep-emerald dark:bg-[#36A879]" />
+          <div className="mt-2 flex items-center gap-1 text-[11px] text-deep-emerald dark:text-brand font-medium">
+            <span className="flex h-1 w-1 rounded-full bg-deep-emerald dark:bg-brand" />
             {reviewedWeekly} reviewed
           </div>
         </div>
@@ -193,8 +193,8 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
           <p className="font-display text-3xl sm:text-4xl font-extrabold text-heading tabular-nums">
             {submittedMonthly}
           </p>
-          <div className="mt-2 flex items-center gap-1 text-[11px] text-deep-emerald dark:text-[#36A879] font-medium">
-            <span className="flex h-1 w-1 rounded-full bg-deep-emerald dark:bg-[#36A879]" />
+          <div className="mt-2 flex items-center gap-1 text-[11px] text-deep-emerald dark:text-brand font-medium">
+            <span className="flex h-1 w-1 rounded-full bg-deep-emerald dark:bg-brand" />
             {reviewedMonthly} reviewed
           </div>
         </div>
@@ -241,8 +241,8 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
               <BarChart data={weeklyData} barGap={6} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
                 <defs>
                   <linearGradient id="weekly-gradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#4680FF" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#4680FF" stopOpacity={0.38} />
+                    <stop offset="0%" stopColor="var(--brand)" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="var(--brand)" stopOpacity={0.38} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -275,8 +275,8 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
               <BarChart data={weeklyData} barGap={6} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
                 <defs>
                   <linearGradient id="monthly-gradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#13C2C2" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#13C2C2" stopOpacity={0.38} />
+                    <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="var(--accent)" stopOpacity={0.38} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -304,15 +304,15 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
               <AreaChart data={monthlyTrend} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
                 <defs>
                   <linearGradient id="area-gold" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#4680FF" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#D6A64B" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--brand)" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} allowDecimals={false} hide />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted-foreground)", opacity: 0.2 }} />
-                <Area type="monotone" dataKey="count" stroke="#4680FF" strokeWidth={3} fillOpacity={1} fill="url(#area-gold)" dot={{ fill: "#4680FF", stroke: "var(--card)", strokeWidth: 2 }} />
+                <Area type="monotone" dataKey="count" stroke="var(--brand)" strokeWidth={3} fillOpacity={1} fill="url(#area-gold)" dot={{ fill: "var(--brand)", stroke: "var(--card)", strokeWidth: 2 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -334,8 +334,8 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
                   ]}
                   cx="50%" cy="50%" innerRadius={70} outerRadius={95} paddingAngle={5} dataKey="value" startAngle={180} endAngle={360}
                 >
-                  <Cell fill="#4680FF" />
-                  <Cell fill="#E8EDF5" />
+                  <Cell fill="var(--brand)" />
+                  <Cell fill="var(--muted)" />
                 </Pie>
                 <Tooltip contentStyle={tooltipStyle} />
                 <Legend wrapperStyle={{ fontSize: 10 }} verticalAlign="bottom" align="center" height={60} />
@@ -380,7 +380,7 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
                 <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
                 <YAxis type="category" dataKey="dept" tick={{ fontSize: 11, fill: "var(--foreground)" }} axisLine={false} tickLine={false} width={130} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v) => [`${v}%`, "Compliance"]} />
-            <Bar dataKey="rate" name="Compliance %" fill="#4680FF" radius={[0, 8, 8, 0]} />
+            <Bar dataKey="rate" name="Compliance %" fill="var(--brand)" radius={[0, 8, 8, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}

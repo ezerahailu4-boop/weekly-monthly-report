@@ -466,7 +466,7 @@ const planCompanyWhere = selectedCompanyId
               value={allTasks.filter((t) => t.status !== "completed").length}
               caption={`${allTasks.filter((t) => t.status === "completed").length} completed · ${overdueList.length} overdue staff`}
               icon={
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-[#36A879]">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-brand">
                   <IconCheckSquare size={16} />
                 </div>
               }

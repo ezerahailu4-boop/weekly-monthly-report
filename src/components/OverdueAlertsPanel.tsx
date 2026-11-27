@@ -122,7 +122,7 @@ export function OverdueAlertsPanel({
         <div
           className={`flex items-center justify-between gap-2 px-4 py-2 text-xs font-medium border-b ${
             notice.type === "ok"
-              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-brand"
               : "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300"
           }`}
         >

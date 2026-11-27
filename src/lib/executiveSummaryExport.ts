@@ -68,7 +68,7 @@ export function renderExecutiveSummaryHtml(summary: ExecutiveSummaryResult): str
   * { box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    color: #0f172a;
+    color: #14243a;
     margin: 0;
     padding: 0;
     line-height: 1.5;
@@ -76,17 +76,17 @@ export function renderExecutiveSummaryHtml(summary: ExecutiveSummaryResult): str
     background: #ffffff;
   }
   .header {
-    background: #0f172a;
+    background: #183454;
     color: #f8fafc;
     padding: 22px 28px;
-    border-bottom: 4px solid #ea580c;
+    border-bottom: 4px solid #c69b43;
   }
   .header-kicker {
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: #fb923c;
+    color: #e6ca7d;
     margin-bottom: 4px;
   }
   .header h1 {
@@ -151,7 +151,7 @@ export function renderExecutiveSummaryHtml(summary: ExecutiveSummaryResult): str
   }
   .narrative-box {
     background: #f8fafc;
-    border-left: 3.5px solid #ea580c;
+    border-left: 3.5px solid #c69b43;
     border-top: 1px solid #e2e8f0;
     border-right: 1px solid #e2e8f0;
     border-bottom: 1px solid #e2e8f0;
@@ -200,10 +200,8 @@ export function renderExecutiveSummaryHtml(summary: ExecutiveSummaryResult): str
     font-weight: 700;
     white-space: nowrap;
   }
-  .badge-green { background: #dcfce7; color: #166534; }
-  .badge-blue { background: #dbeafe; color: #1e40af; }
-  .badge-amber { background: #fef3c7; color: #92400e; }
-  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-green, .badge-blue { background: #e9eef4; color: #183454; }
+  .badge-amber, .badge-red { background: #f7eedb; color: #765510; }
   .badge-gray { background: #f1f5f9; color: #475569; }
   .item-card {
     border: 1px solid #e2e8f0;
@@ -227,7 +225,7 @@ export function renderExecutiveSummaryHtml(summary: ExecutiveSummaryResult): str
     margin-top: 5px;
     padding-top: 5px;
     border-top: 1px dashed #e2e8f0;
-    color: #166534;
+    color: #183454;
     font-size: 10.5px;
   }
   .empty { color: #64748b; font-style: italic; font-size: 11px; margin: 4px 0; }

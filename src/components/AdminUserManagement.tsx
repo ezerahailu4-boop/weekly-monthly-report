@@ -338,7 +338,7 @@ export function AdminUserManagement({
       {createdCredentials && (
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 shadow-xs animate-in fade-in-50">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200 font-bold text-sm">
+            <div className="flex items-center gap-2 text-emerald-900 dark:text-brand font-bold text-sm">
               <IconCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
               <span>Account Provisioned Successfully!</span>
             </div>

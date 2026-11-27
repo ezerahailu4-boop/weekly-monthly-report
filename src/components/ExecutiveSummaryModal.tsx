@@ -714,7 +714,7 @@ function ExecutiveSummaryModal({
                         className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 space-y-1"
                       >
                         <div className="flex items-center justify-between gap-2 text-xs">
-                          <span className="font-bold text-amber-950 dark:text-amber-200">
+                          <span className="font-bold text-accent-strong dark:text-accent">
                             {s.department} — {s.authorName}
                           </span>
                           <Link
@@ -724,7 +724,7 @@ function ExecutiveSummaryModal({
                             View Report →
                           </Link>
                         </div>
-                        <p className="text-xs text-amber-950/90 dark:text-amber-100 whitespace-pre-wrap leading-relaxed">
+                        <p className="text-xs text-accent-strong/90 dark:text-accent whitespace-pre-wrap leading-relaxed">
                           {s.text}
                         </p>
                       </div>
@@ -818,7 +818,7 @@ function ExecutiveSummaryModal({
                   <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
                     <IconCheckCircle size={20} />
                   </div>
-                  <p className="text-sm font-bold text-emerald-900 dark:text-emerald-200">
+                  <p className="text-sm font-bold text-emerald-900 dark:text-brand">
                     100% Reporting Compliance!
                   </p>
                   <p className="text-xs text-emerald-800 dark:text-emerald-300/90">
@@ -828,7 +828,7 @@ function ExecutiveSummaryModal({
               ) : (
                 <div className="rounded-xl border border-border overflow-hidden">
                   <div className="bg-rose-500/10 px-4 py-2.5 border-b border-rose-500/20 flex items-center justify-between">
-                    <span className="text-xs font-bold text-rose-800 dark:text-rose-200 flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-rose-800 dark:text-accent flex items-center gap-1.5">
                       <IconClock size={14} />
                       {summary.nonSubmitters.length} Staff Member
                       {summary.nonSubmitters.length === 1 ? "" : "s"} Pending Submission
