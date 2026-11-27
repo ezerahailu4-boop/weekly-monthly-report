@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 import { sql } from "@/lib/db";
-import { getPortalSettings } from "@/lib/portalSettings";
+import { getCompanySettingsForUser, getPortalSettings } from "@/lib/portalSettings";
 import { sendTelegramMessage } from "@/lib/telegram";
 
 /**
@@ -55,6 +55,7 @@ export async function createPasswordResetRequest(input: {
       requestId,
       email: emailLower,
       emailExists,
+      userId: userId ? String(userId) : null,
     });
   } catch (err) {
     console.error("Failed to notify admins of reset request:", err);
@@ -209,11 +210,13 @@ export async function adminReviewResetRequest(input: {
   adminId: string;
   action: "approve" | "reject";
   notes?: string | null;
+  companyId?: string | null;
 }): Promise<{ status: string; email: string; userId?: string }> {
   const rows = await sql`
-    SELECT id, email, status, requested_by_user_id, expires_at
-    FROM password_reset_requests
-    WHERE id = ${input.requestId}
+    SELECT r.id, r.email, r.status, r.requested_by_user_id, r.expires_at, u.company_id AS user_company_id
+    FROM password_reset_requests r
+    LEFT JOIN users u ON r.requested_by_user_id = u.id
+    WHERE r.id = ${input.requestId}
     LIMIT 1;
   `;
 
@@ -222,6 +225,9 @@ export async function adminReviewResetRequest(input: {
   }
 
   const request = rows[0];
+  if (input.companyId && request.user_company_id !== input.companyId) {
+    throw new Error("Forbidden: Reset request belongs to another company.");
+  }
   const now = new Date();
 
   if (request.status !== "pending") {
@@ -282,10 +288,12 @@ export async function listResetRequests({
   limit = 50,
   offset = 0,
   status,
+  companyId,
 }: {
   limit?: number;
   offset?: number;
   status?: string;
+  companyId?: string | null;
 }): Promise<Array<{
   id: string;
   email: string;
@@ -297,14 +305,25 @@ export async function listResetRequests({
   admin_action_at: string | null;
   admin_notes: string | null;
 }>> {
-  const query = sql`
-    SELECT id, email, status, created_at, expires_at,
-           requested_by_user_id, admin_action_by, admin_action_at, admin_notes
-    FROM password_reset_requests
-    ${status ? sql`WHERE status = ${status}` : sql``}
-    ORDER BY created_at DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `;
+  const query = companyId
+    ? sql`
+        SELECT r.id, r.email, r.status, r.created_at, r.expires_at,
+               r.requested_by_user_id, r.admin_action_by, r.admin_action_at, r.admin_notes
+        FROM password_reset_requests r
+        JOIN users u ON r.requested_by_user_id = u.id
+        WHERE u.company_id = ${companyId}
+          ${status ? sql`AND r.status = ${status}` : sql``}
+        ORDER BY r.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `
+    : sql`
+        SELECT id, email, status, created_at, expires_at,
+               requested_by_user_id, admin_action_by, admin_action_at, admin_notes
+        FROM password_reset_requests
+        ${status ? sql`WHERE status = ${status}` : sql``}
+        ORDER BY created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
 
   const rows = await query as ResetRequestRow[];
 
@@ -352,14 +371,23 @@ async function notifyAdminsOfResetRequest(input: {
   requestId: string;
   email: string;
   emailExists: boolean;
+  userId?: string | null;
 }): Promise<void> {
-  const settings = await getPortalSettings();
+  const settings = input.userId
+    ? await getCompanySettingsForUser(input.userId)
+    : await getPortalSettings();
   if (!settings.telegram_bot_token) return;
 
-  const admins = await sql`
-    SELECT id, full_name, email, telegram_chat_id FROM users
-    WHERE role IN ('admin', 'super_admin') AND telegram_chat_id IS NOT NULL;
-  `;
+  const admins = settings.company_id
+    ? await sql`
+        SELECT id, full_name, email, telegram_chat_id FROM users
+        WHERE telegram_chat_id IS NOT NULL
+          AND (role = 'super_admin' OR (role = 'admin' AND company_id = ${settings.company_id}));
+      `
+    : await sql`
+        SELECT id, full_name, email, telegram_chat_id FROM users
+        WHERE role IN ('admin', 'super_admin') AND telegram_chat_id IS NOT NULL;
+      `;
   if (admins.length === 0) return;
 
   const existsLabel = input.emailExists ? "registered user" : "unrecognized email";
@@ -394,7 +422,7 @@ export async function notifyUserPasswordReset(input: {
   userId: string;
   email: string;
 }): Promise<void> {
-  const settings = await getPortalSettings();
+  const settings = await getCompanySettingsForUser(input.userId);
   if (!settings.telegram_bot_token) return;
 
   const rows = await sql`

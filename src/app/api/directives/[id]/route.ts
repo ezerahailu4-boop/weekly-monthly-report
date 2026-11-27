@@ -19,7 +19,7 @@ export async function GET(
            d.status, to_char(d.due_date, 'YYYY-MM-DD') as due_date,
            d.sla_days, d.last_comment_at, d.sla_due_at, d.source_report_id,
            d.created_by, d.created_at, d.updated_at,
-           u.full_name as created_by_name
+           u.full_name as created_by_name, u.company_id as creator_company_id
     FROM directives d
     LEFT JOIN users u ON d.created_by = u.id
     WHERE d.id = ${id}
@@ -28,6 +28,22 @@ export async function GET(
 
   if (rows.length === 0) {
     return NextResponse.json({ error: "Directive not found" }, { status: 404 });
+  }
+
+  const dir = rows[0];
+  if (
+    user.role !== "super_admin" &&
+    dir.creator_company_id &&
+    dir.creator_company_id !== user.company_id
+  ) {
+    const taskAccess = await sql`
+      SELECT 1 FROM tasks t JOIN users u ON t.assigned_to = u.id
+      WHERE t.directive_id = ${id} AND u.company_id = ${user.company_id}
+      LIMIT 1;
+    `;
+    if (taskAccess.length === 0) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   const [tasks, comments, plans] = await Promise.all([
@@ -93,11 +109,24 @@ export async function PATCH(
   try {
     const body = await request.json();
 
-    const existing = await sql`SELECT * FROM directives WHERE id = ${id} LIMIT 1;`;
+    const existing = await sql`
+      SELECT d.*, u.company_id as creator_company_id
+      FROM directives d
+      LEFT JOIN users u ON d.created_by = u.id
+      WHERE d.id = ${id}
+      LIMIT 1;
+    `;
     if (existing.length === 0) {
       return NextResponse.json({ error: "Directive not found" }, { status: 404 });
     }
     const curr = existing[0];
+    if (
+      user.role !== "super_admin" &&
+      curr.creator_company_id &&
+      curr.creator_company_id !== user.company_id
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     if (!isPrivileged) {
       // Non-privileged users may only update status to in_progress or completed
@@ -189,6 +218,22 @@ export async function DELETE(
   }
 
   const { id } = await params;
+  if (user.role !== "super_admin") {
+    const existing = await sql`
+      SELECT u.company_id as creator_company_id
+      FROM directives d
+      LEFT JOIN users u ON d.created_by = u.id
+      WHERE d.id = ${id}
+      LIMIT 1;
+    `;
+    if (
+      existing.length > 0 &&
+      existing[0].creator_company_id &&
+      existing[0].creator_company_id !== user.company_id
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
   await sql`DELETE FROM directives WHERE id = ${id};`;
   return NextResponse.json({ success: true });
 }

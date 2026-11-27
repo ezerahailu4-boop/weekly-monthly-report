@@ -1,6 +1,11 @@
 import crypto from "crypto";
 import { sql } from "./db";
-import { getPortalSettings } from "./portalSettings";
+import {
+  getAllActiveCompanySettings,
+  getCompanySettings,
+  getCompanySettingsForUser,
+  type PortalSettingsRow,
+} from "./portalSettings";
 import { getMonthBounds, getWeekBounds } from "./compliancePeriods";
 import { ETHIOPIA_TIMEZONE, evaluateReportingWindow } from "./windowSchedule";
 import {
@@ -68,6 +73,7 @@ function mapWarningRow(r: Record<string, unknown>): DisciplinaryWarningRow {
     employee_name: r.employee_name ? String(r.employee_name) : null,
     employee_email: r.employee_email ? String(r.employee_email) : null,
     employee_department: r.employee_department ? String(r.employee_department) : null,
+    employee_company_id: r.employee_company_id ? String(r.employee_company_id) : null,
     employee_telegram_chat_id: r.employee_telegram_chat_id
       ? String(r.employee_telegram_chat_id)
       : null,
@@ -76,7 +82,8 @@ function mapWarningRow(r: Record<string, unknown>): DisciplinaryWarningRow {
 }
 
 export async function getWarningsList(
-  userId?: string | null
+  userId?: string | null,
+  companyId?: string | null
 ): Promise<DisciplinaryWarningRow[]> {
   try {
     const rows = userId
@@ -90,6 +97,7 @@ export async function getWarningsList(
                  w.telegram_sent_at, w.telegram_error, w.created_at,
                  u.full_name AS employee_name, u.email AS employee_email,
                  u.department AS employee_department,
+                 u.company_id AS employee_company_id,
                  u.telegram_chat_id AS employee_telegram_chat_id,
                  ib.full_name AS issued_by_name
           FROM disciplinary_warnings w
@@ -98,7 +106,8 @@ export async function getWarningsList(
           WHERE w.user_id = ${userId}
           ORDER BY w.created_at DESC;
         `
-      : await sql`
+      : companyId
+        ? await sql`
           SELECT w.id, w.user_id, w.issued_by, w.report_type,
                  to_char(w.period_start, 'YYYY-MM-DD') AS period_start,
                  to_char(w.period_end, 'YYYY-MM-DD') AS period_end,
@@ -108,6 +117,26 @@ export async function getWarningsList(
                  w.telegram_sent_at, w.telegram_error, w.created_at,
                  u.full_name AS employee_name, u.email AS employee_email,
                  u.department AS employee_department,
+                 u.company_id AS employee_company_id,
+                 u.telegram_chat_id AS employee_telegram_chat_id,
+                 ib.full_name AS issued_by_name
+          FROM disciplinary_warnings w
+          JOIN users u ON w.user_id = u.id
+          LEFT JOIN users ib ON w.issued_by = ib.id
+          WHERE u.company_id = ${companyId}
+          ORDER BY w.created_at DESC;
+        `
+        : await sql`
+          SELECT w.id, w.user_id, w.issued_by, w.report_type,
+                 to_char(w.period_start, 'YYYY-MM-DD') AS period_start,
+                 to_char(w.period_end, 'YYYY-MM-DD') AS period_end,
+                 w.period_label, w.strike_number, w.warning_level,
+                 w.letter_ref, w.letter_subject, w.letter_body,
+                 w.trigger_source, w.status, w.acknowledged_at,
+                 w.telegram_sent_at, w.telegram_error, w.created_at,
+                 u.full_name AS employee_name, u.email AS employee_email,
+                 u.department AS employee_department,
+                 u.company_id AS employee_company_id,
                  u.telegram_chat_id AS employee_telegram_chat_id,
                  ib.full_name AS issued_by_name
           FROM disciplinary_warnings w
@@ -136,6 +165,7 @@ export async function getWarningById(
            w.telegram_sent_at, w.telegram_error, w.created_at,
            u.full_name AS employee_name, u.email AS employee_email,
            u.department AS employee_department,
+           u.company_id AS employee_company_id,
            u.telegram_chat_id AS employee_telegram_chat_id,
            ib.full_name AS issued_by_name
     FROM disciplinary_warnings w
@@ -189,14 +219,15 @@ export async function deliverWarningTelegram(params: {
   warningId: string;
   portalOrigin?: string | null;
 }): Promise<{ sent: boolean; error?: string }> {
-  const [settings, warning] = await Promise.all([
-    getPortalSettings(),
-    getWarningById(params.warningId),
-  ]);
+  const warning = await getWarningById(params.warningId);
 
   if (!warning) {
     return { sent: false, error: "Warning record not found." };
   }
+
+  const settings = warning.employee_company_id
+    ? await getCompanySettings(warning.employee_company_id)
+    : await getCompanySettingsForUser(warning.user_id);
 
   if (!settings.telegram_bot_token) {
     const errMsg = "Telegram bot token is not configured.";
@@ -548,57 +579,11 @@ export async function runComplianceEnforcement(params: {
   issuedBy?: string | null;
   portalOrigin?: string | null;
   targetPeriods?: EnforcementPeriodInput[];
+  companyId?: string | null;
 }): Promise<EnforcementSummary> {
-  const settings = await getPortalSettings();
-  const windowStatus = evaluateReportingWindow(settings);
-
-  let periodsToCheck: EnforcementPeriodInput[] = params.targetPeriods || [];
-
-  if (params.triggerSource === "auto" && periodsToCheck.length === 0) {
-    if (!settings.auto_warn_enabled) {
-      return {
-        skipped: true,
-        skipReason: "Automatic disciplinary enforcement is disabled in settings.",
-        checkedPeriods: [],
-        verbalIssued: 0,
-        lettersIssued: 0,
-        alreadyWarned: 0,
-        telegramSent: 0,
-        telegramFailed: 0,
-        issuedWarnings: [],
-      };
-    }
-
-    if (settings.window_mode === "force_open" || windowStatus.isOpen) {
-      return {
-        skipped: true,
-        skipReason: "Reporting window is currently open; waiting for close deadline.",
-        checkedPeriods: [],
-        verbalIssued: 0,
-        lettersIssued: 0,
-        alreadyWarned: 0,
-        telegramSent: 0,
-        telegramFailed: 0,
-        issuedWarnings: [],
-      };
-    }
-
-    const todayEthYmd = new Intl.DateTimeFormat("en-CA", {
-      timeZone: ETHIOPIA_TIMEZONE,
-    }).format(new Date());
-    const prev = getPreviousClosedPeriods(todayEthYmd);
-    periodsToCheck = [prev.lastWeek];
-    if (prev.ethDayOfMonth >= 4) {
-      periodsToCheck.push(prev.lastMonth);
-    }
-  }
-
-  const employees = await sql`
-    SELECT id
-    FROM users
-    WHERE role = 'employee'
-    ORDER BY full_name ASC;
-  `;
+  const companySettingsList: PortalSettingsRow[] = params.companyId
+    ? [await getCompanySettings(params.companyId)]
+    : await getAllActiveCompanySettings();
 
   let verbalIssued = 0;
   let lettersIssued = 0;
@@ -606,47 +591,112 @@ export async function runComplianceEnforcement(params: {
   let telegramSent = 0;
   let telegramFailed = 0;
   const issuedWarnings: DisciplinaryWarningRow[] = [];
+  const checkedPeriodsSet = new Set<string>();
+  const skipReasons: string[] = [];
+  let enforcedCompanies = 0;
 
-  for (const period of periodsToCheck) {
-    for (const emp of employees) {
-      const outcome = await issueWarningForMissedReport({
-        userId: String(emp.id),
-        reportType: period.reportType,
-        periodStart: period.periodStart,
-        periodEnd: period.periodEnd,
-        periodLabel: period.periodLabel,
-        issuedBy: params.issuedBy ?? null,
-        triggerSource: params.triggerSource,
-        portalOrigin: params.portalOrigin,
-      });
+  for (const settings of companySettingsList) {
+    const windowStatus = evaluateReportingWindow(settings);
+    let periodsToCheck: EnforcementPeriodInput[] = params.targetPeriods || [];
 
-      if (!outcome.issued) {
-        if (outcome.skippedReason === "already_warned") {
-          alreadyWarned += 1;
-        }
+    if (params.triggerSource === "auto" && periodsToCheck.length === 0) {
+      if (!settings.auto_warn_enabled) {
+        skipReasons.push(
+          `${settings.company_name || "Portal"}: automatic enforcement disabled`
+        );
         continue;
       }
 
-      if (outcome.warning) {
-        issuedWarnings.push(outcome.warning);
-        if (outcome.warning.warning_level === "verbal_warning") {
-          verbalIssued += 1;
-        } else {
-          lettersIssued += 1;
-        }
+      if (settings.window_mode === "force_open" || windowStatus.isOpen) {
+        skipReasons.push(
+          `${settings.company_name || "Portal"}: reporting window currently open`
+        );
+        continue;
       }
 
-      if (outcome.telegram?.sent) {
-        telegramSent += 1;
-      } else {
-        telegramFailed += 1;
+      const todayEthYmd = new Intl.DateTimeFormat("en-CA", {
+        timeZone: ETHIOPIA_TIMEZONE,
+      }).format(new Date());
+      const prev = getPreviousClosedPeriods(todayEthYmd);
+      periodsToCheck = [prev.lastWeek];
+      if (prev.ethDayOfMonth >= 4) {
+        periodsToCheck.push(prev.lastMonth);
+      }
+    }
+
+    if (periodsToCheck.length === 0) continue;
+    enforcedCompanies += 1;
+
+    const employees = settings.company_id
+      ? await sql`
+          SELECT id
+          FROM users
+          WHERE role = 'employee' AND company_id = ${settings.company_id}
+          ORDER BY full_name ASC;
+        `
+      : await sql`
+          SELECT id
+          FROM users
+          WHERE role = 'employee'
+          ORDER BY full_name ASC;
+        `;
+
+    for (const period of periodsToCheck) {
+      checkedPeriodsSet.add(`${period.reportType}:${period.periodLabel}`);
+      for (const emp of employees) {
+        const outcome = await issueWarningForMissedReport({
+          userId: String(emp.id),
+          reportType: period.reportType,
+          periodStart: period.periodStart,
+          periodEnd: period.periodEnd,
+          periodLabel: period.periodLabel,
+          issuedBy: params.issuedBy ?? null,
+          triggerSource: params.triggerSource,
+          portalOrigin: params.portalOrigin,
+        });
+
+        if (!outcome.issued) {
+          if (outcome.skippedReason === "already_warned") {
+            alreadyWarned += 1;
+          }
+          continue;
+        }
+
+        if (outcome.warning) {
+          issuedWarnings.push(outcome.warning);
+          if (outcome.warning.warning_level === "verbal_warning") {
+            verbalIssued += 1;
+          } else {
+            lettersIssued += 1;
+          }
+        }
+
+        if (outcome.telegram?.sent) {
+          telegramSent += 1;
+        } else {
+          telegramFailed += 1;
+        }
       }
     }
   }
 
+  if (enforcedCompanies === 0 && skipReasons.length > 0) {
+    return {
+      skipped: true,
+      skipReason: skipReasons.join("; "),
+      checkedPeriods: [],
+      verbalIssued: 0,
+      lettersIssued: 0,
+      alreadyWarned: 0,
+      telegramSent: 0,
+      telegramFailed: 0,
+      issuedWarnings: [],
+    };
+  }
+
   return {
     skipped: false,
-    checkedPeriods: periodsToCheck.map((p) => `${p.reportType}:${p.periodLabel}`),
+    checkedPeriods: Array.from(checkedPeriodsSet),
     verbalIssued,
     lettersIssued,
     alreadyWarned,

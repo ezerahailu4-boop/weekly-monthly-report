@@ -14,17 +14,6 @@ const PUBLIC_PATHS = [
   "/apple-icon",
 ];
 
-// Paths that should be rate-limited at the edge (per IP, fixed window).
-const RATE_LIMITED_PATHS = [
-  "/api/auth/login",
-  "/api/admin",
-  "/api/tasks",
-  "/api/directives",
-  "/api/reports",
-  "/api/plans",
-  "/api/warnings",
-];
-
 const RATE_LIMIT_CONFIG: Record<string, { max: number; windowMs: number }> = {
   "/api/auth/login": { max: 5, windowMs: 60 * 1000 },
   "/api/admin": { max: 30, windowMs: 60 * 1000 },
@@ -36,14 +25,17 @@ const RATE_LIMIT_CONFIG: Record<string, { max: number; windowMs: number }> = {
 };
 
 function rateLimitFor(pathname: string, request: Request) {
-  const matched = RATE_LIMIT_CONFIG[
-    Object.keys(RATE_LIMIT_CONFIG).find((key) => pathname.startsWith(key)) || ""
-  ];
-  if (!matched) return null;
-  return rateLimit(request, matched);
+  const matchedPrefix = Object.keys(RATE_LIMIT_CONFIG).find((key) =>
+    pathname.startsWith(key)
+  );
+  if (!matchedPrefix) return null;
+  return rateLimit(request, {
+    ...RATE_LIMIT_CONFIG[matchedPrefix],
+    scope: `edge:${matchedPrefix}`,
+  });
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Block public signup
@@ -57,11 +49,12 @@ export async function middleware(request: NextRequest) {
   // Edge-level rate limiting for sensitive routes
   const limit = rateLimitFor(pathname, request);
   if (limit && !limit.success) {
+    const retryAfter = Math.max(1, Math.ceil((limit.reset - Date.now()) / 1000));
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
       {
         status: 429,
-        headers: { "Retry-After": String(Math.ceil((limit.reset - Date.now()) / 1000)) || "60" },
+        headers: { "Retry-After": String(retryAfter) },
       }
     );
   }

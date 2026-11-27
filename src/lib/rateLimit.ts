@@ -1,9 +1,6 @@
-import { NextResponse } from "next/server";
-
 /**
- * In-memory fixed-window rate limiter.
- * Suitable for single-instance serverless deployments.
- * Keys are client IP addresses; windows are 60 seconds.
+ * In-memory fixed-window rate limiter with automatic stale-window eviction.
+ * Keys are client IP addresses + route scope; windows default to 60 seconds.
  */
 interface RateLimitWindow {
   count: number;
@@ -13,6 +10,7 @@ interface RateLimitWindow {
 const windows = new Map<string, RateLimitWindow>();
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 60 * 1000;
+const MAX_TRACKED_KEYS = 5000;
 
 function getClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -24,19 +22,27 @@ function getClientIp(request: Request): string {
   return "unknown";
 }
 
-export function rateLimit(request: Request, opts?: { max?: number; windowMs?: number }): {
+export function rateLimit(
+  request: Request,
+  opts?: { max?: number; windowMs?: number; scope?: string }
+): {
   success: boolean;
   remaining: number;
   reset: number;
 } {
   const max = opts?.max ?? MAX_ATTEMPTS;
   const windowMs = opts?.windowMs ?? WINDOW_MS;
-  const ip = getClientIp(request);
+  const scope = opts?.scope || "default";
+  const key = `${scope}:${getClientIp(request)}`;
   const now = Date.now();
 
-  const existing = windows.get(ip);
+  if (windows.size > MAX_TRACKED_KEYS) {
+    cleanupRateLimitWindows(now);
+  }
+
+  const existing = windows.get(key);
   if (!existing || now > existing.resetAt) {
-    windows.set(ip, { count: 1, resetAt: now + windowMs });
+    windows.set(key, { count: 1, resetAt: now + windowMs });
     return { success: true, remaining: max - 1, reset: now + windowMs };
   }
 
@@ -48,9 +54,12 @@ export function rateLimit(request: Request, opts?: { max?: number; windowMs?: nu
   };
 }
 
-export function cleanupRateLimitWindows(): void {
-  const now = Date.now();
+export function cleanupRateLimitWindows(now: number = Date.now()): void {
   for (const [key, window] of windows.entries()) {
     if (now > window.resetAt) windows.delete(key);
   }
+}
+
+export function clearAllRateLimitWindows(): void {
+  windows.clear();
 }

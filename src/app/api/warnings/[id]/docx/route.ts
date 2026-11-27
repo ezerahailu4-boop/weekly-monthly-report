@@ -17,7 +17,9 @@ export async function GET(
     return NextResponse.json({ error: "Warning letter not found." }, { status: 404 });
   }
 
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
+  const isPrivileged =
+    user.role === "super_admin" ||
+    (user.role === "admin" && warning.employee_company_id === user.company_id);
   if (!isPrivileged && warning.user_id !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

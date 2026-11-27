@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const { email, password } = await request.json();
 
     // Rate limit: 5 attempts per IP per 60 seconds
-    const limit = rateLimit(request, { max: 5, windowMs: 60_000 });
+    const limit = rateLimit(request, { max: 5, windowMs: 60_000, scope: "login-route" });
     if (!limit.success) {
       await auditLog({
         actorEmail: (email || "unknown").toLowerCase(),

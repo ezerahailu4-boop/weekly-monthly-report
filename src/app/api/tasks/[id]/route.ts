@@ -15,9 +15,12 @@ export async function PATCH(
 
   const { id } = await params;
   const existingRows = await sql`
-    SELECT id, assigned_to, assigned_by, status, title, description, priority,
-           to_char(due_date, 'YYYY-MM-DD') as due_date, completion_note, completed_at
-    FROM tasks WHERE id = ${id} LIMIT 1;
+    SELECT t.id, t.assigned_to, t.assigned_by, t.status, t.title, t.description, t.priority,
+           to_char(t.due_date, 'YYYY-MM-DD') as due_date, t.completion_note, t.completed_at,
+           u.company_id as assignee_company_id
+    FROM tasks t
+    JOIN users u ON t.assigned_to = u.id
+    WHERE t.id = ${id} LIMIT 1;
   `;
 
   if (existingRows.length === 0) {
@@ -25,7 +28,10 @@ export async function PATCH(
   }
 
   const existing = existingRows[0];
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
+  const isSuperAdmin = user.role === "super_admin";
+  const isPrivileged =
+    isSuperAdmin ||
+    (user.role === "admin" && existing.assignee_company_id === user.company_id);
   const isAssignee = existing.assigned_to === user.id;
 
   if (!isPrivileged && !isAssignee) {
@@ -172,6 +178,21 @@ export async function DELETE(
   const { id } = await params;
 
   try {
+    if (user.role !== "super_admin") {
+      const existing = await sql`
+        SELECT u.company_id as assignee_company_id
+        FROM tasks t
+        JOIN users u ON t.assigned_to = u.id
+        WHERE t.id = ${id}
+        LIMIT 1;
+      `;
+      if (existing.length === 0) {
+        return NextResponse.json({ error: "Task not found." }, { status: 404 });
+      }
+      if (existing[0].assignee_company_id !== user.company_id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
     await sql`DELETE FROM tasks WHERE id = ${id};`;
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

@@ -505,7 +505,7 @@ table, .tabular-nums, [data-tabular] {
 
   /* Hide UI chrome that has no meaning on paper */
   aside, [role="dialog"], .animate-in, .CommandPalette, .command-palette,
-  [aria-label="Breadcrumb"] .text-muted-foreground/60 + *, .no-print-on-paper {
+  [aria-label="Breadcrumb"] .text-muted-foreground\/60 + *, .no-print-on-paper {
     display: none !important;
   }
 
@@ -545,7 +545,7 @@ table, .tabular-nums, [data-tabular] {
 
   /* Status badges / chips: ensure dark text on light print */
   .text-muted-foreground, .text-foreground { color: black !important; }
-  .bg-primary, .bg-accent, .bg-emerald-500/10, .bg-brand/10 {
+  .bg-primary, .bg-accent, .bg-emerald-500\/10, .bg-brand\/10 {
     background: white !important;
     color: black !important;
     border: 1px solid #999 !important;

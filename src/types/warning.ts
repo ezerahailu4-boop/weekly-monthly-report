@@ -26,6 +26,7 @@ export interface DisciplinaryWarningRow {
   employee_name?: string | null;
   employee_email?: string | null;
   employee_department?: string | null;
+  employee_company_id?: string | null;
   employee_telegram_chat_id?: string | null;
   issued_by_name?: string | null;
 }

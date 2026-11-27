@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui";
 import { IconCrown, IconShield, IconUser } from "@/components/Icons";
 
 interface ExecutiveHeaderProps {
@@ -25,7 +24,6 @@ export function ExecutiveHeader({
 }: ExecutiveHeaderProps) {
   const isSuperAdmin = user?.role === "super_admin";
   const isAdmin = user?.role === "admin";
-  const displayName = user?.full_name || user?.email?.split("@")[0] || "Executive";
 
   return (
     <>

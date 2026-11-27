@@ -24,12 +24,13 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const statusFilter = searchParams.get("status");
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
+  const isSuperAdmin = user.role === "super_admin";
+  const isAdmin = user.role === "admin";
 
   type DirectiveRow = Record<string, unknown>;
   let rows: DirectiveRow[];
   try {
-    rows = isPrivileged
+    rows = isSuperAdmin
       ? await sql`
         SELECT d.id, d.reference_code, d.title, d.department, d.priority,
                d.directions, d.executive_summary, d.entry_mode, d.attachments,
@@ -44,7 +45,8 @@ export async function GET(request: Request) {
         LEFT JOIN users u ON d.created_by = u.id
         ORDER BY d.created_at DESC;
       `
-      : await sql`
+      : isAdmin
+        ? await sql`
         SELECT d.id, d.reference_code, d.title, d.department, d.priority,
                d.directions, d.executive_summary, d.entry_mode, d.attachments,
                d.status, to_char(d.due_date, 'YYYY-MM-DD') as due_date,
@@ -56,15 +58,40 @@ export async function GET(request: Request) {
                (SELECT COUNT(*)::int FROM directive_comments c WHERE c.directive_id = d.id) as comment_count
         FROM directives d
         LEFT JOIN users u ON d.created_by = u.id
-        WHERE d.department = 'All Departments'
-           OR d.department = ${user.department}
-           OR d.created_by = ${user.id}
+        WHERE u.company_id = ${user.company_id}
            OR EXISTS (
-             SELECT 1 FROM tasks t WHERE t.directive_id = d.id AND t.assigned_to = ${user.id}
+             SELECT 1 FROM tasks t JOIN users tu ON t.assigned_to = tu.id
+             WHERE t.directive_id = d.id AND tu.company_id = ${user.company_id}
            )
         ORDER BY d.created_at DESC;
+      `
+        : await sql`
+        SELECT d.id, d.reference_code, d.title, d.department, d.priority,
+               d.directions, d.executive_summary, d.entry_mode, d.attachments,
+               d.status, to_char(d.due_date, 'YYYY-MM-DD') as due_date,
+               d.sla_days, d.last_comment_at, d.sla_due_at, d.source_report_id,
+               d.created_by, d.created_at, d.updated_at,
+               u.full_name as created_by_name,
+               (SELECT COUNT(*)::int FROM tasks t WHERE t.directive_id = d.id) as total_tasks,
+               (SELECT COUNT(*)::int FROM tasks t WHERE t.directive_id = d.id AND t.status = 'completed') as completed_tasks,
+               (SELECT COUNT(*)::int FROM directive_comments c WHERE c.directive_id = d.id) as comment_count
+        FROM directives d
+        LEFT JOIN users u ON d.created_by = u.id
+        WHERE (
+            u.company_id = ${user.company_id}
+            OR d.created_by IS NULL
+          )
+          AND (
+            d.department = 'All Departments'
+            OR d.department = ${user.department}
+            OR d.created_by = ${user.id}
+            OR EXISTS (
+              SELECT 1 FROM tasks t WHERE t.directive_id = d.id AND t.assigned_to = ${user.id}
+            )
+          )
+        ORDER BY d.created_at DESC;
       `;
-  } catch (err: unknown) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to load directives." },
       { status: 500 }
@@ -141,6 +168,31 @@ export async function POST(request: Request) {
       );
     }
 
+    const initialTasks: InitialTaskInput[] = Array.isArray(body.initial_tasks)
+      ? body.initial_tasks
+      : [];
+
+    if (user.role === "admin" && initialTasks.length > 0) {
+      const assigneeIds = Array.from(
+        new Set(
+          initialTasks
+            .map((t) => (t.assigned_to ? String(t.assigned_to).trim() : ""))
+            .filter(Boolean)
+        )
+      );
+      if (assigneeIds.length > 0) {
+        const allowedRows = await sql`
+          SELECT id FROM users WHERE id = ANY(${assigneeIds}) AND company_id = ${user.company_id};
+        `;
+        if (allowedRows.length !== assigneeIds.length) {
+          return NextResponse.json(
+            { error: "All task assignees must belong to your company." },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
     const settings = await getPortalSettings();
     const slaDays =
       typeof body.sla_days === "number" && body.sla_days >= 1 && body.sla_days <= 60
@@ -204,9 +256,6 @@ export async function POST(request: Request) {
     const directiveId = String(inserted[0].id);
 
     // Optional concurrent multi-tasks created under this directive
-    const initialTasks: InitialTaskInput[] = Array.isArray(body.initial_tasks)
-      ? body.initial_tasks
-      : [];
     const notifyTelegram = body.notify_telegram !== false;
     const origin = new URL(request.url).origin;
     const portalOrigin = process.env.NEXT_PUBLIC_APP_URL || origin;

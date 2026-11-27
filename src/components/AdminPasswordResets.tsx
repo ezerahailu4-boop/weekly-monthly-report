@@ -25,31 +25,53 @@ const FILTER_CHIPS: Array<[string, string]> = [
   ["expired", "Expired"],
 ];
 
+async function queryResetRequests(filter: string): Promise<ResetRequest[]> {
+  const url = new URL("/api/auth/reset-requests", window.location.origin);
+  url.searchParams.set("status", filter === "all" ? "" : filter);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to load requests");
+  const data = await res.json();
+  return data.requests || [];
+}
+
 export function AdminPasswordResets() {
   const [requests, setRequests] = useState<ResetRequest[]>([]);
   const [filter, setFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchRequests();
-  }, [filter]);
-
-  async function fetchRequests() {
+  async function reloadRequests() {
     setLoading(true);
     try {
-      const url = new URL("/api/auth/reset-requests", window.location.origin);
-      url.searchParams.set("status", filter === "all" ? "" : filter);
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to load requests");
-      const data = await res.json();
-      setRequests(data.requests || []);
+      const data = await queryResetRequests(filter);
+      setRequests(data);
+      setError(null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load reset requests");
     } finally {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    let active = true;
+    queryResetRequests(filter)
+      .then((data) => {
+        if (!active) return;
+        setRequests(data);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        setError(err instanceof Error ? err.message : "Failed to load reset requests");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [filter]);
 
   async function review(requestId: string, action: "approve" | "reject") {
     const notes = window.prompt(
@@ -67,7 +89,7 @@ export function AdminPasswordResets() {
         const data = await res.json();
         throw new Error(data.error || "Review failed");
       }
-      fetchRequests();
+      await reloadRequests();
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Review failed");
     }
@@ -111,7 +133,12 @@ export function AdminPasswordResets() {
               key={value}
               variant={filter === value ? "brand" : "outline"}
               size="sm"
-              onClick={() => setFilter(value)}
+              onClick={() => {
+                if (filter !== value) {
+                  setLoading(true);
+                  setFilter(value);
+                }
+              }}
               className={`text-xs ${chipColor}`}
             >
               {label}

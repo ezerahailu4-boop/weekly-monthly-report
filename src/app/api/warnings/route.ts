@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { sql } from "@/lib/db";
 import {
   getWarningsList,
   issueWarningForMissedReport,
@@ -16,10 +17,12 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const scope = searchParams.get("scope");
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
+  const isSuperAdmin = user.role === "super_admin";
+  const isAdmin = user.role === "admin";
 
   const warnings = await getWarningsList(
-    isPrivileged && scope !== "mine" ? null : user.id
+    (isSuperAdmin || isAdmin) && scope !== "mine" ? null : user.id,
+    isAdmin && scope !== "mine" ? user.company_id : null
   );
 
   return NextResponse.json({ success: true, warnings });
@@ -59,6 +62,7 @@ export async function POST(request: Request) {
         issuedBy: user.id,
         portalOrigin,
         targetPeriods: periods,
+        companyId: user.role === "admin" ? user.company_id : null,
       });
 
       return NextResponse.json({ success: true, summary });
@@ -81,6 +85,21 @@ export async function POST(request: Request) {
         { error: "userId, reportType, periodStart, periodEnd, and periodLabel are required." },
         { status: 400 }
       );
+    }
+
+    if (user.role === "admin") {
+      const targetRows = await sql`
+        SELECT company_id FROM users WHERE id = ${userId} LIMIT 1;
+      `;
+      if (targetRows.length === 0) {
+        return NextResponse.json({ error: "User not found." }, { status: 404 });
+      }
+      if (targetRows[0].company_id !== user.company_id) {
+        return NextResponse.json(
+          { error: "Forbidden: You can only issue warnings within your company." },
+          { status: 403 }
+        );
+      }
     }
 
     const outcome = await issueWarningForMissedReport({

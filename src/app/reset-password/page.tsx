@@ -2,25 +2,22 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { BrandLogo } from "@/components/BrandLogo";
 import { ThemeToggle } from "@/components/ThemeProvider";
 import {
   IconAlertCircle,
   IconArrowLeft,
   IconCheck,
-  IconEye,
   IconLock,
 } from "@/components/Icons";
 
 export default function ResetPasswordPage() {
-  const router = useRouter();
   const params = useSearchParams();
   const token = params.get("token");
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(token ? null : "No reset token provided.");
   const [success, setSuccess] = useState(false);
@@ -168,7 +165,7 @@ export default function ResetPasswordPage() {
                   New Password
                 </label>
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type="password"
                   required
                   minLength={8}
                   placeholder="••••••••"
@@ -186,7 +183,7 @@ export default function ResetPasswordPage() {
                   Confirm Password
                 </label>
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type="password"
                   required
                   minLength={8}
                   placeholder="••••••••"

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { sql } from "@/lib/db";
 import { adminReviewResetRequest, listResetRequests } from "@/lib/passwordReset";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -17,7 +16,12 @@ export async function GET(request: Request) {
     const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 100);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
 
-    const requests = await listResetRequests({ limit, offset, status });
+    const requests = await listResetRequests({
+      limit,
+      offset,
+      status,
+      companyId: user.role === "admin" ? user.company_id : null,
+    });
 
     return NextResponse.json({ requests });
   } catch (err: unknown) {
@@ -49,6 +53,7 @@ export async function POST(request: Request) {
       adminId: user.id,
       action: action as "approve" | "reject",
       notes: notes ?? null,
+      companyId: user.role === "admin" ? user.company_id : null,
     });
 
     return NextResponse.json({

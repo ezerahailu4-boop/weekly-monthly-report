@@ -12,12 +12,13 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const scope = searchParams.get("scope");
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
+  const isSuperAdmin = user.role === "super_admin";
+  const isAdmin = user.role === "admin";
 
   let rows: unknown[];
   try {
     rows =
-      isPrivileged && scope !== "mine"
+      isSuperAdmin && scope !== "mine"
         ? await sql`
           SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by, t.directive_id,
                  t.status, t.priority, to_char(t.due_date, 'YYYY-MM-DD') as due_date,
@@ -36,7 +37,27 @@ export async function GET(request: Request) {
             t.due_date ASC NULLS LAST,
             t.created_at DESC;
         `
-        : await sql`
+        : isAdmin && scope !== "mine"
+          ? await sql`
+          SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by, t.directive_id,
+                 t.status, t.priority, to_char(t.due_date, 'YYYY-MM-DD') as due_date,
+                 t.completion_note, t.completed_at, t.telegram_notified_at, t.telegram_error,
+                 t.created_at, t.updated_at,
+                 u.full_name as assignee_name, u.email as assignee_email,
+                 u.department as assignee_department, u.telegram_chat_id as assignee_telegram_chat_id,
+                 ab.full_name as assigned_by_name,
+                 d.reference_code as directive_ref, d.title as directive_title
+          FROM tasks t
+          JOIN users u ON t.assigned_to = u.id
+          LEFT JOIN users ab ON t.assigned_by = ab.id
+          LEFT JOIN directives d ON t.directive_id = d.id
+          WHERE u.company_id = ${user.company_id}
+          ORDER BY
+            CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END ASC,
+            t.due_date ASC NULLS LAST,
+            t.created_at DESC;
+        `
+          : await sql`
           SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by, t.directive_id,
                  t.status, t.priority, to_char(t.due_date, 'YYYY-MM-DD') as due_date,
                  t.completion_note, t.completed_at, t.telegram_notified_at, t.telegram_error,
@@ -55,7 +76,7 @@ export async function GET(request: Request) {
             t.due_date ASC NULLS LAST,
             t.created_at DESC;
         `;
-  } catch (err: unknown) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to load tasks." },
       { status: 500 }
@@ -104,7 +125,7 @@ interface BulkTaskInput {
 
 async function handleBulkCreate(
   request: Request,
-  user: { id: string; full_name?: string | null },
+  user: { id: string; role: string; company_id: string | null; full_name?: string | null },
   body: {
     tasks: BulkTaskInput[];
     assigned_to: string[];
@@ -149,13 +170,14 @@ async function handleBulkCreate(
     }
   }
 
-  // Validate all assignees exist
-  const userRows = await sql`
-    SELECT id FROM users WHERE id = ANY(${assigneeIds});
-  `;
+  // Validate all assignees exist (and belong to the admin's company when not super_admin)
+  const userRows =
+    user.role === "super_admin"
+      ? await sql`SELECT id FROM users WHERE id = ANY(${assigneeIds});`
+      : await sql`SELECT id FROM users WHERE id = ANY(${assigneeIds}) AND company_id = ${user.company_id};`;
   if (userRows.length !== assigneeIds.length) {
     return NextResponse.json(
-      { error: "One or more selected assignees do not exist." },
+      { error: "One or more selected assignees do not exist in your company." },
       { status: 404 }
     );
   }
@@ -257,7 +279,7 @@ async function handleBulkCreate(
 
 async function handleSingleCreate(
   request: Request,
-  user: { id: string; full_name?: string | null },
+  user: { id: string; role: string; company_id: string | null; full_name?: string | null },
   body: {
     title?: string;
     description?: string;
@@ -289,12 +311,13 @@ async function handleSingleCreate(
     return NextResponse.json({ error: "Invalid priority value." }, { status: 400 });
   }
 
-  const userRows = await sql`
-    SELECT id FROM users WHERE id = ${assigned_to} LIMIT 1;
-  `;
+  const userRows =
+    user.role === "super_admin"
+      ? await sql`SELECT id FROM users WHERE id = ${assigned_to} LIMIT 1;`
+      : await sql`SELECT id FROM users WHERE id = ${assigned_to} AND company_id = ${user.company_id} LIMIT 1;`;
   if (userRows.length === 0) {
     return NextResponse.json(
-      { error: "Selected assignee does not exist." },
+      { error: "Selected assignee does not exist in your company." },
       { status: 404 }
     );
   }

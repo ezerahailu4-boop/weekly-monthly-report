@@ -2,24 +2,35 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { getPortalSettings } from "@/lib/portalSettings";
+import {
+  findCompanySettingsByErpKey,
+  getCompanySettings,
+  getPortalSettings,
+  type PortalSettingsRow,
+} from "@/lib/portalSettings";
 import { summarizeDirections } from "@/lib/directiveSummarizer";
-import { safeTimingCompare } from "@/lib/safeCompare";
 
-async function authorizeErpRequest(request: Request): Promise<{ ok: boolean; userId: string | null }> {
+async function authorizeErpRequest(request: Request): Promise<{
+  ok: boolean;
+  userId: string | null;
+  settings: PortalSettingsRow | null;
+}> {
   const authHeader = request.headers.get("authorization") || "";
   if (authHeader.startsWith("Bearer ")) {
     const token = authHeader.slice(7).trim();
-    const settings = await getPortalSettings();
-    if (settings.erp_api_key && safeTimingCompare(token, settings.erp_api_key)) {
-      return { ok: true, userId: null };
+    const matched = await findCompanySettingsByErpKey(token);
+    if (matched) {
+      return { ok: true, userId: null, settings: matched };
     }
   }
   const user = await getCurrentUser();
   if (user && (user.role === "admin" || user.role === "super_admin")) {
-    return { ok: true, userId: user.id };
+    const settings = user.company_id
+      ? await getCompanySettings(user.company_id)
+      : await getPortalSettings();
+    return { ok: true, userId: user.id, settings };
   }
-  return { ok: false, userId: null };
+  return { ok: false, userId: null, settings: null };
 }
 
 /**
@@ -38,7 +49,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const entity = body.entity === "action_plan" ? "action_plan" : "directive";
-    const settings = await getPortalSettings();
+    const settings = auth.settings || (await getPortalSettings());
     const prefix = settings.letterhead_config.referencePrefix || "YH-DFC";
     const year = new Date().getUTCFullYear();
 
@@ -93,10 +104,12 @@ export async function POST(request: Request) {
       });
     }
 
-    // Ingest action plan by author_email
+    // Ingest action plan by author_email (scoped to company when token is company-bound)
     const authorEmail = String(body.author_email || "").trim().toLowerCase();
     const userRows = authorEmail
-      ? await sql`SELECT id, department FROM users WHERE lower(email) = ${authorEmail} LIMIT 1;`
+      ? settings.company_id
+        ? await sql`SELECT id, department FROM users WHERE lower(email) = ${authorEmail} AND company_id = ${settings.company_id} LIMIT 1;`
+        : await sql`SELECT id, department FROM users WHERE lower(email) = ${authorEmail} LIMIT 1;`
       : [];
     const ownerId = userRows[0]?.id || auth.userId;
     if (!ownerId) {

@@ -16,7 +16,7 @@ export async function GET(
            to_char(p.period_end, 'YYYY-MM-DD') as period_end,
            p.entry_mode, p.objectives, p.summary, p.attachments, p.status,
            p.review_notes, p.reviewed_by, p.reviewed_at, p.created_at, p.updated_at,
-           u.full_name as author_name, u.email as author_email,
+           u.full_name as author_name, u.email as author_email, u.company_id as author_company_id,
            rev.full_name as reviewer_name,
            d.reference_code as directive_ref, d.title as directive_title
     FROM action_plans p
@@ -32,7 +32,9 @@ export async function GET(
   }
 
   const plan = rows[0];
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
+  const isPrivileged =
+    user.role === "super_admin" ||
+    (user.role === "admin" && plan.author_company_id === user.company_id);
   if (!isPrivileged && plan.user_id !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -48,13 +50,21 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
 
-  const existing = await sql`SELECT * FROM action_plans WHERE id = ${id} LIMIT 1;`;
+  const existing = await sql`
+    SELECT p.*, u.company_id as author_company_id
+    FROM action_plans p
+    JOIN users u ON p.user_id = u.id
+    WHERE p.id = ${id}
+    LIMIT 1;
+  `;
   if (existing.length === 0) {
     return NextResponse.json({ error: "Action plan not found" }, { status: 404 });
   }
   const curr = existing[0];
+  const isPrivileged =
+    user.role === "super_admin" ||
+    (user.role === "admin" && curr.author_company_id === user.company_id);
   const isOwner = curr.user_id === user.id;
 
   if (!isPrivileged && !isOwner) {
@@ -133,13 +143,21 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
 
-  const existing = await sql`SELECT user_id FROM action_plans WHERE id = ${id} LIMIT 1;`;
+  const existing = await sql`
+    SELECT p.user_id, u.company_id as author_company_id
+    FROM action_plans p
+    JOIN users u ON p.user_id = u.id
+    WHERE p.id = ${id}
+    LIMIT 1;
+  `;
   if (existing.length === 0) {
     return NextResponse.json({ error: "Action plan not found" }, { status: 404 });
   }
 
+  const isPrivileged =
+    user.role === "super_admin" ||
+    (user.role === "admin" && existing[0].author_company_id === user.company_id);
   if (!isPrivileged && existing[0].user_id !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

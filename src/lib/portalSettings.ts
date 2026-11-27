@@ -1,5 +1,6 @@
 import { sql } from "./db";
 import { getCurrentUser } from "./auth";
+import { safeTimingCompare } from "./safeCompare";
 import {
   DEFAULT_WINDOW_CONFIG,
   evaluateReportingWindow,
@@ -198,4 +199,66 @@ export async function getReportingWindowStatus(
 ): Promise<ReportingWindowStatus> {
   const settings = await getPortalSettings();
   return evaluateReportingWindow(settings, now);
+}
+
+/** Load settings for every active company (used by unauthenticated cron jobs & webhooks). */
+export async function getAllActiveCompanySettings(): Promise<PortalSettingsRow[]> {
+  try {
+    const companies = await sql`
+      SELECT id FROM companies WHERE is_active = true ORDER BY name ASC;
+    `;
+    if (companies.length === 0) {
+      return [await getPortalSettings()];
+    }
+    return Promise.all(companies.map((c) => getCompanySettings(String(c.id))));
+  } catch (err) {
+    console.error("Failed to list active companies, using default portal settings:", err);
+    return [await getPortalSettings()];
+  }
+}
+
+/** Resolve company settings for a specific user ID (falls back to default settings). */
+export async function getCompanySettingsForUser(
+  userId: string
+): Promise<PortalSettingsRow> {
+  try {
+    const rows = await sql`
+      SELECT company_id FROM users WHERE id = ${userId} LIMIT 1;
+    `;
+    const companyId = rows[0]?.company_id ? String(rows[0].company_id) : null;
+    if (companyId) {
+      return getCompanySettings(companyId);
+    }
+  } catch (err) {
+    console.error("Failed to resolve user company settings:", err);
+  }
+  return getPortalSettings();
+}
+
+/** Match an incoming ERP Bearer token against per-company settings first, then env fallback. */
+export async function findCompanySettingsByErpKey(
+  token: string
+): Promise<PortalSettingsRow | null> {
+  if (!token) return null;
+  try {
+    const rows = await sql`
+      SELECT company_id, erp_api_key
+      FROM company_settings
+      WHERE erp_api_key IS NOT NULL AND erp_api_key <> '';
+    `;
+    for (const row of rows) {
+      const candidate = String(row.erp_api_key || "");
+      if (candidate && safeTimingCompare(token, candidate)) {
+        return getCompanySettings(String(row.company_id));
+      }
+    }
+  } catch (err) {
+    console.error("Error matching per-company ERP API key:", err);
+  }
+
+  const envKey = process.env.ERP_API_KEY?.trim();
+  if (envKey && safeTimingCompare(token, envKey)) {
+    return getPortalSettings();
+  }
+  return null;
 }

@@ -14,9 +14,10 @@ export async function GET(
   const { id } = await params;
 
   const rows = await sql`
-    SELECT file_name, mime_type, content_base64
-    FROM uploaded_files
-    WHERE id = ${id}
+    SELECT f.file_name, f.mime_type, f.content_base64, f.uploaded_by, u.company_id AS uploader_company_id
+    FROM uploaded_files f
+    LEFT JOIN users u ON f.uploaded_by = u.id
+    WHERE f.id = ${id}
     LIMIT 1;
   `;
 
@@ -25,6 +26,16 @@ export async function GET(
   }
 
   const file = rows[0];
+  const isSuperAdmin = user.role === "super_admin";
+  const isOwner = file.uploaded_by === user.id;
+  const isSameCompany =
+    !!user.company_id &&
+    !!file.uploader_company_id &&
+    file.uploader_company_id === user.company_id;
+
+  if (!isSuperAdmin && !isOwner && !isSameCompany && file.uploaded_by !== null) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   const buffer = Buffer.from(String(file.content_base64), "base64");
   const safeName = String(file.file_name || "document").replace(/"/g, "");
 

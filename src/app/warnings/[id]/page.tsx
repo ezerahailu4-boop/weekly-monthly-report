@@ -28,7 +28,9 @@ export default async function WarningLetterPage({
   const warning = await getWarningById(id);
   if (!warning) notFound();
 
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
+  const isPrivileged =
+    user.role === "super_admin" ||
+    (user.role === "admin" && warning.employee_company_id === user.company_id);
   const isOwner = warning.user_id === user.id;
   if (!isPrivileged && !isOwner) redirect("/dashboard");
 

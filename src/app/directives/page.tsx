@@ -13,11 +13,13 @@ export default async function DirectivesPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
+  const isSuperAdmin = user.role === "super_admin";
+  const isAdmin = user.role === "admin";
+  const isPrivileged = isAdmin || isSuperAdmin;
 
   const [settings, directiveRows, userRows] = await Promise.all([
     getPortalSettings(),
-    isPrivileged
+    isSuperAdmin
       ? sql`
           SELECT d.id, d.reference_code, d.title, d.department, d.priority,
                  d.directions, d.executive_summary, d.entry_mode, d.attachments,
@@ -32,7 +34,8 @@ export default async function DirectivesPage() {
           LEFT JOIN users u ON d.created_by = u.id
           ORDER BY d.created_at DESC;
         `
-      : sql`
+      : isAdmin
+        ? sql`
           SELECT d.id, d.reference_code, d.title, d.department, d.priority,
                  d.directions, d.executive_summary, d.entry_mode, d.attachments,
                  d.status, to_char(d.due_date, 'YYYY-MM-DD') as due_date,
@@ -44,21 +47,50 @@ export default async function DirectivesPage() {
                  (SELECT COUNT(*)::int FROM directive_comments c WHERE c.directive_id = d.id) as comment_count
           FROM directives d
           LEFT JOIN users u ON d.created_by = u.id
-          WHERE d.department = 'All Departments'
-             OR d.department = ${user.department}
-             OR d.created_by = ${user.id}
+          WHERE u.company_id = ${user.company_id}
              OR EXISTS (
-               SELECT 1 FROM tasks t WHERE t.directive_id = d.id AND t.assigned_to = ${user.id}
+               SELECT 1 FROM tasks t JOIN users tu ON t.assigned_to = tu.id
+               WHERE t.directive_id = d.id AND tu.company_id = ${user.company_id}
              )
           ORDER BY d.created_at DESC;
+        `
+        : sql`
+          SELECT d.id, d.reference_code, d.title, d.department, d.priority,
+                 d.directions, d.executive_summary, d.entry_mode, d.attachments,
+                 d.status, to_char(d.due_date, 'YYYY-MM-DD') as due_date,
+                 d.sla_days, d.last_comment_at, d.sla_due_at, d.source_report_id,
+                 d.created_by, d.created_at, d.updated_at,
+                 u.full_name as created_by_name,
+                 (SELECT COUNT(*)::int FROM tasks t WHERE t.directive_id = d.id) as total_tasks,
+                 (SELECT COUNT(*)::int FROM tasks t WHERE t.directive_id = d.id AND t.status = 'completed') as completed_tasks,
+                 (SELECT COUNT(*)::int FROM directive_comments c WHERE c.directive_id = d.id) as comment_count
+          FROM directives d
+          LEFT JOIN users u ON d.created_by = u.id
+          WHERE (u.company_id = ${user.company_id} OR d.created_by IS NULL)
+            AND (
+              d.department = 'All Departments'
+              OR d.department = ${user.department}
+              OR d.created_by = ${user.id}
+              OR EXISTS (
+                SELECT 1 FROM tasks t WHERE t.directive_id = d.id AND t.assigned_to = ${user.id}
+              )
+            )
+          ORDER BY d.created_at DESC;
         `,
-    isPrivileged
+    isSuperAdmin
       ? sql`
           SELECT id, full_name, email, department, role, telegram_chat_id
           FROM users
           ORDER BY full_name ASC;
         `
-      : Promise.resolve([]),
+      : isPrivileged
+        ? sql`
+          SELECT id, full_name, email, department, role, telegram_chat_id
+          FROM users
+          WHERE company_id = ${user.company_id}
+          ORDER BY full_name ASC;
+        `
+        : Promise.resolve([]),
   ]);
 
   const directives: DirectiveRow[] = directiveRows.map((d) => ({

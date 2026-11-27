@@ -1,5 +1,9 @@
 import { sql } from "./db";
-import { getPortalSettings } from "./portalSettings";
+import {
+  getCompanySettings,
+  getCompanySettingsForUser,
+  getPortalSettings,
+} from "./portalSettings";
 
 export function escapeTelegramHtml(text: string | null | undefined): string {
   if (!text) return "";
@@ -274,14 +278,31 @@ export async function notifyAdminsReportSubmitted(params: {
   periodStart: string;
   periodEnd: string;
   portalOrigin?: string | null;
+  companyId?: string | null;
 }): Promise<void> {
-  const settings = await getPortalSettings();
+  let companyId = params.companyId ?? null;
+  if (!companyId) {
+    const reportRows = await sql`
+      SELECT company_id FROM reports WHERE id = ${params.reportId} LIMIT 1;
+    `;
+    companyId = reportRows[0]?.company_id ? String(reportRows[0].company_id) : null;
+  }
+
+  const settings = companyId
+    ? await getCompanySettings(companyId)
+    : await getPortalSettings();
   if (!settings.telegram_bot_token) return;
 
-  const admins = await sql`
-    SELECT telegram_chat_id FROM users
-    WHERE role IN ('admin', 'super_admin') AND telegram_chat_id IS NOT NULL;
-  `;
+  const admins = companyId
+    ? await sql`
+        SELECT telegram_chat_id FROM users
+        WHERE (role = 'super_admin' OR (role = 'admin' AND company_id = ${companyId}))
+          AND telegram_chat_id IS NOT NULL;
+      `
+    : await sql`
+        SELECT telegram_chat_id FROM users
+        WHERE role IN ('admin', 'super_admin') AND telegram_chat_id IS NOT NULL;
+      `;
   if (admins.length === 0) return;
 
   const reportUrl = params.portalOrigin
@@ -317,7 +338,7 @@ export async function notifyAuthorReportReviewed(params: {
   portalOrigin?: string | null;
   authorUserId: string;
 }): Promise<void> {
-  const settings = await getPortalSettings();
+  const settings = await getCompanySettingsForUser(params.authorUserId);
   if (!settings.telegram_bot_token) return;
 
   const rows = await sql`
@@ -358,12 +379,11 @@ export async function notifyTaskAssigneeViaTelegram(params: {
   taskId: string;
   portalOrigin?: string | null;
 }): Promise<{ sent: boolean; error?: string }> {
-  const settings = await getPortalSettings();
-
   const rows = await sql`
     SELECT t.id, t.title, t.description, t.priority,
            to_char(t.due_date, 'YYYY-MM-DD') as due_date,
-           u.id as assignee_id, u.full_name as assignee_name, u.telegram_chat_id,
+           u.id as assignee_id, u.full_name as assignee_name,
+           u.company_id as assignee_company_id, u.telegram_chat_id,
            ab.full_name as assigned_by_name
     FROM tasks t
     JOIN users u ON t.assigned_to = u.id
@@ -377,6 +397,9 @@ export async function notifyTaskAssigneeViaTelegram(params: {
   }
 
   const row = rows[0];
+  const settings = row.assignee_company_id
+    ? await getCompanySettings(String(row.assignee_company_id))
+    : await getPortalSettings();
 
   if (!settings.telegram_bot_token) {
     const msg = "Telegram bot token not configured yet by Admin.";

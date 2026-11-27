@@ -12,10 +12,12 @@ export default async function TasksPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const isPrivileged = user.role === "admin" || user.role === "super_admin";
+  const isSuperAdmin = user.role === "super_admin";
+  const isAdmin = user.role === "admin";
+  const isPrivileged = isAdmin || isSuperAdmin;
 
   const [taskRows, userRows] = await Promise.all([
-    isPrivileged
+    isSuperAdmin
       ? sql`
           SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by, t.directive_id,
                  t.status, t.priority, to_char(t.due_date, 'YYYY-MM-DD') as due_date,
@@ -34,7 +36,27 @@ export default async function TasksPage() {
             t.due_date ASC NULLS LAST,
             t.created_at DESC;
         `
-      : sql`
+      : isAdmin
+        ? sql`
+          SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by, t.directive_id,
+                 t.status, t.priority, to_char(t.due_date, 'YYYY-MM-DD') as due_date,
+                 t.completion_note, t.completed_at, t.telegram_notified_at, t.telegram_error,
+                 t.created_at, t.updated_at,
+                 u.full_name as assignee_name, u.email as assignee_email,
+                 u.department as assignee_department, u.telegram_chat_id as assignee_telegram_chat_id,
+                 ab.full_name as assigned_by_name,
+                 d.reference_code as directive_ref, d.title as directive_title
+          FROM tasks t
+          JOIN users u ON t.assigned_to = u.id
+          LEFT JOIN users ab ON t.assigned_by = ab.id
+          LEFT JOIN directives d ON t.directive_id = d.id
+          WHERE u.company_id = ${user.company_id}
+          ORDER BY
+            CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END ASC,
+            t.due_date ASC NULLS LAST,
+            t.created_at DESC;
+        `
+        : sql`
           SELECT t.id, t.title, t.description, t.assigned_to, t.assigned_by, t.directive_id,
                  t.status, t.priority, to_char(t.due_date, 'YYYY-MM-DD') as due_date,
                  t.completion_note, t.completed_at, t.telegram_notified_at, t.telegram_error,
@@ -53,13 +75,20 @@ export default async function TasksPage() {
             t.due_date ASC NULLS LAST,
             t.created_at DESC;
         `,
-    isPrivileged
+    isSuperAdmin
       ? sql`
           SELECT id, full_name, email, department, role, telegram_chat_id
           FROM users
           ORDER BY full_name ASC;
         `
-      : Promise.resolve([]),
+      : isPrivileged
+        ? sql`
+          SELECT id, full_name, email, department, role, telegram_chat_id
+          FROM users
+          WHERE company_id = ${user.company_id}
+          ORDER BY full_name ASC;
+        `
+        : Promise.resolve([]),
   ]);
 
   const tasks: TaskRow[] = taskRows.map((t) => ({

@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import { chromium } from "playwright-core";
 import Chromium from "@sparticuz/chromium";
 import {
   AlignmentType,
@@ -43,6 +42,10 @@ export function getCompanyLogoBuffer(): Buffer | null {
  * otherwise falls back to Playwright's bundled Chromium (local dev).
  */
 export async function launchChromium() {
+  // Keep Playwright out of ordinary server-rendered pages. This module also
+  // provides shared letterhead helpers used by the dashboard through the
+  // warnings module, while Chromium is only needed when generating a PDF.
+  const { chromium } = await import("playwright-core");
   try {
     const exePath = await Chromium.executablePath();
     return await chromium.launch({

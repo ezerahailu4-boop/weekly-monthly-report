@@ -5,12 +5,9 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { ThemeToggle } from "@/components/ThemeProvider";
 import {
-  IconAlertCircle,
   IconArrowLeft,
-  IconEnvelope,
   IconLock,
   IconMail,
-  IconShield,
 } from "@/components/Icons";
 
 export default function ForgotPasswordPage() {
