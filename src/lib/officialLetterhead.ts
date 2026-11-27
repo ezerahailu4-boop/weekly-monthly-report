@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import { chromium } from "playwright-core";
 import Chromium from "@sparticuz/chromium";
 import {
   AlignmentType,
@@ -43,6 +42,9 @@ export function getCompanyLogoBuffer(): Buffer | null {
  * otherwise falls back to Playwright's bundled Chromium (local dev).
  */
 export async function launchChromium() {
+  // This shared module is also imported by server-rendered pages. Load
+  // Playwright only when a PDF export actually launches Chromium.
+  const { chromium } = await import("playwright-core");
   try {
     const exePath = await Chromium.executablePath();
     return await chromium.launch({
