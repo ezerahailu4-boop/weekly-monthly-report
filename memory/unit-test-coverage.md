@@ -37,12 +37,10 @@ Added a vitest-based unit test suite for the pure utility functions in `src/lib/
 - `npx eslint src/` → 0 errors (15 pre-existing warnings only)
 - `npm run build` → passes
 
-**Follow-up commit (`f41ea61`) — fixed 7 pre-existing lint/type errors:**
-- `src/app/api/directives/route.ts` — `any[]` → `Record<string, unknown>[]` with `r.status as string` cast
-- `src/app/global-error.tsx` — `logged` state → `useRef` to avoid setState in useEffect
-- `src/app/not-found.tsx` — apostrophes escaped as `&rsquo;`
-- `src/app/reset-password/page.tsx` — initialize error/tokenValid state from token instead of setState in effect; restored dropped state declarations
-- `src/components/StatusBadge.tsx` — `as any` → typed `StatusKey` union
+**Follow-up commit (`b719f8b`) — fixed plan/report PDF letterhead export on Vercel:**
+- `src/app/api/plans/[id]/export/route.ts` — added `--no-sandbox`/`--disable-setuid-sandbox` to `chromium.launch()`; wrapped `renderOfficialLetterheadHtml` in try/catch so letterhead failures don’t break the whole export; improved catch-block logging
+- `src/app/api/reports/[id]/export/pdf/route.ts` — same Chromium flags + try/catch around `renderReportHtml` with minimal fallback HTML
+- `src/lib/officialLetterhead.ts` — added 8s `AbortController` timeout to `fetchCompanyLogoBuffer` to prevent hanging on unreachable external logo URLs
 
 **Why:** Closed the "Test coverage", "Print styles", and "Accessibility audit" gaps identified in the codebase. The project previously had only one Playwright e2e file (`tests/e2e/auth.spec.ts`) and no unit tests; print CSS covered only `.report-render`; and there was no programmatic table/modal/station card accessibility.
 
