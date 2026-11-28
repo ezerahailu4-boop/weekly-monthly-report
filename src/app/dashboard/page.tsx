@@ -363,11 +363,7 @@ export default async function DashboardPage({
           <div className={`relative z-10 flex flex-wrap items-center gap-2 ${isSuperAdmin ? "border-t border-border/70 pt-4" : ""}`}>
             {isPrivileged && (
               <>
-                <ExecutiveSummaryTrigger
-                  reports={allReportList}
-                  staff={staffList}
-                  todayEthYmd={todayEthYmd}
-                />
+                <ExecutiveSummaryTrigger />
 
                 <a
                   href="/api/reports/export/csv"
