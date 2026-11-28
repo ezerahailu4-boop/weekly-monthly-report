@@ -27,7 +27,6 @@ import {
   IconPrinter,
   IconTrendingUp,
   IconUsers,
-  IconX,
 } from "./Icons";
 import type { ReportRow } from "@/types/report";
 
@@ -44,51 +43,29 @@ const DEPT_STATUS_STYLES: Record<DepartmentSummaryRow["status"], string> = {
     "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25",
 };
 
-export function ExecutiveSummaryTrigger({
-  reports,
-  staff,
-  todayEthYmd,
-}: {
-  reports: ReportRow[];
-  staff: SummaryStaffMember[];
-  todayEthYmd: string;
-}) {
-  const [open, setOpen] = useState(false);
-
+export function ExecutiveSummaryTrigger() {
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
+      <Link
+        href="/executive-summary"
         title="Generate board-ready executive holding summary across all reports"
         className="inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-accent/20 transition-colors cursor-pointer"
       >
         <IconBarChart size={14} className="text-accent" />
-        Executive Summary
-      </button>
-
-      {open && (
-        <ExecutiveSummaryModal
-          reports={reports}
-          staff={staff}
-          todayEthYmd={todayEthYmd}
-          onClose={() => setOpen(false)}
-        />
-      )}
-    </>
+        Executive Holding Summary
+      </Link>
   );
 }
 
-function ExecutiveSummaryModal({
+export function ExecutiveSummaryView({
   reports,
   staff,
   todayEthYmd,
-  onClose,
+  scopeLabel,
 }: {
   reports: ReportRow[];
   staff: SummaryStaffMember[];
   todayEthYmd: string;
-  onClose: () => void;
+  scopeLabel: string;
 }) {
   const weekOptions = useMemo(
     () => buildWeekOptions(todayEthYmd, reports),
@@ -233,13 +210,8 @@ function ExecutiveSummaryModal({
     summary.incompleteActivities.length;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-3 sm:p-5 backdrop-blur-xs animate-in fade-in-50"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Executive Holding Summary"
-    >
-      <div className="w-full max-w-5xl max-h-[92vh] rounded-xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+    <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="w-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         {/* Top Modal Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border px-5 py-4 bg-muted/30 shrink-0">
           <div className="flex items-center gap-3">
@@ -256,7 +228,7 @@ function ExecutiveSummaryModal({
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Consolidated KPI performance, compliance, and escalations across YETAF Holding Limited
+                Consolidated KPI performance, compliance, and escalations across {scopeLabel}
               </p>
             </div>
           </div>
@@ -299,14 +271,12 @@ function ExecutiveSummaryModal({
               Export DOCX
             </a>
 
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close Executive Summary"
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
             >
-              <IconX size={16} />
-            </button>
+              <span aria-hidden="true" className="mr-1.5">←</span> Dashboard
+            </Link>
           </div>
         </div>
 
@@ -404,7 +374,7 @@ function ExecutiveSummaryModal({
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+        <div className="space-y-5 px-4 py-5 sm:px-6">
           {summaryError && (
             <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 space-y-2">
               <div className="flex items-start gap-3">
@@ -927,20 +897,19 @@ function ExecutiveSummaryModal({
         </div>
 
         {/* Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-3 bg-muted/20 text-[11px] text-muted-foreground shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-3 bg-muted/20 text-[11px] text-muted-foreground sm:px-6">
           <span>
             Showing{" "}
             <strong className="text-foreground">{metrics.totalReports}</strong>{" "}
             report{metrics.totalReports === 1 ? "" : "s"} ·{" "}
             <strong className="text-foreground">{summary.meta.periodLabel}</strong>
           </span>
-          <button
-            type="button"
-            onClick={onClose}
+          <Link
+            href="/dashboard"
             className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
           >
-            Close
-          </button>
+            Back to dashboard
+          </Link>
         </div>
       </div>
     </div>
