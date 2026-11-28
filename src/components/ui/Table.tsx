@@ -9,7 +9,7 @@ export function Table({
   ...props
 }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="relative w-full overflow-x-auto rounded-xl border border-border bg-card">
+    <div className="relative w-full overflow-x-auto rounded-lg border border-border bg-card shadow-sm">
       <table className={`w-full caption-bottom text-sm ${className}`} {...props}>
         {children}
       </table>
@@ -24,7 +24,7 @@ export function TableHeader({
 }: React.HTMLAttributes<HTMLTableSectionElement>) {
   return (
     <thead
-      className={`border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider ${className}`}
+      className={`border-b border-border [& tr]:bg-muted/50 [& tr]:sticky [& tr]:top-0 [& tr]:z-10 ${className}`}
       {...props}
     >
       {children}
@@ -68,7 +68,7 @@ export function TableRow({
   return (
     <tr
       className={`transition-colors duration-150 ${
-        hoverable ? "hover:bg-muted/30" : ""
+        hoverable ? "hover:bg-muted/40" : ""
       } ${className}`}
       {...props}
     >
@@ -85,7 +85,7 @@ export function TableHead({
   return (
     <th
       scope="col"
-      className={`h-10 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 ${className}`}
+      className={`h-11 px-4 text-left align-middle font-semibold text-xs uppercase tracking-wider text-muted-foreground [&:has([role=checkbox])]:pr-0 ${className}`}
       {...props}
     >
       {children}
@@ -129,16 +129,17 @@ export function TableSortHeader<T extends string = string>({
     <button
       type="button"
       onClick={() => onSort(columnKey)}
-      className={`inline-flex items-center gap-1.5 font-semibold text-xs tracking-wider transition-colors hover:text-foreground cursor-pointer ${
+      className={`inline-flex items-center gap-1.5 font-semibold text-xs tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 hover:text-foreground cursor-pointer ${
         isSorted ? "text-foreground" : "text-muted-foreground"
       } ${className}`}
+      aria-label={isSorted ? `${label} sorted, press to toggle` : `Sort by ${label}`}
     >
       <span>{label}</span>
       <span className="flex flex-col text-[10px] leading-[8px] opacity-70">
-        <span className={isSorted && currentOrder === "asc" ? "text-accent font-bold" : ""}>
+        <span className={isSorted && currentOrder === "asc" ? "text-primary font-bold" : ""}>
           ▲
         </span>
-        <span className={isSorted && currentOrder === "desc" ? "text-accent font-bold" : ""}>
+        <span className={isSorted && currentOrder === "desc" ? "text-primary font-bold" : ""}>
           ▼
         </span>
       </span>
@@ -163,19 +164,21 @@ export function TablePagination({
 
   return (
     <div
-      className={`flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border bg-card text-xs text-muted-foreground ${className}`}
+      className={`flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border bg-card p-4 text-xs text-muted-foreground ${className}`}
     >
       <div>
         {typeof totalItems === "number" ? (
           <span>
-            Total <strong className="text-foreground">{totalItems}</strong> entries · Page{" "}
-            <strong className="text-foreground">{currentPage}</strong> of{" "}
-            <strong className="text-foreground">{totalPages}</strong>
+            Total{" "}
+            <span className="font-semibold text-foreground tabular-nums">{totalItems}</span>{" "}
+            entries · Page{" "}
+            <span className="font-semibold text-foreground">{currentPage}</span> of{" "}
+            <span className="font-semibold text-foreground">{totalPages}</span>
           </span>
         ) : (
           <span>
-            Page <strong className="text-foreground">{currentPage}</strong> of{" "}
-            <strong className="text-foreground">{totalPages}</strong>
+            Page <span className="font-semibold text-foreground">{currentPage}</span> of{" "}
+            <span className="font-semibold text-foreground">{totalPages}</span>
           </span>
         )}
       </div>
@@ -186,6 +189,7 @@ export function TablePagination({
           size="xs"
           disabled={currentPage <= 1}
           onClick={() => onPageChange(currentPage - 1)}
+          aria-label="Previous page"
         >
           Previous
         </Button>
@@ -193,7 +197,6 @@ export function TablePagination({
         <div className="flex items-center gap-1 px-1">
           {Array.from({ length: totalPages }).map((_, i) => {
             const pageNum = i + 1;
-            // Only show nearby pages if totalPages is large
             if (
               totalPages > 7 &&
               Math.abs(pageNum - currentPage) > 2 &&
@@ -216,11 +219,13 @@ export function TablePagination({
                 key={pageNum}
                 type="button"
                 onClick={() => onPageChange(pageNum)}
-                className={`h-7 w-7 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                className={`h-7 w-7 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer ${
                   isCurrent
-                    ? "bg-accent text-accent-foreground font-semibold"
+                    ? "bg-primary text-primary-foreground font-semibold"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
+                aria-current={isCurrent ? "page" : undefined}
+                aria-label={`Page ${pageNum}`}
               >
                 {pageNum}
               </button>
@@ -233,6 +238,7 @@ export function TablePagination({
           size="xs"
           disabled={currentPage >= totalPages}
           onClick={() => onPageChange(currentPage + 1)}
+          aria-label="Next page"
         >
           Next
         </Button>
@@ -240,4 +246,3 @@ export function TablePagination({
     </div>
   );
 }
-

@@ -11,9 +11,9 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={`rounded-xl border border-border bg-card text-card-foreground shadow-xs transition-all duration-150 ${
+        className={`rounded-lg border border-border bg-card text-card-foreground shadow-xs transition-all duration-150 ${
           hoverable
-            ? "hover:border-accent/40 hover:shadow-sm hover:-translate-y-[1px]"
+            ? "hover:border-primary/40 hover:shadow-md hover:-translate-y-[1px]"
             : ""
         } ${className}`}
         {...props}
@@ -47,7 +47,7 @@ export function CardTitle({
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={`text-base font-semibold leading-none tracking-tight text-foreground sm:text-lg ${className}`}
+      className={`text-[14px] font-semibold leading-none tracking-tight text-foreground sm:text-lg ${className}`}
       {...props}
     >
       {children}
@@ -61,7 +61,7 @@ export function CardDescription({
   ...props
 }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={`text-xs text-muted-foreground sm:text-sm ${className}`} {...props}>
+    <p className={`text-xs sm:text-sm text-muted-foreground ${className}`} {...props}>
       {children}
     </p>
   );
@@ -93,4 +93,3 @@ export function CardFooter({
     </div>
   );
 }
-

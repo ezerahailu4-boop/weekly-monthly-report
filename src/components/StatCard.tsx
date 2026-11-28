@@ -1,6 +1,7 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui";
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 
 interface StatCardProps {
   title: string;
@@ -8,42 +9,61 @@ interface StatCardProps {
   caption?: string;
   delta?: string;
   deltaPositive?: boolean;
+  deltaLabel?: string;
   icon?: React.ReactNode;
 }
 
-export function StatCard({ title, value, caption, delta, deltaPositive, icon }: StatCardProps) {
-  const deltaColor = delta
-    ? deltaPositive === false
-      ? "text-destructive"
-      : "text-emerald-600 dark:text-emerald-400"
-    : "text-muted-foreground";
+export function StatCard({
+  title,
+  value,
+  caption,
+  delta,
+  deltaPositive,
+  deltaLabel,
+  icon,
+}: StatCardProps) {
+  const isDeltaNegative = deltaPositive === false;
+  const deltaColor = isDeltaNegative ? "text-destructive-600" : "text-success-600";
+  const arrow = isDeltaNegative ? "▼" : "▲";
+
+  // Consistent number formatting across all KPI cards.
+  const formattedValue =
+    typeof value === "number" ? new Intl.NumberFormat("en-US").format(value) : String(value);
 
   return (
-    <Card className="glass-card" role="region" aria-label={title}>
+    <Card
+      className="group hoverable shadow-sm hover:shadow-md transition-all duration-200"
+      hoverable
+    >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="stat-label text-sm font-normal leading-none">{title}</CardTitle>
-        {icon && <div className="text-muted-foreground" aria-hidden="true">{icon}</div>}
+        <CardTitle className="text-[12px] font-semibold leading-none tracking-tight uppercase text-muted-foreground">
+          {title}
+        </CardTitle>
+        {icon && (
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100">
+            {icon}
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <div className="stat-card">
-          <span className="stat-value text-2xl font-bold">{value}</span>
-          {caption && <p className="stat-label mt-0.5">{caption}</p>}
+          <span className="stat-value text-[28px] font-bold tabular-nums text-foreground tracking-tight">
+            {formattedValue}
+          </span>
+          {caption && <p className="stat-label mt-0.5 text-[12px] font-medium text-muted-foreground leading-none">
+            {caption}
+          </p>}
         </div>
         {delta && (
-          <div className={`mt-2 ${deltaColor}`}>
-            <span className="text-xs font-medium">
-              {deltaPositive === false ? "▼" : "▲"} {delta}
+          <div className={`mt-3 inline-flex items-center gap-1.5 ${deltaColor} rounded-lg px-3 py-1.5 text-xs font-medium`}>
+            <span className={arrow === "▼" ? "text-destructive-600" : "text-success-600"} aria-hidden="true">
+              {arrow}
             </span>
+            <span className="tabular-nums">{delta}</span>
+            <span className="text-muted-foreground">{deltaLabel ?? "since last week"}</span>
           </div>
         )}
       </CardContent>
-      {delta !== undefined ? (
-        <CardFooter className="border-t pt-2">
-          <CardDescription>
-            {deltaPositive === false ? "Down since last period" : "Up since last period"}
-          </CardDescription>
-        </CardFooter>
-      ) : null}
     </Card>
   );
 }

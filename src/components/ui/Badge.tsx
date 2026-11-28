@@ -28,29 +28,30 @@ const badgeVariants: Record<BadgeVariant, { container: string; dot: string }> = 
     dot: "bg-muted-foreground",
   },
   brand: {
+    // Primary accent (indigo) — brand colour, never used for status semantics.
     container:
-      "border-accent/30 bg-accent/10 text-accent font-semibold dark:border-accent/40 dark:bg-accent/20",
-    dot: "bg-accent",
+      "border-indigo-100 bg-indigo-50 text-indigo-700 font-semibold dark:border-indigo-400 dark:bg-indigo-900/20 dark:text-indigo-300",
+    dot: "bg-indigo-600",
   },
   success: {
     container:
-      "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300",
-    dot: "bg-emerald-500",
+      "border-success-300 bg-success-50 text-success-700 font-semibold dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-300",
+    dot: "bg-success-600",
   },
   warning: {
     container:
-      "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300",
-    dot: "bg-amber-500",
+      "border-warning-300 bg-warning-50 text-warning-700 font-semibold dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-300",
+    dot: "bg-warning-600",
   },
   destructive: {
     container:
-      "border-red-200 bg-red-50 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300",
-    dot: "bg-red-500",
+      "border-destructive-300 bg-destructive-50 text-destructive-700 font-semibold dark:border-destructive-500/30 dark:bg-destructive-500/10 dark:text-destructive-300",
+    dot: "bg-destructive-600",
   },
   info: {
     container:
-      "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300",
-    dot: "bg-blue-500",
+      "border-indigo-100 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/20 dark:text-indigo-300",
+    dot: "bg-indigo-600",
   },
   outline: {
     container: "border-border bg-card text-foreground",
@@ -101,6 +102,7 @@ export function Badge({
 
 /**
  * Universal Status Badge supporting Directives, Tasks, Plans, Reports, and Priorities.
+ * Colour is never the only signal: every status has an explicit text label.
  */
 export function StatusBadge({
   status,
@@ -193,4 +195,3 @@ export function StatusBadge({
     </Badge>
   );
 }
-

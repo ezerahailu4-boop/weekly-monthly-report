@@ -212,60 +212,143 @@
   --color-rose-800: var(--color-amber-800);
   --color-rose-900: var(--color-amber-900);
   --color-rose-950: var(--color-amber-950);
+
+  /* Semantic status colours (light theme) — green / amber / red. */
+  --color-success-50: var(--success-bg);
+  --color-success-100: var(--success-bg);
+  --color-success-200: color-mix(in srgb, var(--success-text) 25%, var(--card));
+  --color-success-300: var(--success-border);
+  --color-success-400: color-mix(in srgb, var(--success-text) 75%, var(--card));
+  --color-success-500: var(--success-text);
+  --color-success-600: var(--success-text);
+  --color-success-700: var(--success-text);
+  --color-success-800: var(--success-text);
+  --color-success-900: var(--success-text);
+  --color-success-950: var(--success-text);
+
+  --color-warning-50: var(--warning-bg);
+  --color-warning-100: var(--warning-bg);
+  --color-warning-200: color-mix(in srgb, var(--warning-text) 25%, var(--card));
+  --color-warning-300: var(--warning-border);
+  --color-warning-400: color-mix(in srgb, var(--warning-text) 75%, var(--card));
+  --color-warning-500: var(--warning-text);
+  --color-warning-600: var(--warning-text);
+  --color-warning-700: var(--warning-text);
+  --color-warning-800: var(--warning-text);
+  --color-warning-900: var(--warning-text);
+  --color-warning-950: var(--warning-text);
+
+  --color-destructive-50: var(--destructive-bg);
+  --color-destructive-100: var(--destructive-bg);
+  --color-destructive-200: color-mix(in srgb, var(--destructive-text) 25%, var(--card));
+  --color-destructive-300: var(--destructive-border);
+  --color-destructive-400: color-mix(in srgb, var(--destructive-text) 75%, var(--card));
+  --color-destructive-500: var(--destructive-text);
+  --color-destructive-600: var(--destructive-text);
+  --color-destructive-700: var(--destructive-text);
+  --color-destructive-800: var(--destructive-text);
+  --color-destructive-900: var(--destructive-text);
+  --color-destructive-950: var(--destructive-text);
+
+  /* Indigo accent scale. */
+  --color-indigo-50: color-mix(in srgb, var(--primary) 12%, var(--card));
+  --color-indigo-100: color-mix(in srgb, var(--primary) 20%, var(--card));
+  --color-indigo-200: color-mix(in srgb, var(--primary) 35%, var(--card));
+  --color-indigo-300: color-mix(in srgb, var(--primary) 55%, var(--card));
+  --color-indigo-400: color-mix(in srgb, var(--primary) 70%, var(--card));
+  --color-indigo-500: var(--primary);
+  --color-indigo-600: var(--primary);
+  --color-indigo-700: var(--primary);
+  --color-indigo-800: var(--primary);
+  --color-indigo-900: var(--primary);
+  --color-indigo-950: var(--primary);
+
+  /* Sidebar light-theme surface colours — resolve bg-sidebar-light-bg / text-sidebar-light-* etc. */
+  --color-sidebar-light-bg: var(--sidebar-light-bg);
+  --color-sidebar-light-text: var(--sidebar-light-text);
+  --color-sidebar-light-icon: var(--sidebar-light-icon);
+  --color-sidebar-light-active-bg: var(--sidebar-light-active-bg);
+  --color-sidebar-light-active-text: var(--sidebar-light-active-text);
+  --color-sidebar-light-active-icon: var(--sidebar-light-active-icon);
+  --color-sidebar-light-hover-text: var(--sidebar-light-hover-text);
+  --color-sidebar-light-section: var(--sidebar-light-section);
+  --color-sidebar-light-divider: var(--sidebar-light-divider);
+  --color-sidebar-light-profile-name: var(--sidebar-light-profile-name);
+  --color-sidebar-light-profile-desc: var(--sidebar-light-profile-desc);
 }
 
-/* ─── Light Theme · Executive Navy, White & Gold ─── */
+/* ─── Light Theme · Polished SaaS · Indigo accent, white cards, dark navy sidebar ─── */
 :root {
-  --radius: 0.75rem;
+  --radius: 0.875rem;
 
-  --background: #F6F8FB;
-  --foreground: #14243A;
+  --background: #F5F7FB;
+  --foreground: #14273D;
 
   --card: #FFFFFF;
-  --card-foreground: #14243A;
+  --card-foreground: #14273D;
 
   --popover: #FFFFFF;
-  --popover-foreground: #14243A;
+  --popover-foreground: #14273D;
 
-  --primary: #183454;
+  --primary: #4F46E5;
   --primary-foreground: #FFFFFF;
 
-  --secondary: #EEF2F7;
-  --secondary-foreground: #14243A;
+  --secondary: #F1F4F8;
+  --secondary-foreground: #14273D;
 
-  --muted: #E9EEF4;
-  --muted-foreground: #53657B;
+  --muted: #F1F4F8;
+  --muted-foreground: #475569;
 
-  --accent: #C69B43;
-  --accent-strong: #765510;
-  --accent-foreground: #14243A;
+  --accent: #4F46E5;
+  --accent-strong: #3730A3;
+  --accent-foreground: #FFFFFF;
 
-  --destructive: #9C7424;
+  --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
 
-  --border: #DCE4ED;
-  --input: #DCE4ED;
-  --ring: #183454;
+  --border: #E8ECF3;
+  --input: #E8ECF3;
+  --ring: #4F46E5;
 
-  --brand: #183454;
+  --brand: #4F46E5;
   --brand-foreground: #FFFFFF;
 
-  --sidebar: #10233D;
+  /* Caption / secondary text (WCAG AA). Captions #64748B, secondary #475569. */
+  --caption-foreground: #64748B;
+
+  /* Semantic status colours — used only for status, never decorative. */
+  --success-bg: #F0FDF4;
+  --success-border: #86EFAC;
+  --success-text: #15803D;
+  --success-dot: #15803D;
+
+  --warning-bg: #FFFBEB;
+  --warning-border: #FDE68A;
+  --warning-text: #92400E;
+  --warning-dot: #92400E;
+
+  --destructive-bg: #FEF2F2;
+  --destructive-border: #FECACA;
+  --destructive-text: #B91C1C;
+  --destructive-dot: #B91C1C;
+
+  /* Light sidebar — dark navy block; active item is a softer lighter block. */
+  --sidebar: #111827;
   --sidebar-foreground: #F8FAFC;
-  --sidebar-border: #263D5A;
-  --sidebar-accent: #C69B43;
-  --sidebar-accent-foreground: #14243A;
-  --sidebar-light-bg: #E8EEF5;
-  --sidebar-light-text: #14243A;
-  --sidebar-light-icon: #53657B;
-  --sidebar-light-active-bg: #D7E1EC;
-  --sidebar-light-active-text: #183454;
-  --sidebar-light-active-icon: #183454;
-  --sidebar-light-hover-text: #14243A;
-  --sidebar-light-section: #53657B;
-  --sidebar-light-divider: #DCE4ED;
-  --sidebar-light-profile-name: #14243A;
-  --sidebar-light-profile-desc: #53657B;
+  --sidebar-border: #1F2937;
+  --sidebar-accent: #4F46E5;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-light-bg: #111827;
+  --sidebar-light-text: #F8FAFC;
+  --sidebar-light-icon: #9CA3AF;
+  --sidebar-light-active-bg: #1F2937;
+  --sidebar-light-active-text: #FFFFFF;
+  --sidebar-light-active-icon: #FFFFFF;
+  --sidebar-light-hover-text: #FFFFFF;
+  --sidebar-light-section: #9CA3AF;
+  --sidebar-light-divider: #1F2937;
+  --sidebar-light-profile-name: #F8FAFC;
+  --sidebar-light-profile-desc: #9CA3AF;
 }
 
 /* ─── Dark Theme · Midnight Navy, White & Gold ─── */
@@ -318,6 +401,24 @@
   --sidebar-light-divider: #2B3B52;
   --sidebar-light-profile-name: #F6F8FC;
   --sidebar-light-profile-desc: #B6C2D1;
+
+  /* Semantic status colours — dark-appropriate counterparts (light theme defines these in :root). */
+  --success-bg: #064E3B;
+  --success-border: #1D7A56;
+  --success-text: #34D399;
+  --success-dot: #34D399;
+
+  --warning-bg: #451A03;
+  --warning-border: #7C3A0C;
+  --warning-text: #FBBF24;
+  --warning-dot: #FBBF24;
+
+  --destructive-bg: #450A0A;
+  --destructive-border: #7F1D1D;
+  --destructive-text: #FCA5A5;
+  --destructive-dot: #FCA5A5;
+
+  --caption-foreground: #9CA3AF;
 }
 
 /* ─── Base ────────────────────────────────────────────────── */

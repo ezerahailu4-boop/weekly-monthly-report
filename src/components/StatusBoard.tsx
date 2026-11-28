@@ -182,8 +182,8 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
           <p className="font-display text-3xl sm:text-4xl font-extrabold text-heading tabular-nums">
             {submittedWeekly}
           </p>
-          <div className="mt-2 flex items-center gap-1 text-[11px] text-deep-emerald dark:text-brand font-medium">
-            <span className="flex h-1 w-1 rounded-full bg-deep-emerald dark:bg-brand" />
+          <div className="mt-2 flex items-center gap-1 text-[11px] text-success-600 font-medium">
+            <span className="flex h-1 w-1 rounded-full bg-success-600" />
             {reviewedWeekly} reviewed
           </div>
         </div>
@@ -193,13 +193,13 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
           <p className="font-display text-3xl sm:text-4xl font-extrabold text-heading tabular-nums">
             {submittedMonthly}
           </p>
-          <div className="mt-2 flex items-center gap-1 text-[11px] text-deep-emerald dark:text-brand font-medium">
-            <span className="flex h-1 w-1 rounded-full bg-deep-emerald dark:bg-brand" />
+          <div className="mt-2 flex items-center gap-1 text-[11px] text-success-600 font-medium">
+            <span className="flex h-1 w-1 rounded-full bg-success-600" />
             {reviewedMonthly} reviewed
           </div>
         </div>
         <div className="glass-card rounded-2xl border border-border p-5 shadow-sm relative overflow-hidden group transition hover:-translate-y-0.5 hover:shadow-md">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300"><IconCompass size={20} /></div>
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-warning-50 text-warning-700"><IconCompass size={20} /></div>
           <p className="text-xs font-semibold uppercase tracking-wider text-body mb-1">Drafts Open</p>
           <p className="font-display text-3xl sm:text-4xl font-extrabold text-destructive tabular-nums">
             {totalDraft}
@@ -344,13 +344,13 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
           </div>
           <div className="mt-4 flex items-center justify-between gap-4 px-2">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-deep-emerald" />
+              <span className="w-2 h-2 rounded-full bg-success-600" />
               <span className="text-xs font-medium text-heading">
                 {totalSubmitted - totalDraft} Active Filings
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-champagne" />
+              <span className="w-2 h-2 rounded-full bg-warning-600" />
               <span className="text-xs font-medium text-body">{totalDraft} Drafts</span>
             </div>
           </div>
@@ -389,11 +389,11 @@ export function StatusBoard({ reports, tasks, plans }: StatusBoardProps) {
 
       {/* ── Quick Stats Pills ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
-        {statPill("Weekly Drafts", draftWeekly, "text-border")}
+        {statPill("Weekly Drafts", draftWeekly, "text-warning-600")}
 
-        {statPill("Monthly Drafts", draftMonthly, "text-border")}
-        {statPill("Weekly Reviewed", reviewedWeekly, "text-deep-emerald")}
-        {statPill("Monthly Reviewed", reviewedMonthly, "text-deep-emerald")}
+        {statPill("Monthly Drafts", draftMonthly, "text-warning-600")}
+        {statPill("Weekly Reviewed", reviewedWeekly, "text-success-600")}
+        {statPill("Monthly Reviewed", reviewedMonthly, "text-success-600")}
       </div>
     </section>
   );

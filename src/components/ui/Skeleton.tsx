@@ -8,8 +8,9 @@ export function Skeleton({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`animate-pulse rounded-md bg-muted/70 ${className}`}
+      className={`animate-pulse rounded-md bg-muted ${className}`}
       {...props}
+      aria-hidden="true"
     />
   );
 }
@@ -22,7 +23,7 @@ export function SkeletonText({
   className?: string;
 }) {
   return (
-    <div className={`space-y-2.5 ${className}`}>
+    <div className={`space-y-2.5 ${className}`} aria-hidden="true">
       {Array.from({ length: lines }).map((_, i) => (
         <Skeleton
           key={i}
@@ -37,7 +38,10 @@ export function SkeletonText({
 
 export function SkeletonCard({ className = "" }: { className?: string }) {
   return (
-    <div className={`rounded-xl border border-border bg-card p-5 space-y-4 ${className}`}>
+    <div
+      className={`rounded-lg border border-border bg-card p-5 space-y-4 shadow-sm ${className}`}
+      aria-hidden="true"
+    >
       <div className="flex items-center justify-between">
         <Skeleton className="h-4 w-1/3" />
         <Skeleton className="h-5 w-16 rounded-full" />
@@ -61,7 +65,7 @@ export function SkeletonTable({
   className?: string;
 }) {
   return (
-    <div className={`w-full space-y-3 ${className}`}>
+    <div className={`w-full space-y-3 ${className}`} aria-hidden="true">
       <div className="flex gap-4 border-b border-border pb-3">
         {Array.from({ length: cols }).map((_, i) => (
           <Skeleton key={i} className="h-4 flex-1" />
@@ -77,4 +81,3 @@ export function SkeletonTable({
     </div>
   );
 }
-

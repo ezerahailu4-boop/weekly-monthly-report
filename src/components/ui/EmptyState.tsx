@@ -28,9 +28,11 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={`flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-xl border border-dashed border-border bg-card/50 ${className}`}
+      className={`flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-lg border border-dashed border-border bg-card/60 ${className}`}
+      role="region"
+      aria-label={title}
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted/60 text-muted-foreground ring-1 ring-border/50 mb-3.5">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted/40 text-muted-foreground ring-1 ring-border/50 mb-4">
         {icon || (
           <svg
             className="h-6 w-6"
@@ -38,6 +40,7 @@ export function EmptyState({
             viewBox="0 0 24 24"
             stroke="currentColor"
             strokeWidth={1.5}
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -50,12 +53,12 @@ export function EmptyState({
       <h4 className="text-base font-semibold text-foreground tracking-tight">
         {title}
       </h4>
-      <p className="mt-1 text-xs sm:text-sm text-muted-foreground max-w-sm">
+      <p className="mt-1.5 text-sm text-muted-foreground max-w-sm leading-relaxed">
         {description}
       </p>
 
       {(actionLabel || secondaryActionLabel) && (
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
           {actionLabel && onAction && (
             <Button
               variant="brand"
@@ -80,4 +83,3 @@ export function EmptyState({
     </div>
   );
 }
-

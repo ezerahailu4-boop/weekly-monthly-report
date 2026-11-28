@@ -21,18 +21,18 @@ describe("statusColorsFor", () => {
 
   it("returns consistent values for draft", () => {
     const c = statusColorsFor("draft");
-    expect(c.light.bg).toBe("bg-muted");
-    expect(c.light.text).toBe("text-muted-foreground");
-    expect(c.dark.bg).toBe("bg-muted");
-    expect(c.dark.text).toBe("text-muted-foreground");
+    expect(c.light.bg).toBe("bg-warning-50");
+    expect(c.light.text).toBe("text-warning-700");
+    expect(c.dark.bg).toBe("bg-warning-50");
+    expect(c.dark.text).toBe("text-warning-700");
   });
 
   it("returns consistent values for overdue", () => {
     const c = statusColorsFor("overdue");
-    expect(c.light.bg).toBe("bg-accent/10");
-    expect(c.light.text).toBe("text-accent-strong");
-    expect(c.dark.bg).toBe("bg-accent/10");
-    expect(c.dark.text).toBe("text-accent-strong");
+    expect(c.light.bg).toBe("bg-destructive-50");
+    expect(c.light.text).toBe("text-destructive-700");
+    expect(c.dark.bg).toBe("bg-destructive-50");
+    expect(c.dark.text).toBe("text-destructive-700");
   });
 });
 
@@ -51,10 +51,10 @@ describe("roleColorsFor", () => {
 
   it("returns consistent values for super_admin", () => {
     const c = roleColorsFor("super_admin");
-    expect(c.light.text).toBe("text-accent-strong");
-    expect(c.light.bg).toBe("bg-accent/10");
-    expect(c.dark.text).toBe("text-accent-strong");
-    expect(c.dark.bg).toBe("bg-accent/10");
+    expect(c.light.text).toBe("text-indigo-700");
+    expect(c.light.bg).toBe("bg-indigo-50");
+    expect(c.dark.text).toBe("text-indigo-700");
+    expect(c.dark.bg).toBe("bg-indigo-50");
   });
 
   it("returns consistent values for employee", () => {
