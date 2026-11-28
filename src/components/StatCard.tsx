@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface StatCardProps {
   title: string;
@@ -11,6 +12,7 @@ interface StatCardProps {
   deltaPositive?: boolean;
   deltaLabel?: string;
   icon?: React.ReactNode;
+  loading?: boolean;
 }
 
 export function StatCard({
@@ -21,14 +23,37 @@ export function StatCard({
   deltaPositive,
   deltaLabel,
   icon,
+  loading = false,
 }: StatCardProps) {
   const isDeltaNegative = deltaPositive === false;
   const deltaColor = isDeltaNegative ? "text-destructive-600" : "text-success-600";
   const arrow = isDeltaNegative ? "▼" : "▲";
 
-  // Consistent number formatting across all KPI cards.
   const formattedValue =
     typeof value === "number" ? new Intl.NumberFormat("en-US").format(value) : String(value);
+
+  if (loading) {
+    return (
+      <Card className="shadow-sm" hoverable>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="animate-pulse rounded-lg bg-muted h-4 w-1/3 text-muted-foreground" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted animate-pulse" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-1/2 tabular-nums font-bold" />
+            <Skeleton className="h-4 w-2/3" />
+            {delta && (
+              <div className="flex items-center gap-1.5 w-1/3">
+                <Skeleton className="h-3 w-3 rounded-full" />
+                <Skeleton className="h-3.5 w-3/4" />
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card

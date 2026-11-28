@@ -16,7 +16,11 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { TelegramConnectionBanner } from "@/components/TelegramConnectionBanner";
 import { StatCard } from "@/components/StatCard";
-import { StatusBoard } from "@/components/StatusBoard";
+import {
+  StatusChart,
+  TrendChart,
+  ComplianceChart,
+} from "@/components/DashboardCharts";
 import {
   Button,
   Badge,
@@ -39,6 +43,11 @@ import {
   IconUser,
 } from "@/components/Icons";
 import type { ReportRow } from "@/types/report";
+
+const SHORT_MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+] as const;
 
 export const dynamic = "force-dynamic";
 
@@ -290,6 +299,37 @@ export default async function DashboardPage({
   const totalCount = reportList.length;
   const pendingReviewCount = reportList.filter((r) => r.status === "submitted").length;
   const reviewedCount = reportList.filter((r) => r.status === "reviewed").length;
+
+  // Monthly trend (last 6 months)
+  const now = new Date();
+  const monthlyTrend = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - i), 1));
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    const count = reportList.filter((r) => {
+      const rd = new Date(r.created_at);
+      return rd.getUTCFullYear() === d.getUTCFullYear() && rd.getUTCMonth() === d.getUTCMonth();
+    }).length;
+    return { month: `${SHORT_MONTHS[d.getUTCMonth()]} ${String(d.getUTCFullYear()).slice(-2)}`, count };
+  });
+
+  // Department compliance
+  const deptMap = new Map<string, { total: number; submitted: number }>();
+  for (const r of reportList) {
+    const dept = r.author_department || r.profiles?.department || "Unassigned";
+    if (!deptMap.has(dept)) deptMap.set(dept, { total: 0, submitted: 0 });
+    const c = deptMap.get(dept)!;
+    c.total += 1;
+    if (r.status !== "draft") c.submitted += 1;
+  }
+  const deptData = [...deptMap.entries()]
+    .map(([department, v]) => ({
+      department,
+      label: department.length > 20 ? `${department.slice(0, 18)}…` : department,
+      rate: v.total > 0 ? Math.round((v.submitted / v.total) * 100) : 0,
+      expected: v.total * 2,
+      filed: v.submitted,
+    }))
+    .sort((a, b) => b.rate - a.rate || a.department.localeCompare(b.department));
 
   const taskResolutionRate =
     kpiCounts.total_tasks > 0
@@ -658,14 +698,24 @@ export default async function DashboardPage({
           <ReportingWindowBanner status={windowStatus} isPrivileged={isPrivileged} />
         </div>
 
-        {/* ── Executive Status Board (widget grid) ── */}
+        {/* ── Chart Row ── */}
         {isPrivileged && (
           <div className="fade-in-up" style={{ animationDelay: "450ms" }}>
-            <StatusBoard
-              reports={allReportList}
-              tasks={boardTaskRows as { id: string; title: string; description: string; status: string; due_date: string | null; completion_note: string | null; assignee_name: string | null }[]}
-              plans={boardPlanRows as { id: string; reference_code: string; title: string; department: string; status: string; summary: string | null; objectives: { activity?: string; status?: string; progress?: number }[] }[]}
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <StatusChart
+                submitted={reportList.filter((r) => r.status !== "draft").length}
+                awaitingReview={reportList.filter((r) => r.status === "submitted").length}
+                drafts={reportList.filter((r) => r.status === "draft").length}
+              />
+              <TrendChart
+                data={monthlyTrend}
+                label="Monthly filing trend"
+              />
+              <ComplianceChart
+                departmentData={deptData}
+                employees={staffList.map((s) => ({ id: s.id, department: s.department }))}
+              />
+            </div>
           </div>
         )}
 

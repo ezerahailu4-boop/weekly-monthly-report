@@ -263,6 +263,19 @@
   --color-indigo-900: var(--primary);
   --color-indigo-950: var(--primary);
 
+  /* Brand scale — same indigo as primary. */
+  --color-brand-50: color-mix(in srgb, var(--primary) 12%, var(--card));
+  --color-brand-100: color-mix(in srgb, var(--primary) 20%, var(--card));
+  --color-brand-200: color-mix(in srgb, var(--primary) 35%, var(--card));
+  --color-brand-300: color-mix(in srgb, var(--primary) 55%, var(--card));
+  --color-brand-400: color-mix(in srgb, var(--primary) 70%, var(--card));
+  --color-brand-500: var(--primary);
+  --color-brand-600: var(--primary);
+  --color-brand-700: var(--primary);
+  --color-brand-800: var(--primary);
+  --color-brand-900: var(--primary);
+  --color-brand-950: var(--primary);
+
   /* Sidebar light-theme surface colours — resolve bg-sidebar-light-bg / text-sidebar-light-* etc. */
   --color-sidebar-light-bg: var(--sidebar-light-bg);
   --color-sidebar-light-text: var(--sidebar-light-text);
@@ -401,24 +414,6 @@
   --sidebar-light-divider: #2B3B52;
   --sidebar-light-profile-name: #F6F8FC;
   --sidebar-light-profile-desc: #B6C2D1;
-
-  /* Semantic status colours — dark-appropriate counterparts (light theme defines these in :root). */
-  --success-bg: #064E3B;
-  --success-border: #1D7A56;
-  --success-text: #34D399;
-  --success-dot: #34D399;
-
-  --warning-bg: #451A03;
-  --warning-border: #7C3A0C;
-  --warning-text: #FBBF24;
-  --warning-dot: #FBBF24;
-
-  --destructive-bg: #450A0A;
-  --destructive-border: #7F1D1D;
-  --destructive-text: #FCA5A5;
-  --destructive-dot: #FCA5A5;
-
-  --caption-foreground: #9CA3AF;
 }
 
 /* ─── Base ────────────────────────────────────────────────── */

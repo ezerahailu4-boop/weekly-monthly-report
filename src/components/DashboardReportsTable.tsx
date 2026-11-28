@@ -15,6 +15,7 @@ import {
   StatusBadge,
   Button,
   EmptyState,
+  SkeletonTable,
   Input,
   Select,
 } from "@/components/ui";
@@ -40,11 +41,17 @@ export function DashboardReportsTable({
   showAuthor = false,
   isPrivileged = false,
   windowLocked = false,
+  loading = false,
+  error = null,
+  onRetry,
 }: {
   initialReports: ReportRow[];
   showAuthor?: boolean;
   isPrivileged?: boolean;
   windowLocked?: boolean;
+  loading?: boolean;
+  error?: Error | null;
+  onRetry?: () => void;
 }) {
   const router = useRouter();
   const [reports, setReports] = useState<ReportRow[]>(initialReports);
@@ -275,8 +282,48 @@ export function DashboardReportsTable({
         </div>
       </div>
 
-      {/* Reports Table or Empty State */}
-      {processedReports.length === 0 ? (
+      {/* Reports Table: loading / error / empty / data states */}
+      {loading && (
+        <SkeletonTable rows={6} cols={6} className="mt-4" />
+      )}
+
+      {!loading && error && (
+        <div className="mt-8 flex flex-col items-center justify-center p-8 text-center rounded-lg border border-dashed border-border bg-card/60">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-destructive-50 text-destructive-600 ring-1 ring-destructive-100 mb-4">
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-base font-semibold text-foreground">Something went wrong</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {error instanceof Error ? error.message : "Failed to load reports."}
+          </p>
+          {onRetry && (
+            <Button
+              key="retry"
+              variant="brand"
+              size="sm"
+              onClick={onRetry}
+              className="mt-4"
+            >
+              Try again
+            </Button>
+          )}
+        </div>
+      )}
+
+      {!loading && !error && processedReports.length === 0 ? (
         <EmptyState
           title="No report records found"
           description={
@@ -290,7 +337,8 @@ export function DashboardReportsTable({
           onSecondaryAction={() => router.push("/reports/new/monthly")}
         />
       ) : (
-        <div className="space-y-0">
+        !loading && !error && (
+          <div className="space-y-0">
           <Table>
             <TableHeader>
               <tr>
@@ -369,8 +417,8 @@ export function DashboardReportsTable({
                         <span
                           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-2xs border ${
                             r.report_type === "weekly"
-                              ? "bg-accent/10 text-accent border-accent/20"
-                              : "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20"
+                              ? "bg-brand-50 text-brand border-brand-100"
+                              : "bg-warning-50 text-warning-700 border-warning-100"
                           }`}
                         >
                           <IconFileText size={15} />
@@ -387,7 +435,7 @@ export function DashboardReportsTable({
                               YH-{r.id.slice(0, 8).toUpperCase()}
                             </span>
                             {hasNotes && (
-                              <span className="inline-flex items-center gap-1 rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300 border border-blue-500/20">
+                              <span className="inline-flex items-center gap-1 rounded border border-brand-100 px-1.5 py-0.5 text-[10px] font-medium text-brand-700 bg-brand-50">
                                 <IconMessageSquare size={10} />
                                 Guidance Attached
                               </span>
@@ -498,7 +546,7 @@ export function DashboardReportsTable({
             onPageChange={(page) => setCurrentPage(page)}
           />
         </div>
-      )}
+      ))}
     </div>
   );
 }
